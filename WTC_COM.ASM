@@ -71,6 +71,9 @@ c_Command_Loop2:			;
 ;１文字読み込み
 c_Command_Loop3:			;
 	call	cread			;MMLファイルから１文字読み込み
+	jnc	c_Command_Step1		;
+	pop	cs:[pMML_File]		;ポインタ復帰
+	jmp	c_Command_End		;MMLファイルが[EOF]ならば終了
 c_Command_Step1:			;
 ;１文字チェック（00h含む）
 	mov	al,cs:[si]		;
@@ -481,7 +484,7 @@ cMCD_12	db	'j',0,		0,0,	0,	0	;j
 cMCD_13	db	'k',0,		0,1,	'k',0,	11h,0	;k	Velocity
 cMCD_14	db	'l',0,		0,1,	'l',0,	20h,1,0	;l	Lengs
 cMCD_15	db	'n',0,		0,1,	'n',0,	11h,0	;n	Noise mode
-cMCD_16	db	'm',0,		0,0,	0,	0	;m
+cMCD_16	db	'm',0,		0,4,	'm',0,	11h,11h,11h,12h,11h,0	;m
 cMCD_17	db	'o',0,		0,1,	'o',0,	11h,0	;o	Octave
 cMCD_18	db	'p',0,		0,1,	'p',0,	11h,0	;p	Pan
 cMCD_19	db	'q',0,		0,1,	'q',0,	12h,0	;q	Gate Step
@@ -539,7 +542,7 @@ cMCD_66	db	'6',0,		0,0,	0,	0	;6
 cMCD_67	db	'7',0,		0,0,	0,	0	;7
 cMCD_68	db	'8',0,		0,0,	0,	0	;8
 cMCD_69	db	'9',0,		0,0,	0,	0	;9
-cMCD_70	db	'*',0,		0,0,	0,	0	;*
+cMCD_70	db	'*',0,		0,4,	'*',0,	11h,11h,0	;*
 cMCD_71	db	'/',0,		0,0,	0,	0	;/
 cMCD_72	db	':',0,		0,3,	':',0,	0f0h	;:	Loop Jump
 	dw		offset cMCD_Loop_Jump		;

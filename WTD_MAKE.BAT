@@ -97,7 +97,7 @@ c:\lsic86\lha a wtdil_DE.lzh  wtd.asm wtd_h.asm
 c:\lsic86\lha a wtdil_DE.lzh  wtc.asm wtc_h.asm wtc_main.asm wtc_sub.asm
 c:\lsic86\lha a wtdil_DE.lzh  wtc_hed.asm wtc_voi.asm wtc_com.asm
 c:\lsic86\lha a wtdil_DE.lzh  セレクタソースファイル
-c:\lsic86\lha a wtdil_DE.lzh  wtd_make.bat セレクタメイクファイル
+c:\lsic86\lha a wtdil_DE.lzh  wtd_wsp.bat wtd_make.bat セレクタメイクファイル
 c:\lsic86\lha a wtdil_DE.lzh  wtd.cf wtd_h.cf セレクタcfファイル
 c:\lsic86\lha a wtdil_DE.lzh  readme.doc 取説.doc
 c:\lsic86\lha a wtdil_DE.lzh  devloper.doc

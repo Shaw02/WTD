@@ -92,7 +92,6 @@ I_Frection_Table:
 ;===============================================================|
 I_Start:
 	pusha					;
-	push	bp				;
 	push	ds				;レジスタ保存
 
 ;---------------------------------------------------------------
@@ -127,7 +126,6 @@ I_MusicEffectStep:				;
 ;割り込みの終了
 
 	pop	ds				;レジスタ復帰
-	pop	bp				;
 	popa					;
 	iret					;
 ;****************************************************************
@@ -190,7 +188,6 @@ I_Pcm_PcmStep:					;
 ;===============================================================|
 I_MusicEffect:					;
 	push	es				;レジスタ保存
-
 ;---------------------------------------------------------------
 ;演奏ルーチン
 
@@ -212,7 +209,7 @@ I_MusicEffect:					;
 I_MusicEffect_MusicLoop:			;
 	call	I_Play				;
 	add	di,WTD_WorkChSize		;構造体のサイズは80h(0x80)
-	dec	cx				;
+	sub	cx,1				;
 	jnz	I_MusicEffect_MusicLoop		;
 
 I_MusicEffect_MusicStep:
@@ -238,7 +235,7 @@ I_MusicEffect_MusicStep:
 I_MusicEffect_EffectLoop:			;
 	call	I_Play				;
 	add	di,WTD_WorkChSize		;構造体のサイズは80h(0x80)
-	dec	cx				;
+	sub	cx,1				;
 	jnz	I_MusicEffect_EffectLoop	;
 
 I_MusicEffect_EffectStep:			;
@@ -290,7 +287,6 @@ I_MusicEffect_PcmCheck_End:			;
 
 ;---------------------------------------------------------------
 ;終わり
-
 	pop	es				;レジスタ復帰
 	ret					;
 ;****************************************************************
@@ -379,7 +375,6 @@ I_PcmVoice_End:
 ;===============================================================|
 I_Play:					;
 	pusha				;
-	push	es			;レジスタ保存
 ;---------------------------------------------------------------
 
 ;演奏チェック
@@ -457,7 +452,6 @@ I_Play_StepE:					;
 	call	I_Play_Volume			;音程制御
 
 ;---------------------------------------------------------------
-	pop	es			;レジスタ復帰
 	popa				;
 	ret				;
 ;****************************************************************
@@ -758,27 +752,78 @@ I_Volume_SoftEnd:				;
 ;===============================================================|
 ;			LFO処理	KeyOn				|
 ;===============================================================|
-I_Play_KeyOn_LFO:			;
+I_Play_KeyOn_LFO:				;
+	push	ax				;
+	push	bp				;レジスタ保存
 
+	mov	bp,dx					;
 
+;カウンター(Rate)の初期化
+	mov	ah,ds:[di + bp].WTD_ChLfo_DecayRate	;DR
+	add	ah,ds:[di + bp].WTD_ChLfo_SpeedRate	;SR
+	mov	ds:[di + bp].WTD_ChLfo_RateCounter,ah	;
 
-	ret				;
+;カウンター(Count)の初期化
+	mov	ah,ds:[di + bp].WTD_ChLfo_Count		;
+	shr	ah,1					;ah = ah / 2
+	mov	ds:[di + bp].WTD_ChLfo_CountCounter,ah	;
+
+;レベルの初期化
+	xor	ax,ax					;
+	mov	ds:[di + bp].WTD_ChLfo_LevelSet,ax	;
+
+	pop	bp					;レジスタ復帰
+	pop	ax					;
+	ret						;
 ;===============================================================|
 ;			Emb処理	KeyOn				|
 ;===============================================================|
-I_Play_KeyOn_Emb:			;
+I_Play_KeyOn_Emb:				;
+	pusha					;
 
+	mov	bp,dx				;
 
+	mov	ah,ds:[di + bp].WTD_ChEmb_Address	;
+	and	ah,0f0h				;
+	mov	ds:[di + bp].WTD_ChEmb_Address,ah	;位置初期化
 
-	ret				;
+	jmp	I_Play_KeyOnOff_Emb		;
 ;===============================================================|
 ;			Emb処理	KeyOff				|
 ;===============================================================|
-I_Play_KeyOff_Emb:			;
+I_Play_KeyOff_Emb:				;
+	pusha					;
 
+	mov	bp,dx				;
 
+	mov	ah,ds:[di + bp].WTD_ChEmb_Address	;
+	and	ah,0f0h				;
+	add	ah,00cH				;
+	mov	ds:[di + bp].WTD_ChEmb_Address,ah	;位置初期化
 
-	ret				;
+;	jmp	I_Play_KeyOnOff_Emb		;
+;---------------------------------------------------------------|
+I_Play_KeyOnOff_Emb:				;
+
+	mov	bx,WTD_WorkAdd_Emb		;
+	mov	bl,ah				;
+	mov	cx,ds:[bx]			;
+	add	bx,2				;
+	mov	dx,ds:[bx]			;
+
+;
+;	上位1bitを設定する。
+;
+
+	mov	ds:[di + bp].WTD_ChEmb_Rate,cl	;
+	mov	ah,ch				;
+	and	ah,7fh				;
+	mov	ds:[di + bp].WTD_ChEmb_Counter,ah	;
+	mov	ds:[di + bp].WTD_ChEmb_MaxMin,dl	;
+	mov	ds:[di + bp].WTD_ChEmb_LevelSet,dh	;
+
+	popa					;
+	ret					;
 ;===============================================================|
 ;			Emb処理	メイン				|
 ;===============================================================|
@@ -790,11 +835,46 @@ I_Play_Emb:				;
 ;===============================================================|
 ;			LFO処理	メイン				|
 ;===============================================================|
-I_Play_LFO:				;
+I_Play_LFO:					;
+	push	ax				;
+	push	bp				;レジスタ保存
 
-	xor	dx,dx			;暫定処理
+	mov	bp,dx				;
 
-	ret				;
+;Rate処理
+	sub	ds:[di + bp].WTD_ChLfo_RateCounter,1	;
+	jnz	I_Play_LFO_End				;
+	mov	al,ds:[di + bp].WTD_ChLfo_SpeedRate	;
+	mov	ds:[di + bp].WTD_ChLfo_RateCounter,al	;
+
+;Level処理(dx←Level)
+	mov	dx,ds:[di + bp].WTD_ChLfo_LevelSet	;dx←Level
+	mov	al,ds:[di + bp].WTD_ChLfo_CountCounter	;
+	mov	ah,ds:[di + bp].WTD_ChLfo_Count		;加減算の分岐
+	cmp	al,ah					;
+	jz	I_Play_LFO_Add				;
+	jc	I_Play_LFO_Add				;
+I_Play_LFO_Sub:						;
+	sub	dx,ds:[di + bp].WTD_ChLfo_Level		;減算
+	jmp	I_Play_LFO_Step				;
+I_Play_LFO_Add:						;
+	add	dx,ds:[di + bp].WTD_ChLfo_Level		;加算
+I_Play_LFO_Step:					;
+	mov	ds:[di + bp].WTD_ChLfo_LevelSet,dx	;保存
+
+;Count処理
+	sub	ds:[di + bp].WTD_ChLfo_CountCounter,1	;
+	jnz	I_Play_LFO_End				;
+	mov	al,ds:[di + bp].WTD_ChLfo_Count		;カウンター初期化
+	shl	al,1					;al = al × 2
+	mov	ds:[di + bp].WTD_ChLfo_CountCounter,al	;
+
+I_Play_LFO_End:
+	mov	dx,DS:[di + bp].WTD_ChLfo_LevelSet	;dx←LFOのレベル
+
+	pop	bp				;レジスタ復帰
+	pop	ax				;
+	ret					;
 ;****************************************************************
 ;*								*
 ;*			割り込みルーチン			*
@@ -1192,6 +1272,30 @@ I_Com29:				;
 ;		LFO Switch					|
 ;===============================================================|
 I_Com2a:				;
+	push	bx			;
+	push	cx			;
+
+	mov	cl,es:[si]		;cl = 0,1,2
+	inc	si			;
+	shl	cl,1			;cl = 0,2,4 (bit)
+	xor	ax,ax			;
+	mov	al,es:[si]		;
+	inc	si			;
+	and	ax,00001h		;Bit Mask
+	mov	bx,0FFFEh		;Bit Mask
+	test	cl,cl			;
+	jz	I_Com2a_Step1		;
+	shl	ax,cl			;al = 1,4,16
+	shl	bx,cl
+I_Com2a_Step1:				;
+	and	ax,015h			;Bit Mask
+	mov	cx,ds:[di].WTD_FlagControl
+	and	cx,bx			;
+	or	ax,cx			;
+	mov	ds:[di].WTD_FlagControl,ax
+
+	pop	cx			;
+	pop	bx			;
 	ret				;
 ;===============================================================|
 ;		MML:Sharp					|
@@ -1362,6 +1466,8 @@ I_Com44:				;
 ;		Emblop						|
 ;===============================================================|
 I_Com45:				;
+	push	bx			;
+
 	mov	al,es:[si]		;ax←エンベロープ番号
 	inc	si			;
 	push	ax			;保存
@@ -1374,8 +1480,8 @@ I_Com45:				;
 	mov	bh,ah			;
 	cmp	bl,1			;
 	jnz	I_Com45_Expr		;
-	cmp	bl,2			;
-	jnz	I_Com45_Pan		;
+;	cmp	bl,2			;まだ、未対応
+;	jnz	I_Com45_Pan		;
 
 I_Com45_Bend:					;音程
 	mov	ds:[di].WTD_BendEmbAddress,al	;
@@ -1397,7 +1503,7 @@ I_Com45_Expr:					;音量
 	jmp	I_Com45_End			;
 
 I_Com45_Pan:					;音程
-	mov	ds:[di].WTD_BendEmbAddress,al	;
+;	mov	ds:[di].WTD_PanEmbAddress,al	;
 	mov	ax,ds:[si].WTD_FlagControl	;
 	shl	bx,1				;bx bit 9  =  No. bit 5
 	and	bx,WTD_Ctrl_EmbPan		;
@@ -1407,6 +1513,7 @@ I_Com45_Pan:					;音程
 ;	jmp	I_Com45_End			;
 
 I_Com45_End:				;
+	pop	bx			;
 	ret				;
 ;===============================================================|
 ;		Volume(MIDI ctrl:0x07)				|
@@ -1698,6 +1805,39 @@ I_Com6c_Step1:				;
 ;		LFO						|
 ;===============================================================|
 I_Com6d:				;
+	push	bp			;
+
+	mov	al,es:[si]		;
+	inc	si			;
+	mov	bp,WTD_BendLFO		;
+	cmp	al,0			;
+	jz	I_Com6d_Step		;
+	mov	bp,WTD_ExprLFO		;
+	cmp	al,1			;
+	jz	I_Com6d_Step		;
+;	mov	bp,WTD_PanLFO		;
+;	cmp	al,2			;
+;	jz	I_Com6d_Step		;
+I_Com6d_Step:				;
+
+	mov	al,es:[si]		;DR
+	inc	si			;
+	mov	ds:[di+bp].WTD_ChLfo_DecayRate,al
+
+	mov	al,es:[si]		;SR
+	inc	si			;
+	mov	ds:[di+bp].WTD_ChLfo_SpeedRate,al
+
+	mov	ax,es:[si]		;Lv
+	inc	si			;
+	inc	si			;
+	mov	ds:[di+bp].WTD_ChLfo_Level,ax
+
+	mov	al,es:[si]		;Cnt
+	inc	si			;
+	mov	ds:[di+bp].WTD_ChLfo_Count,al
+
+	pop	bp			;
 	ret				;
 ;===============================================================|
 ;		Noise mode					|
@@ -1719,6 +1859,8 @@ I_Com6f:				;
 ;		Panpot						|
 ;===============================================================|
 I_Com70:				;
+	push	cx			;
+
 	mov	al,es:[si]		;
 	inc	si			;
 	mov	ds:[di].WTD_Pan,al	;
@@ -1727,6 +1869,7 @@ I_Com70:				;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
 
+	pop	cx			;
 	ret				;
 ;===============================================================|
 ;		Gate time 'q'					|
@@ -2141,10 +2284,10 @@ I_SP_Volume:				;
 
 ;音量の次元を[dB]に変換
 ;	shl	al,1			;(Range:0～255)
-	and	ax,00ffh			;
-	mov	bx,offset I_Volume_Table	;
-	mov	si,ax				;
-	mov	al,cs:[bx + si]		;cl←int(256*(log(al+1)/log(257)))
+;	and	ax,00ffh			;
+;	mov	bx,offset I_Volume_Table	;
+;	mov	si,ax				;
+;	mov	al,cs:[bx + si]		;cl←int(256*(log(al+1)/log(257)))
 	mov	cl,al			;
 
 ;パンポット読み込み

@@ -1,5 +1,5 @@
 +-----------------------------------------------------------------------------
-| タイトル | Ｗonder Swan Ｔotal Sound Ｄriver β  version 0.03
+| タイトル | Ｗonder Swan Ｔotal Sound Ｄriver β  version 0.04
 |ファイル名| wtdIL_h.lzh wtdIL_SE.lzh wtdIL_PE.lzh wtdIL_DE.lzh
 | カテゴリ | 音源ドライバー
 | 動作機種 | Wonder Swan 及びその上位互換
@@ -23,18 +23,13 @@ PCM Voice発生時だけは頻度に割り込み処理を行う必要があり、処理速度が低下致し
 
 
 		以下の機能を追加・修正
-
 	●制御
-	・WTD_FlagControl	修正：ビットの並びを変更した。
-	・WTD_ExprEmbLevelSet	修正：MIDIでエンベロープ無効の場合、
-				　　　KeyOffで数値を操作しないようにした。
-	・WTD_TaiFlag		修正：フラグ内容が書き込まれていなかった。
-	・エンベロープ		修正：定義数が０だと暴走した。
+	・音程Soft Ware LFOを実装した。
+	・音量Soft Ware LFOを実装した。
+	・WTD_ExprPan		修正：内臓PCM用のRange変換の式が間違えていた。
 	●データ・コマンド
-	・モード・ダンパー	P
-	・ループ		[,:,]
-	・無限ループ		修正：無限ループになっていなかった。
-	ＭＭＬコンパイラ「wtc.com」の追加。「取説.pdf」に説明の追加。
+	・LFOスイッチ		*
+	・LFO			m
 
 
 制作のファイルは【wtdIL_??.LZH】です。
