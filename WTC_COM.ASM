@@ -8,6 +8,447 @@
 ;						A.Watanabe		|
 ;									|
 ;=======================================================================|
+;===============================================================|
+;		命令定義　（コンパイル情報）			|
+;===============================================================|
+;---------------------------------------------------------------|
+;	①コマンド文字列					|
+;		最後は00hで終わる				|
+;	②バージョン						|
+;		byte	整数部	／	byte	少数部		|
+;	③出力文字列。						|
+;		最後は00hで終わる				|
+;	④出力する場所						|
+;	    00h	終わり						|
+;	    1xh データ読み込み＆書き込み			|
+;		x	0:4bit×2 / 1:Byte / 2:Word		|
+;	    20h 音長用数値書き込み。				|(変更未)
+;		「Zenlen÷(読み込み)」を書き込む。		|
+;		（'%'指定だったら、そのままの数値。）		|
+;		（付点もチェックする。）			|
+;		01	lコマンドの場合指定する。		|
+;		01以外	lコマンド以外。				|
+;	    8xh	音階書き込み					|(変更未)
+;		x	0・・・休符				|
+;			1・・・ド　／　7・・・シ		|
+;		('#','+','-','&'のチェック。)			|
+;		(次に、数値があるかチェック。→'20h'と同じ処理)	|
+;	    F0h	プログラム					|
+;		nnnn	Offset Address				|
+;---------------------------------------------------------------
+c_Command_Data:
+;		Strings		Version	Strings	Command
+cMCD_0	db	0dh,0ah,'C',0,	0,1,	0,	0f0h	;<CR+LF>+'C'
+	dw		offset cMCD_CH			;
+	db		0				;
+cMCD_1	db	0dh,0ah,'!',0,	0,1,	0,	0f0h	;<CR+LF>+'!'
+	dw		offset cMCD_Macro		;
+	db		0				;
+cMCD_2	db	0dh,0ah,0,	0,1,	0,	0f0h	;<CR+LF>改行
+	dw		offset cMCD_CR			;
+	db		0				;－最初に改行チェック
+cMCD_3	db	'a',0,		0,1,	0,	86h,0	;a	ラ
+cMCD_4	db	'b',0,		0,1,	0,	87h,0	;b	シ
+cMCD_5	db	'c',0,		0,1,	0,	81h,0	;c	ド
+cMCD_6	db	'd',0,		0,1,	0,	82h,0	;d	レ
+cMCD_7	db	'e',0,		0,1,	0,	83h,0	;e	ミ
+cMCD_8	db	'f',0,		0,1,	0,	84h,0	;f	ファ
+cMCD_9	db	'g',0,		0,1,	0,	85h,0	;g	ソ
+cMCD_10	db	'h',0,		0,0,	0,	0	;h
+cMCD_11	db	'i',0,		0,0,	0,	0	;i
+cMCD_12	db	'j',0,		0,0,	0,	0	;j
+cMCD_13	db	'k',0,		0,1,	'k',0,	11h,0	;k	Velocity
+cMCD_14	db	'l',0,		0,1,	'l',0,	20h,1,0	;l	Lengs
+cMCD_15	db	'n',0,		0,1,	'n',0,	11h,0	;n	Noise mode
+cMCD_16	db	'm',0,		0,4,	'm',0,	11h,11h,11h,12h,11h,0	;m
+cMCD_17	db	'o',0,		0,1,	'o',0,	11h,0	;o	Octave
+cMCD_18	db	'p',0,		0,2,	'p',0,	11h,0	;p	Pan
+cMCD_19	db	'q',0,		0,1,	'q',0,	12h,0	;q	Gate Step
+cMCD_20	db	'r',0,		0,1,	0,	80h,0	;r	休符
+cMCD_21	db	's',0,		0,5,	's',0,	11h,11h,0   ;s	Sweep
+cMCD_22	db	't',0,		0,2,	't',0,	0f0h	;t	Tempo
+	dw		offset cMCD_st
+	db		0
+cMCD_23	db	'u',0,		0,1,	'u',0,	12h,0	;u	Gate Step
+cMCD_24	db	'v',0,		0,1,	'v',0,	11h,0	;v	Volume
+cMCD_25	db	'w',0,		0,0,	0,	0	;w
+cMCD_26	db	'x',0,		0,5,	'x',0,	11h,0	;x	Volume UpDown
+cMCD_27	db	'y',0,		0,5,	'y',0,	11h,11h,0   ;y	Conroll Change
+cMCD_28	db	'z',0,		0,0,	0,	0	;z
+cMCD_29	db	'A',0,		0,0,	0,	0	;A
+cMCD_30	db	'B',0,		0,0,	0,	0	;B
+cMCD_31	db	'C',0,		0,1,	'C',0,	11h,0	;C	Channel
+cMCD_32	db	'D',0,		0,1,	'D',0,	12h,0	;D	Detune
+cMCD_33	db	'E',0,		0,5,	'E',0,	11h,11h,0   ;E	Emb
+cMCD_34	db	'F',0,		0,0,	0,	0	;F
+cMCD_35	db	'G',0,		0,0,	0,	0	;G
+cMCD_36	db	'H',0,		0,0,	0,	0	;H
+cMCD_37	db	'I',0,		0,0,	0,	0	;I
+cMCD_38	db	'J',0,		0,0,	0,	0	;J
+cMCD_39	db	'K',0,		0,1,	'K',0,	12h,0	;K
+cMCD_40	db	'L',0,		0,3,	0,	0f0h	;L	Loop
+	dw		offset cMCD_lL			;
+	db		0				;
+cMCD_41	db	'N',0,		0,0,	0,	0	;N
+cMCD_42	db	'M',0,		0,0,	0,	0	;M
+cMCD_43	db	'O',0,		0,0,	0,	0	;O
+cMCD_44	db	'P',0,		0,3,	'P',0,	11h,0	;P
+cMCD_45	db	'Q',0,		0,1,	'Q',0,	11h,0	;Q
+cMCD_46	db	'R',0,		0,0,	0,	0	;R
+cMCD_47	db	'S',0,		0,0,	0,	0	;S
+cMCD_48	db	'T',0,		0,0,	0,	0	;T
+cMCD_49	db	'U',0,		0,1,	'U',0,	11h,0	;U
+cMCD_50	db	'V',0,		0,0,	'V',0,	12h,0	;V
+cMCD_51	db	'W',0,		0,0,	0,	0	;W
+cMCD_52	db	'X',0,		0,5,	'X',0,	0f0h	;X
+	dw		offset cMCD_lX			;
+	db		0				;
+cMCD_53	db	'Y',0,		0,0,	0,	0	;Y
+cMCD_54	db	'Z',0,		0,5,	'Y',0,	0f0h	;Z
+	dw		offset cMCD_lZ			;
+	db		0				;
+cMCD_55	db	'!',0,		0,1,	'!',0,	0	;!	Work Sw
+cMCD_56	db	'"',0,		0,1,	'"',0,	11h,0	;"	Work Add
+cMCD_57	db	''',0,		0,1,	''',0,	11h,0	;'	Acsent
+cMCD_58	db	'(',0,		0,1,	'(',0,	0	;(	Volume Down
+cMCD_59	db	')',0,		0,1,	')',0,	0	;)	Volume Up
+cMCD_60	db	'0',0,		0,0,	0,	0	;0
+cMCD_61	db	'1',0,		0,0,	0,	0	;1
+cMCD_62	db	'2',0,		0,0,	0,	0	;2
+cMCD_63	db	'3',0,		0,0,	0,	0	;3
+cMCD_64	db	'4',0,		0,0,	0,	0	;4
+cMCD_65	db	'5',0,		0,0,	0,	0	;5
+cMCD_66	db	'6',0,		0,0,	0,	0	;6
+cMCD_67	db	'7',0,		0,0,	0,	0	;7
+cMCD_68	db	'8',0,		0,0,	0,	0	;8
+cMCD_69	db	'9',0,		0,0,	0,	0	;9
+cMCD_70	db	'*',0,		0,4,	'*',0,	11h,11h,0 ;*	LFO Switch
+cMCD_71	db	'/',0,		0,5,	'/',0,	11h,11h,0 ;/	Emb Switch
+cMCD_72	db	':',0,		0,3,	':',0,	0f0h	;:	Loop Jump
+	dw		offset cMCD_Loop_Jump		;
+	db		0				;
+cMCD_73	db	';',0,		0,0,	0,	0	;;	Loop Flag
+;	dw		offset cMCD_Loop_Flag		;
+;	db		0				;
+cMCD_74	db	'[',0,		0,3,	'[',0,	0f0h	;[	Loop Start
+	dw		offset cMCD_Loop_Start		;
+	db		0				;
+cMCD_75	db	']',0,		0,3,	']',0,	0f0h	;]	Loop End
+	dw		offset cMCD_Loop_End		;
+	db		0				;
+cMCD_76	db	'<',0,		0,1,	'<',0,	0	;<
+cMCD_77	db	'>',0,		0,1,	'>',0,	0	;>
+cMCD_78	db	'@',0,		0,1,	'@',0,	11h,0	;@
+cMCD_79	db	'_',0,		0,1,	'_',0,	11h,0	;_
+cMCD_80	db	'{',0,		0,0,	0,	0	;{
+;===============================================================
+;現在コンパイル中のチャンネル。
+cMCD_ChannelWTD	db	?		;コンパイル中の。
+cMCD_ChannelMML	db	?		;ＭＭＬ中の。
+;無限ループアドレス
+cMCD_LoopL	dw	0000h		;
+;音長'l'
+dMCD_lengs	dw	48		;
+;ループ
+cMCD_LoopCount	dw	-2		;
+cMCD_LoopEnd	dw	8	dup(0)	;
+cMCD_LoopJump	dw	8	dup(0)	;
+
+;===============================================================
+cMCD_CRS:				;Serach
+	pusha				;改行検査から実行する。
+	jmp	cMCD_CR_Loop		;
+;- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+cMCD_CR:				;制御文字であるかチェックし、
+	pusha				;そうでなかったら、改行検査を行う。
+	call	CREAD			;
+	cmp	ah,21h			;制御文字であるか？
+	jc	cMCD_CR_Step		;それ以外だったら、改行検査から。
+cMCD_CR_Loop:				;
+	call	CREAD			;
+	jc	cMCD_CR_End		;ファイル終了だったら、終わり。
+	cmp	ah,0dh			;（このとき、ポインタは改行の次。）
+	jnz	cMCD_CR_Loop		;改行があった。
+
+;ポインタを改行直前に戻す。
+cMCD_CR_Step:				;
+	dec	cs:[pMML_File]		;
+;終了
+cMCD_CR_End:				;
+	popa				;レジスタ復帰
+	ret				;
+;---------------------------------------------------------------
+cMCD_CH:				;チャンネル設定
+	pusha				;
+
+cMCD_CH_Loop:				;
+	call	A2H8R			;読み込み
+	mov	cs:[cMCD_ChannelMML],ah	;保存
+
+	cmp	ah,cs:[cMCD_ChannelWTD]	;比較
+	jz	cMCD_CH_End		;同じだったら終わる。
+
+	call	CREAD			;カンマがあったら、
+	cmp	ah,','			;トラックの複数指定。
+	jz	cMCD_CH_Loop		;
+
+;終了
+cMCD_CH_End:
+	popa				;レジスタ復帰
+	ret				;
+;---------------------------------------------------------------
+cMCD_Macro:				;マクロ
+	pusha				;
+
+;
+;	後回しにする。
+;
+
+	popa				;レジスタ復帰
+	ret				;
+;---------------------------------------------------------------
+cMCD_st:
+	pusha				;
+
+;数値読み込み
+	call	A2H16R			;cx←Tempo
+	mov	cx,ax			;
+	xor	bx,bx			;bx←TimeBase
+	mov	bl,ds:[0].WTD_Mus_TimeBase
+
+;演算
+	mov	dx,0000ah		;
+	mov	ax,0fc80h		;
+	div	bx			;
+	xor	dx,dx			;
+	div	cx			;ax←12000 * 60 / (Tempo * TimeBase)
+
+;書き込み
+	call	CSET16			;
+
+;終了
+	popa				;
+	ret				;
+;---------------------------------------------------------------
+cMCD_lL:				;'L'コマンド
+	push	ax			;
+	
+	mov	ax,cs:[pWTD_File]	;
+	mov	cs:[cMCD_LoopL],ax	;
+	
+	pop	ax			;アドレスの保存
+	ret				;
+;---------------------------------------------------------------
+cMCD_lX:				;'X'コマンド
+	pusha				;
+
+	mov	ah,0f0h			;
+	call	cset			;
+
+cMCD_lX_Loop:				;
+	call	A2H8R			;読み込み
+	call	CSET
+
+	cmp	ah,0f7h			;トラックの複数指定。
+	jz	cMCD_lX_Loop		;
+
+
+	popa				;
+	ret				;
+;---------------------------------------------------------------
+cMCD_lZ:				;'Z'コマンド
+	pusha				;
+
+	mov	dx,cs:[pWTD_File]	;
+	xor	cx,cx			;
+	call	CSET
+
+cMCD_lZ_Loop:				;
+	inc	cx			;
+	call	A2H8R			;読み込み
+	call	CSET
+
+	push	cs:[pWTD_File]		;
+	call	CREAD			;
+	cmp	ah,'}'			;
+	pop	cs:[pWTD_File]		;
+	jz	cMCD_lZ_Loop		;
+
+	push	cs:[pWTD_File]		;
+	mov	cs:[pWTD_File],dx	;
+	mov	ah,cl			;
+	call	CSET			;
+	pop	cs:[pWTD_File]		;
+
+	popa				;
+	ret				;
+;---------------------------------------------------------------
+cMCD_Loop_Start:			;
+	push	ax			;
+	push	bx			;
+
+	add	cs:[cMCD_LoopCount],2	;ポインタ・インクリメント
+
+	cmp	cs:[cMCD_LoopCount],18	;ネスト８回超えた？
+	jc	cMCD_Loop_Start_Step1	;
+	jmp	LOOP_ERROR		;そしたら、エラー。
+cMCD_Loop_Start_Step1:			;
+	mov	ax,cs:[pWTD_File]	;ポインタ読み込み。
+	mov	bx,cs:[cMCD_LoopCount]	;
+
+	mov	cs:[cMCD_LoopEnd + bx],ax
+
+	mov	ah,2			;とりあえず、２を書き込み。
+	call	cset			;
+
+	pop	bx			;
+	pop	ax			;
+	ret				;
+;---------------------------------------------------------------
+cMCD_Loop_End:				;
+	push	ax			;
+	push	bx			;
+
+	mov	bx,cs:[cMCD_LoopCount]	;ポインタ読み込み。
+
+	mov	ax,cs:[cMCD_LoopEnd + bx]
+	inc	ax			;1つ進んだ場所を書き込み。
+	call	cset16			;戻りアドレスの書き込み。
+	dec	ax			;
+
+	push	cs:[pWTD_File]		;
+	mov	cs:[pWTD_File],ax	;
+	call	A2H8R			;
+	call	CSET			;ループ回数
+	pop	cs:[pWTD_File]		;
+
+	mov	ax,cs:[cMCD_LoopJump + bx]
+	cmp	ax,0			;ループアドレス
+	jz	cMCD_Loop_End_End	;
+; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+	mov	cx,cs:[pWTD_File]	;Loop Jump
+
+	push	cs:[pWTD_File]		;
+	mov	cs:[pWTD_File],ax	;
+	mov	ax,cx			;
+	call	cset16			;
+	pop	cs:[pWTD_File]		;
+; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+cMCD_Loop_End_End:			;
+	xor	ax,ax			;ax←0
+	mov	cs:[cMCD_LoopJump + bx],ax
+	mov	cs:[cMCD_LoopEnd + bx],ax
+	sub	bx,2			;
+	mov	cs:[cMCD_LoopCount],bx	;ポインタ書き込み
+
+	pop	bx			;
+	pop	ax			;
+	ret				;
+;---------------------------------------------------------------
+cMCD_Loop_Jump:				;
+	push	ax			;
+	push	bx			;
+
+	mov	ax,cs:[pWTD_File]	;ポインタ読み込み。
+	mov	bx,cs:[cMCD_LoopCount]	;
+
+	mov	cs:[cMCD_LoopJump + bx],ax
+
+	call	cset16			;
+
+	pop	bx			;
+	pop	ax			;
+	ret				;
+;---------------------------------------------------------------
+cMCD_Loop_Flag:				;
+	ret				;
+;===============================================================
+c_Command_Adrs:				;コマンド・データのアドレス。
+	dw	81			;数量
+	dw	offset cMCD_0		;<CR+LF>+"C"
+	dw	offset cMCD_1		;<CR+LF>+"!"
+	dw	offset cMCD_2		;<CR+LF>
+	dw	offset cMCD_3		;a	ラ
+	dw	offset cMCD_4		;b	シ
+	dw	offset cMCD_5		;c	ド
+	dw	offset cMCD_6		;d	レ
+	dw	offset cMCD_7		;e	ミ
+	dw	offset cMCD_8		;f	ファ
+	dw	offset cMCD_9		;g	ソ
+	dw	offset cMCD_10		;h	
+	dw	offset cMCD_11		;i	
+	dw	offset cMCD_12		;j	
+	dw	offset cMCD_13		;k	
+	dw	offset cMCD_14		;l	
+	dw	offset cMCD_15		;n	
+	dw	offset cMCD_16		;m	
+	dw	offset cMCD_17		;o	
+	dw	offset cMCD_18		;p	
+	dw	offset cMCD_19		;q	
+	dw	offset cMCD_20		;r	
+	dw	offset cMCD_21		;s	
+	dw	offset cMCD_22		;t	
+	dw	offset cMCD_23		;u	
+	dw	offset cMCD_24		;v	
+	dw	offset cMCD_25		;w	
+	dw	offset cMCD_26		;x	
+	dw	offset cMCD_27		;y	
+	dw	offset cMCD_28		;z	
+	dw	offset cMCD_29		;A	
+	dw	offset cMCD_30		;B	
+	dw	offset cMCD_31		;C	
+	dw	offset cMCD_32		;D	
+	dw	offset cMCD_33		;E	
+	dw	offset cMCD_34		;F	
+	dw	offset cMCD_35		;G	
+	dw	offset cMCD_36		;H	
+	dw	offset cMCD_37		;I	
+	dw	offset cMCD_38		;J	
+	dw	offset cMCD_39		;K	
+	dw	offset cMCD_40		;L	
+	dw	offset cMCD_41		;N	
+	dw	offset cMCD_42		;M	
+	dw	offset cMCD_43		;O	
+	dw	offset cMCD_44		;P	
+	dw	offset cMCD_45		;Q	
+	dw	offset cMCD_46		;R	
+	dw	offset cMCD_47		;S	
+	dw	offset cMCD_48		;T	
+	dw	offset cMCD_49		;U	
+	dw	offset cMCD_50		;V	
+	dw	offset cMCD_51		;W	
+	dw	offset cMCD_52		;X	
+	dw	offset cMCD_53		;Y	
+	dw	offset cMCD_54		;Z	
+	dw	offset cMCD_55		;!	
+	dw	offset cMCD_56		;"	
+	dw	offset cMCD_57		;'	
+	dw	offset cMCD_58		;(	
+	dw	offset cMCD_59		;)	
+	dw	offset cMCD_60		;0	
+	dw	offset cMCD_61		;1	
+	dw	offset cMCD_62		;2	
+	dw	offset cMCD_63		;3	
+	dw	offset cMCD_64		;4	
+	dw	offset cMCD_65		;5	
+	dw	offset cMCD_66		;6	
+	dw	offset cMCD_67		;7	
+	dw	offset cMCD_68		;8	
+	dw	offset cMCD_69		;9	
+	dw	offset cMCD_70		;*	
+	dw	offset cMCD_71		;/	
+	dw	offset cMCD_72		;:	
+	dw	offset cMCD_73		;	
+	dw	offset cMCD_74		;[	
+	dw	offset cMCD_75		;]	
+	dw	offset cMCD_76		;<	
+	dw	offset cMCD_77		;>	
+	dw	offset cMCD_78		;@	
+	dw	offset cMCD_79		;_	
+	dw	offset cMCD_80		;{	
+;===============================================================|
+;			コマンド・コンパイル			|
+;===============================================================|
 c_Command:				;パートコンパイル
 	pusha				;レジスタ保存
 
@@ -348,393 +789,4 @@ c_Command_KeyCode_Step9:
 
 c_Command_KeyCode_End:			;
 	popa				;
-	ret				;
-;===============================================================|
-;			命令定義				|
-;===============================================================|
-c_Command_Adrs:
-	dw	81			;数量
-	dw	offset cMCD_0		;<CR+LF>+"C"
-	dw	offset cMCD_1		;<CR+LF>+"!"
-	dw	offset cMCD_2		;<CR+LF>
-	dw	offset cMCD_3		;a	ラ
-	dw	offset cMCD_4		;b	シ
-	dw	offset cMCD_5		;c	ド
-	dw	offset cMCD_6		;d	レ
-	dw	offset cMCD_7		;e	ミ
-	dw	offset cMCD_8		;f	ファ
-	dw	offset cMCD_9		;g	ソ
-	dw	offset cMCD_10		;h	
-	dw	offset cMCD_11		;i	
-	dw	offset cMCD_12		;j	
-	dw	offset cMCD_13		;k	
-	dw	offset cMCD_14		;l	
-	dw	offset cMCD_15		;n	
-	dw	offset cMCD_16		;m	
-	dw	offset cMCD_17		;o	
-	dw	offset cMCD_18		;p	
-	dw	offset cMCD_19		;q	
-	dw	offset cMCD_20		;r	
-	dw	offset cMCD_21		;s	
-	dw	offset cMCD_22		;t	
-	dw	offset cMCD_23		;u	
-	dw	offset cMCD_24		;v	
-	dw	offset cMCD_25		;w	
-	dw	offset cMCD_26		;x	
-	dw	offset cMCD_27		;y	
-	dw	offset cMCD_28		;z	
-	dw	offset cMCD_29		;A	
-	dw	offset cMCD_30		;B	
-	dw	offset cMCD_31		;C	
-	dw	offset cMCD_32		;D	
-	dw	offset cMCD_33		;E	
-	dw	offset cMCD_34		;F	
-	dw	offset cMCD_35		;G	
-	dw	offset cMCD_36		;H	
-	dw	offset cMCD_37		;I	
-	dw	offset cMCD_38		;J	
-	dw	offset cMCD_39		;K	
-	dw	offset cMCD_40		;L	
-	dw	offset cMCD_41		;N	
-	dw	offset cMCD_42		;M	
-	dw	offset cMCD_43		;O	
-	dw	offset cMCD_44		;P	
-	dw	offset cMCD_45		;Q	
-	dw	offset cMCD_46		;R	
-	dw	offset cMCD_47		;S	
-	dw	offset cMCD_48		;T	
-	dw	offset cMCD_49		;U	
-	dw	offset cMCD_50		;V	
-	dw	offset cMCD_51		;W	
-	dw	offset cMCD_52		;X	
-	dw	offset cMCD_53		;Y	
-	dw	offset cMCD_54		;Z	
-	dw	offset cMCD_55		;!	
-	dw	offset cMCD_56		;"	
-	dw	offset cMCD_57		;'	
-	dw	offset cMCD_58		;(	
-	dw	offset cMCD_59		;)	
-	dw	offset cMCD_60		;0	
-	dw	offset cMCD_61		;1	
-	dw	offset cMCD_62		;2	
-	dw	offset cMCD_63		;3	
-	dw	offset cMCD_64		;4	
-	dw	offset cMCD_65		;5	
-	dw	offset cMCD_66		;6	
-	dw	offset cMCD_67		;7	
-	dw	offset cMCD_68		;8	
-	dw	offset cMCD_69		;9	
-	dw	offset cMCD_70		;*	
-	dw	offset cMCD_71		;/	
-	dw	offset cMCD_72		;:	
-	dw	offset cMCD_73		;	
-	dw	offset cMCD_74		;[	
-	dw	offset cMCD_75		;]	
-	dw	offset cMCD_76		;<	
-	dw	offset cMCD_77		;>	
-	dw	offset cMCD_78		;@	
-	dw	offset cMCD_79		;_	
-	dw	offset cMCD_80		;{	
-;---------------------------------------------------------------|
-;	①コマンド文字列					|
-;		最後は00hで終わる				|
-;	②バージョン						|
-;		byte	整数部	／	byte	少数部		|
-;	③出力文字列。						|
-;		最後は00hで終わる				|
-;	④出力する場所						|
-;	    00h	終わり						|
-;	    1xh データ読み込み＆書き込み			|
-;		x	0:4bit×2 / 1:Byte / 2:Word		|
-;	    20h 音長用数値書き込み。				|(変更未)
-;		「Zenlen÷(読み込み)」を書き込む。		|
-;		（'%'指定だったら、そのままの数値。）		|
-;		（付点もチェックする。）			|
-;		01	lコマンドの場合指定する。		|
-;		01以外	lコマンド以外。				|
-;	    8xh	音階書き込み					|(変更未)
-;		x	0・・・休符				|
-;			1・・・ド　／　7・・・シ		|
-;		('#','+','-','&'のチェック。)			|
-;		(次に、数値があるかチェック。→'20h'と同じ処理)	|
-;	    F0h	プログラム					|
-;		nnnn	Offset Address				|
-;---------------------------------------------------------------
-c_Command_Data:
-;		Strings		Version	Strings	Command
-cMCD_0	db	0dh,0ah,'C',0,	0,1,	0,	0f0h	;<CR+LF>+'C'
-	dw		offset cMCD_CH			;
-	db		0				;
-cMCD_1	db	0dh,0ah,'!',0,	0,1,	0,	0f0h	;<CR+LF>+'!'
-	dw		offset cMCD_Macro		;
-	db		0				;
-cMCD_2	db	0dh,0ah,0,	0,1,	0,	0f0h	;<CR+LF>改行
-	dw		offset cMCD_CR			;
-	db		0				;－最初に改行チェック
-cMCD_3	db	'a',0,		0,1,	0,	86h,0	;a	ラ
-cMCD_4	db	'b',0,		0,1,	0,	87h,0	;b	シ
-cMCD_5	db	'c',0,		0,1,	0,	81h,0	;c	ド
-cMCD_6	db	'd',0,		0,1,	0,	82h,0	;d	レ
-cMCD_7	db	'e',0,		0,1,	0,	83h,0	;e	ミ
-cMCD_8	db	'f',0,		0,1,	0,	84h,0	;f	ファ
-cMCD_9	db	'g',0,		0,1,	0,	85h,0	;g	ソ
-cMCD_10	db	'h',0,		0,0,	0,	0	;h
-cMCD_11	db	'i',0,		0,0,	0,	0	;i
-cMCD_12	db	'j',0,		0,0,	0,	0	;j
-cMCD_13	db	'k',0,		0,1,	'k',0,	11h,0	;k	Velocity
-cMCD_14	db	'l',0,		0,1,	'l',0,	20h,1,0	;l	Lengs
-cMCD_15	db	'n',0,		0,1,	'n',0,	11h,0	;n	Noise mode
-cMCD_16	db	'm',0,		0,4,	'm',0,	11h,11h,11h,12h,11h,0	;m
-cMCD_17	db	'o',0,		0,1,	'o',0,	11h,0	;o	Octave
-cMCD_18	db	'p',0,		0,1,	'p',0,	11h,0	;p	Pan
-cMCD_19	db	'q',0,		0,1,	'q',0,	12h,0	;q	Gate Step
-cMCD_20	db	'r',0,		0,1,	0,	80h,0	;r	休符
-cMCD_21	db	's',0,		0,0,	0,	0	;s
-cMCD_22	db	't',0,		0,1,	't',0,	0f0h	;t	Tempo
-	dw		offset cMCD_st
-	db		0
-cMCD_23	db	'u',0,		0,1,	'u',0,	12h,0	;u	Gate Step
-cMCD_24	db	'v',0,		0,1,	'v',0,	11h,0	;v	Volume
-cMCD_25	db	'w',0,		0,0,	0,	0	;w
-cMCD_26	db	'x',0,		0,0,	0,	0	;x
-cMCD_27	db	'y',0,		0,0,	0,	0	;y
-cMCD_28	db	'z',0,		0,0,	0,	0	;z
-cMCD_29	db	'A',0,		0,0,	0,	0	;A
-cMCD_30	db	'B',0,		0,0,	0,	0	;B
-cMCD_31	db	'C',0,		0,1,	'C',0,	11h,0	;C	Channel
-cMCD_32	db	'D',0,		0,1,	'D',0,	12h,0	;D	Detune
-cMCD_33	db	'E',0,		0,1,	'E',0,	11h,11h,0   ;E	Emb
-cMCD_34	db	'F',0,		0,0,	0,	0	;F
-cMCD_35	db	'G',0,		0,0,	0,	0	;G
-cMCD_36	db	'H',0,		0,0,	0,	0	;H
-cMCD_37	db	'I',0,		0,0,	0,	0	;I
-cMCD_38	db	'J',0,		0,0,	0,	0	;J
-cMCD_39	db	'K',0,		0,1,	'K',0,	12h,0	;K
-cMCD_40	db	'L',0,		0,1,	0,	0f0h	;L	Loop
-	dw		offset cMCD_lL			;
-	db		0				;
-cMCD_41	db	'N',0,		0,0,	0,	0	;N
-cMCD_42	db	'M',0,		0,0,	0,	0	;M
-cMCD_43	db	'O',0,		0,0,	0,	0	;O
-cMCD_44	db	'P',0,		0,3,	'P',0,	11h,0	;P
-cMCD_45	db	'Q',0,		0,1,	'Q',0,	11h,0	;Q
-cMCD_46	db	'R',0,		0,0,	0,	0	;R
-cMCD_47	db	'S',0,		0,0,	0,	0	;S
-cMCD_48	db	'T',0,		0,0,	0,	0	;T
-cMCD_49	db	'U',0,		0,1,	'U',0,	11h,0	;U
-cMCD_50	db	'V',0,		0,0,	'V',0,	12h,0	;V
-cMCD_51	db	'W',0,		0,0,	0,	0	;W
-cMCD_52	db	'X',0,		0,0,	0,	0	;X
-cMCD_53	db	'Y',0,		0,0,	0,	0	;Y
-cMCD_54	db	'Z',0,		0,0,	0,	0	;Z
-cMCD_55	db	'!',0,		0,1,	'!',0,	0	;!	Work Sw
-cMCD_56	db	'"',0,		0,1,	'"',0,	11h,0	;"	Work Add
-cMCD_57	db	''',0,		0,1,	''',0,	11h,0	;'	Acsent
-cMCD_58	db	'(',0,		0,1,	'(',0,	0	;(	Volume Down
-cMCD_59	db	')',0,		0,1,	')',0,	0	;)	Volume Up
-cMCD_60	db	'0',0,		0,0,	0,	0	;0
-cMCD_61	db	'1',0,		0,0,	0,	0	;1
-cMCD_62	db	'2',0,		0,0,	0,	0	;2
-cMCD_63	db	'3',0,		0,0,	0,	0	;3
-cMCD_64	db	'4',0,		0,0,	0,	0	;4
-cMCD_65	db	'5',0,		0,0,	0,	0	;5
-cMCD_66	db	'6',0,		0,0,	0,	0	;6
-cMCD_67	db	'7',0,		0,0,	0,	0	;7
-cMCD_68	db	'8',0,		0,0,	0,	0	;8
-cMCD_69	db	'9',0,		0,0,	0,	0	;9
-cMCD_70	db	'*',0,		0,4,	'*',0,	11h,11h,0	;*
-cMCD_71	db	'/',0,		0,0,	0,	0	;/
-cMCD_72	db	':',0,		0,3,	':',0,	0f0h	;:	Loop Jump
-	dw		offset cMCD_Loop_Jump		;
-	db		0				;
-cMCD_73	db	';',0,		0,0,	0,	0	;;	Loop Flag
-;	dw		offset cMCD_Loop_Flag		;
-;	db		0				;
-cMCD_74	db	'[',0,		0,3,	'[',0,	0f0h	;[	Loop Start
-	dw		offset cMCD_Loop_Start		;
-	db		0				;
-cMCD_75	db	']',0,		0,3,	']',0,	0f0h	;]	Loop End
-	dw		offset cMCD_Loop_End		;
-	db		0				;
-cMCD_76	db	'<',0,		0,1,	'<',0,	0	;<
-cMCD_77	db	'>',0,		0,1,	'>',0,	0	;>
-cMCD_78	db	'@',0,		0,1,	'@',0,	11h,0	;@
-cMCD_79	db	'_',0,		0,1,	'_',0,	11h,0	;_
-cMCD_80	db	'{',0,		0,0,	0,	0	;{
-;===============================================================
-;現在コンパイル中のチャンネル。
-cMCD_ChannelWTD	db	?		;コンパイル中の。
-cMCD_ChannelMML	db	?		;ＭＭＬ中の。
-;無限ループアドレス
-cMCD_LoopL	dw	0000h		;
-;音長'l'
-dMCD_lengs	dw	48		;
-;ループ
-cMCD_LoopCount	dw	-2		;
-cMCD_LoopEnd	dw	8	dup(0)	;
-cMCD_LoopJump	dw	8	dup(0)	;
-
-;===============================================================
-cMCD_CRS:				;Serach
-	pusha				;改行検査から実行する。
-	jmp	cMCD_CR_Loop		;
-;- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-cMCD_CR:				;制御文字であるかチェックし、
-	pusha				;そうでなかったら、改行検査を行う。
-	call	CREAD			;
-	cmp	ah,21h			;制御文字であるか？
-	jc	cMCD_CR_Step		;それ以外だったら、改行検査から。
-cMCD_CR_Loop:				;
-	call	CREAD			;
-	jc	cMCD_CR_End		;ファイル終了だったら、終わり。
-	cmp	ah,0dh			;（このとき、ポインタは改行の次。）
-	jnz	cMCD_CR_Loop		;改行があった。
-
-;ポインタを改行直前に戻す。
-cMCD_CR_Step:				;
-	dec	cs:[pMML_File]		;
-;終了
-cMCD_CR_End:				;
-	popa				;レジスタ復帰
-	ret				;
-;---------------------------------------------------------------
-cMCD_CH:				;チャンネル設定
-	pusha				;
-
-cMCD_CH_Loop:				;
-	call	A2H8R			;読み込み
-	mov	cs:[cMCD_ChannelMML],ah	;保存
-
-	cmp	ah,cs:[cMCD_ChannelWTD]	;比較
-	jz	cMCD_CH_End		;同じだったら終わる。
-
-	call	CREAD			;カンマがあったら、
-	cmp	ah,','			;トラックの複数指定。
-	jz	cMCD_CH_Loop		;
-
-;終了
-cMCD_CH_End:
-	popa				;レジスタ復帰
-	ret				;
-;---------------------------------------------------------------
-cMCD_Macro:				;マクロ
-	pusha				;
-
-;
-;	後回しにする。
-;
-
-	popa				;レジスタ復帰
-	ret				;
-;---------------------------------------------------------------
-cMCD_st:
-	pusha				;
-
-;数値読み込み
-	call	A2H16R			;cx←Tempo
-	mov	cx,ax			;
-	xor	bx,bx			;bx←TimeBase
-	mov	bl,ds:[0].WTD_Mus_TimeBase
-
-;演算
-	mov	dx,0000ah		;
-	mov	ax,0fc80h		;
-	div	bx			;
-	xor	dx,dx			;
-	div	cx			;ax←12000 * 60 / (Tempo * TimeBase)
-
-;書き込み
-	call	CSET16			;
-
-;終了
-	popa				;
-	ret				;
-;---------------------------------------------------------------
-cMCD_lL:				;'L'コマンド
-	push	ax			;
-	
-	mov	ax,cs:[pWTD_File]	;
-	mov	cs:[cMCD_LoopL],ax	;
-	
-	pop	ax			;アドレスの保存
-	ret				;
-;---------------------------------------------------------------
-cMCD_Loop_Start:			;
-	push	ax			;
-	push	bx			;
-
-	add	cs:[cMCD_LoopCount],2	;ポインタ・インクリメント
-
-	cmp	cs:[cMCD_LoopCount],18	;ネスト８回超えた？
-	jc	cMCD_Loop_Start_Step1	;
-	jmp	LOOP_ERROR		;そしたら、エラー。
-cMCD_Loop_Start_Step1:			;
-	mov	ax,cs:[pWTD_File]	;ポインタ読み込み。
-	mov	bx,cs:[cMCD_LoopCount]	;
-
-	mov	cs:[cMCD_LoopEnd + bx],ax
-
-	mov	ah,2			;とりあえず、２を書き込み。
-	call	cset			;
-
-	pop	bx			;
-	pop	ax			;
-	ret				;
-;---------------------------------------------------------------
-cMCD_Loop_End:				;
-	push	ax			;
-	push	bx			;
-
-	mov	bx,cs:[cMCD_LoopCount]	;ポインタ読み込み。
-
-	mov	ax,cs:[cMCD_LoopEnd + bx]
-	inc	ax			;1つ進んだ場所を書き込み。
-	call	cset16			;戻りアドレスの書き込み。
-	dec	ax			;
-
-	push	cs:[pWTD_File]		;
-	mov	cs:[pWTD_File],ax	;
-	call	A2H8R			;
-	call	CSET			;ループ回数
-	pop	cs:[pWTD_File]		;
-
-	mov	ax,cs:[cMCD_LoopJump + bx]
-	cmp	ax,0			;ループアドレス
-	jz	cMCD_Loop_End_End	;
-; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-	mov	cx,cs:[pWTD_File]	;Loop Jump
-
-	push	cs:[pWTD_File]		;
-	mov	cs:[pWTD_File],ax	;
-	mov	ax,cx			;
-	call	cset16			;
-	pop	cs:[pWTD_File]		;
-; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-cMCD_Loop_End_End:			;
-	xor	ax,ax			;ax←0
-	mov	cs:[cMCD_LoopJump + bx],ax
-	mov	cs:[cMCD_LoopEnd + bx],ax
-	sub	bx,2			;
-	mov	cs:[cMCD_LoopCount],bx	;ポインタ書き込み
-
-	pop	bx			;
-	pop	ax			;
-	ret				;
-;---------------------------------------------------------------
-cMCD_Loop_Jump:				;
-	push	ax			;
-	push	bx			;
-
-	mov	ax,cs:[pWTD_File]	;ポインタ読み込み。
-	mov	bx,cs:[cMCD_LoopCount]	;
-
-	mov	cs:[cMCD_LoopJump + bx],ax
-
-	call	cset16			;
-
-	pop	bx			;
-	pop	ax			;
-	ret				;
-;---------------------------------------------------------------
-cMCD_Loop_Flag:				;
 	ret				;

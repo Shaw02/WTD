@@ -490,13 +490,26 @@ _MusicPlay_Loop1:				;
 	mov	ds:[di].WTD_KeySetPointer,al	;
 	mov	ds:[di].WTD_BendDetune,ax	;
 	mov	ds:[di].WTD_BendEmbAddress,al	;
+	mov	ds:[di].WTD_BendEmbRate,al	;
+	mov	ds:[di].WTD_BendEmbCounter,al	;
+	mov	ds:[di].WTD_BendEmbMaxMin,al	;
+	mov	ds:[di].WTD_BendEmbLevelSet,al	;
 	mov	ds:[di].WTD_ExprDetune,ax	;
 	mov	ds:[di].WTD_ExprEmbAddress,al	;
+	mov	ds:[di].WTD_ExprEmbRate,al	;
+	mov	ds:[di].WTD_ExprEmbCounter,al	;
+	mov	ds:[di].WTD_ExprEmbMaxMin,al	;
+	mov	ds:[di].WTD_ExprEmbLevelSet,al	;
 	mov	ds:[di].WTD_GateTimeStepLast,ax	;
 	mov	ds:[di].WTD_GateTimeStepFirst,ax
+	mov	ds:[di].WTD_Expr,al		;
+	mov	ds:[di].WTD_ExprSet,al		;
+	mov	ds:[di].WTD_ExprPanSet,al	;Velocityと同一
+	mov	ds:[di].WTD_Velocity,al		;ExprPanと同一
 	mov	ax,1				;
 	mov	ds:[di].WTD_Leng,ax		;
 	mov	ds:[di].WTD_LengCounter,ax	;
+	mov	ds:[di].WTD_VolumeUpDown,al	;
 	mov	ax,4				;
 	mov	ds:[di].WTD_Octave,al		;
 	mov	ax,8				;
@@ -506,8 +519,6 @@ _MusicPlay_Loop1:				;
 	mov	ax,64				;
 	mov	ds:[di].WTD_Pan,al		;
 	mov	ax,100				;
-	mov	ds:[di].WTD_Expr,al		;
-	mov	ds:[di].WTD_Velocity,al		;
 	mov	ax,127				;
 	mov	ds:[di].WTD_AcsentVelocity,al	;
 	mov	ax,8192				;
@@ -515,6 +526,7 @@ _MusicPlay_Loop1:				;
 	mov	ax,0ffffh			;
 	mov	ds:[di].WTD_Voice,al		;
 	mov	ds:[di].WTD_LoopCountPointer,al	;
+	mov	ds:[di].WTD_Key,al		;
 	mov	ds:[di].WTD_KeySet + 0,al	;
 	mov	ds:[di].WTD_KeySet + 1,al	;
 	mov	ds:[di].WTD_KeySet + 2,al	;
@@ -616,6 +628,11 @@ _MusicStop	proc far		;
 _MusicStop_Loop1:			;
 
 ;初期化すべき事項
+	mov	ax,003Fh			;
+	mov	ds:[di].WTD_FlagControl,ax	;演奏終了
+
+	call	I_Play_KeyOff		;キーオフ
+
 	mov	dx,offset I_Table_KeyOff
 	call	I_Table_Jump		;キーオフ
 

@@ -450,6 +450,7 @@ I_Play_Step9:						;
 I_Play_StepE:					;
 	call	I_Play_Frection			;音量制御
 	call	I_Play_Volume			;音程制御
+	call	I_Play_Pan			;パン制御
 
 ;---------------------------------------------------------------
 	popa				;
@@ -527,6 +528,7 @@ I_Play_KeyOn_Step1:				;
 ;音程Emb
 	test	ds:[di].WTD_FlagControl,WTD_Ctrl_BendEmb
 	jz	I_Play_KeyOn_Step2		;
+	mov	cx,WTD_Ctrl_EmbFreq		;
 	mov	dx,WTD_BendEmb			;
 	call	I_Play_KeyOn_Emb		;
 I_Play_KeyOn_Step2:				;
@@ -541,11 +543,28 @@ I_Play_KeyOn_Step3:				;
 ;音量Emb
 	test	ds:[di].WTD_FlagControl,WTD_Ctrl_ExprEmb
 	jz	I_Play_KeyOn_Step4		;
+	mov	cx,WTD_Ctrl_EmbVol		;
 	mov	dx,WTD_ExprEmb			;
 	call	I_Play_KeyOn_Emb		;
-	jmp	I_Play_KeyOn_StepEnd		;
+	jmp	I_Play_KeyOn_Step4End		;
 I_Play_KeyOn_Step4:				;
 	mov	ds:[di].WTD_ExprEmbLevelSet,0ffh
+I_Play_KeyOn_Step4End:				;
+
+;パンLFO
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_PanLFO
+	jz	I_Play_KeyOn_Step5		;
+;	mov	dx,WTD_PanLFO			;
+;	call	I_Play_KeyOn_LFO		;
+I_Play_KeyOn_Step5:				;
+
+;パンEmb
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_PanEmb
+	jz	I_Play_KeyOn_Step6		;
+;	mov	cx,WTD_Ctrl_EmbPan		;
+;	mov	dx,WTD_PanEmb			;
+;	call	I_Play_KeyOn_Emb		;
+I_Play_KeyOn_Step6:				;
 
 I_Play_KeyOn_StepEnd:			;
 	popa				;レジスタ復帰
@@ -569,6 +588,7 @@ I_Play_KeyOff_Start:			;
 ;音程Emb
 	test	ds:[di].WTD_FlagControl,WTD_Ctrl_BendEmb
 	jz	I_Play_KeyOff_Step1		;
+	mov	cx,WTD_Ctrl_EmbFreq		;
 	mov	dx,WTD_BendEmb			;
 	call	I_Play_KeyOff_Emb		;
 I_Play_KeyOff_Step1:				;
@@ -576,6 +596,7 @@ I_Play_KeyOff_Step1:				;
 ;音量Emb
 	test	ds:[di].WTD_FlagControl,WTD_Ctrl_ExprEmb
 	jz	I_Play_KeyOff_Step2		;
+	mov	cx,WTD_Ctrl_EmbVol		;
 	mov	dx,WTD_ExprEmb			;
 	call	I_Play_KeyOff_Emb		;
 	jmp	I_Play_KeyOff_StepEnd		;
@@ -584,6 +605,14 @@ I_Play_KeyOff_Step2:				;
 	jz	I_Play_KeyOff_Step3		;
 	mov	ds:[di].WTD_ExprEmbLevelSet,000h
 I_Play_KeyOff_Step3:				;
+
+;パンEmb
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_PanEmb
+	jz	I_Play_KeyOff_Step4		;
+;	mov	cx,WTD_Ctrl_EmbPan		;
+;	mov	dx,WTD_PanEmb			;
+;	call	I_Play_KeyOff_Emb		;
+I_Play_KeyOff_Step4:				;
 
 I_Play_KeyOff_StepEnd:				;
 	popa					;レジスタ復帰
@@ -628,6 +657,7 @@ I_Play_Frection_Step1:			;
 ;音量Emb処理
 	test	ds:[di].WTD_FlagControl,WTD_Ctrl_BendEmb
 	jz	I_Play_Frection_Step2	;
+	mov	cx,WTD_Ctrl_EmbFreq	;
 	mov	dx,WTD_BendEmb		;
 	call	I_Play_Emb		;
 	test	dl,80h			;dx←dl(符号付)
@@ -671,6 +701,7 @@ I_Play_Volume_Step1:			;
 ;音量Emb処理
 	test	ds:[di].WTD_FlagControl,WTD_Ctrl_ExprEmb
 	jz	I_Play_Volume_Step2	;
+	mov	cx,WTD_Ctrl_EmbVol	;
 	mov	dx,WTD_ExprEmb		;
 	call	I_Play_Emb		;
 	mov	ds:[di].WTD_ExprEmbLevelSet,dl	;エンベロープ値
@@ -730,6 +761,63 @@ I_Volume_SoftEnd:				;
 
 	popa				;
 	ret				;
+;===============================================================|
+;			パンポット制御 (LFO,Emb合成)		|
+;===============================================================|
+I_Play_Pan:				;
+	pusha				;
+
+;パンポット読み込み
+	xor	ax,ax			;
+	mov	al,ds:[di].WTD_Pan	;
+	inc	ax			;
+	shl	ax,7			;128倍にする。
+	dec	ax			;（Range:0～16383）
+
+;パンポットLFO処理
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_PanLFO
+	jz	I_Play_Pan_Step1	;
+;	mov	dx,WTD_PanLFO		;
+;	call	I_Play_LFO		;
+	add	ax,dx			;
+I_Play_Pan_Step1:			;
+
+;パンポットEmb処理
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_PanEmb
+	jz	I_Play_Pan_Step2	;
+;	mov	cx,WTD_Ctrl_EmbPan	;
+;	mov	dx,WTD_PanEmb		;
+;	call	I_Play_Emb		;
+	test	dl,80h			;dx←dl(符号付)
+	jz	I_Play_Pan_Step3	;
+	mov	dh,0ffh			;
+I_Play_Pan_Step3:			;
+	shl	dx,6			;×2^6
+	add	ax,dx			;加算
+I_Play_Pan_Step2:			;
+
+;パンポットを、7bitに補正
+	inc	ax			;
+	shr	ax,7			;ax←{(ax+1)÷128}-1
+	dec	ax			;（Range:0～127）
+	test	ah,ah			;
+	jnz	I_Play_Pan_Step5	;
+	test	al,080h			;
+	jz	I_Play_Pan_Step6	;
+I_Play_Pan_Step4:			;if (128=>ax>255){
+	mov	al,07fh			;	al = 0x7F;
+	jmp	I_Play_Pan_Step6	;}
+I_Play_Pan_Step5:			;if (ax>255){
+	mov	al,000h			;	al = 0x00;
+I_Play_Pan_Step6:			;}
+
+;パンポットの出力
+	mov	cl,MIDI_Ctrl_Pan	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;パンポットセット
+
+	popa				;
+	ret				;
 ;****************************************************************
 ;*								*
 ;*			割り込みルーチン			*
@@ -781,43 +869,30 @@ I_Play_KeyOn_LFO:				;
 I_Play_KeyOn_Emb:				;
 	pusha					;
 
-	mov	bp,dx				;
+	xchg	bp,dx				;
 
-	mov	ah,ds:[di + bp].WTD_ChEmb_Address	;
-	and	ah,0f0h				;
-	mov	ds:[di + bp].WTD_ChEmb_Address,ah	;位置初期化
+	mov	al,ds:[di + bp].WTD_ChEmb_Address	;
+	and	al,0f0h					;
+	mov	ds:[di + bp].WTD_ChEmb_Address,al	;位置初期化
 
-	jmp	I_Play_KeyOnOff_Emb		;
-;===============================================================|
-;			Emb処理	KeyOff				|
-;===============================================================|
-I_Play_KeyOff_Emb:				;
-	pusha					;
+	mov	ah,00h				;上位アドレスの設定
+	test	ds:[di].WTD_FlagControl,cx	;
+	jz	I_Play_KeyOn_Emb_Step1		;
+	mov	ah,01h				;
+I_Play_KeyOn_Emb_Step1:				;
 
-	mov	bp,dx				;
-
-	mov	ah,ds:[di + bp].WTD_ChEmb_Address	;
-	and	ah,0f0h				;
-	add	ah,00cH				;
-	mov	ds:[di + bp].WTD_ChEmb_Address,ah	;位置初期化
-
-;	jmp	I_Play_KeyOnOff_Emb		;
-;---------------------------------------------------------------|
-I_Play_KeyOnOff_Emb:				;
-
-	mov	bx,WTD_WorkAdd_Emb		;
-	mov	bl,ah				;
-	mov	cx,ds:[bx]			;
+	mov	bx,dx				;bx←ベースアドレス
+	add	bx,WTD_WorkAdd_Emb		;エンベロープアドレス
+	add	bx,ax				;データアドレス
+	mov	ax,ds:[bx]			;読み込み。
 	add	bx,2				;
 	mov	dx,ds:[bx]			;
 
-;
-;	上位1bitを設定する。
-;
-
-	mov	ds:[di + bp].WTD_ChEmb_Rate,cl	;
-	mov	ah,ch				;
-	and	ah,7fh				;
+	mov	ds:[di + bp].WTD_ChEmb_Rate,al		;
+	cmp	ah,80h					;ahは、絶対値をとる。
+	jc	I_Play_KeyOn_Emb_Step9			;
+	neg	ah					;
+I_Play_KeyOn_Emb_Step9:					;
 	mov	ds:[di + bp].WTD_ChEmb_Counter,ah	;
 	mov	ds:[di + bp].WTD_ChEmb_MaxMin,dl	;
 	mov	ds:[di + bp].WTD_ChEmb_LevelSet,dh	;
@@ -825,13 +900,133 @@ I_Play_KeyOnOff_Emb:				;
 	popa					;
 	ret					;
 ;===============================================================|
+;			Emb処理	KeyOff				|
+;===============================================================|
+I_Play_KeyOff_Emb:				;
+	pusha					;
+
+	xchg	bp,dx				;
+
+	mov	al,ds:[di + bp].WTD_ChEmb_Address	;
+	and	al,0f0h					;
+	or	al,00cH					;
+	mov	ds:[di + bp].WTD_ChEmb_Address,al	;位置初期化
+
+I_Play_KeyOnOff_Emb:					;
+
+	mov	ah,00h				;上位アドレスの設定
+	test	ds:[di].WTD_FlagControl,cx	;
+	jz	I_Play_KeyOff_Emb_Step1		;
+	mov	ah,01h				;
+I_Play_KeyOff_Emb_Step1:			;
+
+	mov	bx,dx				;bx←ベースアドレス
+	add	bx,WTD_WorkAdd_Emb		;エンベロープアドレス
+	add	bx,ax				;データアドレス
+	mov	ax,ds:[bx]			;読み込み。
+	add	bx,2				;
+	mov	dx,ds:[bx]			;
+
+	mov	ds:[di + bp].WTD_ChEmb_Rate,al		;
+	cmp	ah,80h					;ahは、絶対値をとる。
+	jc	I_Play_KeyOff_Emb_Step9			;
+	neg	ah					;
+I_Play_KeyOff_Emb_Step9:				;
+	mov	ds:[di + bp].WTD_ChEmb_Counter,ah	;
+	mov	ds:[di + bp].WTD_ChEmb_MaxMin,dl	;
+
+	popa					;
+	ret					;
+;===============================================================|
 ;			Emb処理	メイン				|
 ;===============================================================|
-I_Play_Emb:				;
+I_Play_Emb:					;
+	push	bp				;
+	push	bx				;レジスタ保存
+	push	ax				;
 
-	xor	dx,dx			;暫定処理
+	xchg	bp,dx				;
 
-	ret				;
+;●Speed処理
+	sub	ds:[di + bp].WTD_ChEmb_Counter,1
+	jz	I_Play_Emb_Step1		;
+	jmp	I_Play_Emb_End			;
+I_Play_Emb_Step1:				;
+
+;●アドレスの設定
+	mov	ah,00h				;上位アドレスの設定
+	test	ds:[di].WTD_FlagControl,cx	;
+	jz	I_Play_Emb_Step2		;
+	mov	ah,01h				;
+I_Play_Emb_Step2:				;ax←Address
+	mov	al,ds:[di + bp].WTD_ChEmb_Address
+	mov	bx,dx				;bx←ベースアドレス
+	add	bx,WTD_WorkAdd_Emb		;エンベロープアドレス
+	add	bx,ax				;bx←データアドレス
+
+;●Count再設定
+	mov	ah,ds:[bx].WTD_Emb_AS		;
+	cmp	ah,80h				;ahは、絶対値をとる。
+	jc	I_Play_Emb_Step5		;
+	neg	ah				;
+I_Play_Emb_Step5:				;
+	mov	ds:[di + bp].WTD_ChEmb_Counter,ah
+
+;●Rate処理
+	mov	al,ds:[di + bp].WTD_ChEmb_LevelSet
+	cmp	ds:[bx].WTD_Emb_AS,80h		;比較(正 or 負)
+	jc	I_Play_Emb_Step7		;分岐
+	sub	al,ds:[bx].WTD_Emb_AR		;負
+	jmp	I_Play_Emb_Step8		;
+I_Play_Emb_Step7:				;
+	add	al,ds:[bx].WTD_Emb_AR		;正
+I_Play_Emb_Step8:				;
+	jc	I_Play_Emb_Step3		;
+
+;●Level処理
+	cmp	ds:[bx].WTD_Emb_AS,80h		;比較(正 or 負)
+	jc	I_Play_Emb_Step4		;分岐
+	cmp	al,ds:[bx].WTD_Emb_AL		;負 最小値チェック
+	jc	I_Play_Emb_Step3		;
+	jmp	I_Play_Emb_StepEnd		;
+I_Play_Emb_Step4:				;正 最大値チェック
+	cmp	al,ds:[bx].WTD_Emb_AL		;
+	jnc	I_Play_Emb_Step3		;
+	jmp	I_Play_Emb_StepEnd		;
+
+;●最大値を超えた場合
+I_Play_Emb_Step3:					;
+	mov	al,ds:[bx].WTD_Emb_AL			;
+	mov	ah,ds:[di + bp].WTD_ChEmb_Address	;
+	and	ah,0fh					;
+	cmp	ah,08h					;
+	jnc	I_Play_Emb_StepEnd			;
+
+	push	ax					;
+	add	ds:[di + bp].WTD_ChEmb_Address,04h	;
+	add	bx,4					;アドレスの設定
+	mov	ax,ds:[bx]				;読み込み。
+	add	bx,2					;
+	mov	dx,ds:[bx]				;
+	mov	ds:[di + bp].WTD_ChEmb_Rate,al		;
+	cmp	ah,80h					;ahは、絶対値をとる。
+	jc	I_Play_Emb_Step6			;
+	neg	ah					;
+I_Play_Emb_Step6:					;
+	mov	ds:[di + bp].WTD_ChEmb_Counter,ah	;
+	mov	ds:[di + bp].WTD_ChEmb_MaxMin,dl	;
+	pop	ax					;
+
+I_Play_Emb_StepEnd:
+	mov	ds:[di + bp].WTD_ChEmb_LevelSet,al
+
+I_Play_Emb_End:
+	mov	dl,ds:[di + bp].WTD_ChEmb_LevelSet
+
+	pop	ax				;
+	pop	bx				;
+	pop	bp				;
+	ret					;
 ;===============================================================|
 ;			LFO処理	メイン				|
 ;===============================================================|
@@ -926,6 +1121,7 @@ I_PlayKey:				;
 	and	ax,07h				;al←音階情報(0～7)
 	sub	ax,1				;
 	jnc	I_PlayKey_Step1			;休符？
+	mov	ds:[di].WTD_Key,al		;音程保存
 	jmp	I_PlayKey_Step2R		;
 I_PlayKey_Step1:				;
 	mov	bx,offset I_PlayKey_Code	;
@@ -967,13 +1163,13 @@ I_PlayKey_Step5:				;
 
 I_PlayKey_Step2:				;
 	add	al,12				;KeyCode補正(MIDI単位)
-I_PlayKey_Step2R:				;
 	mov	ds:[di].WTD_Key,al		;音程保存
 ;ハードウェアをKeyOn
 	add	al,ds:[di].WTD_KeyShift		;
 	mov	dx,offset I_Table_KeyOn		;
 	call	I_Table_Jump			;KeyOn
 
+I_PlayKey_Step2R:				;
 ;タイフラグチェック
 	test	cl,020h				;タイフラグチェック
 	jz	I_PlayKey_Step6			;cy←0
@@ -1260,13 +1456,21 @@ I_Com27:				;
 ;		Volume down					|
 ;===============================================================|
 I_Com28:				;
-	dec	ds:[di].WTD_Expr	;
+	mov	al,ds:[di].WTD_VolumeUpDown
+	sub	ds:[di].WTD_Expr,al	;
+	jnc	I_Com28_End		;
+	mov	ds:[di].WTD_Expr,0	;
+I_Com28_End:				;
 	ret				;
 ;===============================================================|
 ;		Volume up					|
 ;===============================================================|
 I_Com29:				;
-	inc	ds:[di].WTD_Expr	;
+	mov	al,ds:[di].WTD_VolumeUpDown
+	add	ds:[di].WTD_Expr,al	;
+	jnc	I_Com29_End		;
+	mov	ds:[di].WTD_Expr,127	;
+I_Com29_End:				;
 	ret				;
 ;===============================================================|
 ;		LFO Switch					|
@@ -1286,7 +1490,7 @@ I_Com2a:				;
 	test	cl,cl			;
 	jz	I_Com2a_Step1		;
 	shl	ax,cl			;al = 1,4,16
-	shl	bx,cl
+	shl	bx,cl			;
 I_Com2a_Step1:				;
 	and	ax,015h			;Bit Mask
 	mov	cx,ds:[di].WTD_FlagControl
@@ -1321,6 +1525,31 @@ I_Com2e:				;
 ;		Emb. Switch					|
 ;===============================================================|
 I_Com2f:				;
+	push	bx			;
+	push	cx			;
+
+	mov	cl,es:[si]		;cl = 0,1,2
+	inc	si			;
+	shl	cl,1			;cl = 0,2,4 (bit)
+	inc	cl			;cl = 1,3,5 (bit)
+	xor	ax,ax			;
+	mov	al,es:[si]		;
+	inc	si			;
+	and	ax,00001h		;Bit Mask
+	mov	bx,0FFFEh		;Bit Mask
+	test	cl,cl			;
+	jz	I_Com2f_Step1		;
+	shl	ax,cl			;al = 2,8,32
+	shl	bx,cl			;
+I_Com2f_Step1:				;
+	and	ax,02Ah			;Bit Mask
+	mov	cx,ds:[di].WTD_FlagControl
+	and	cx,bx			;
+	or	ax,cx			;
+	mov	ds:[di].WTD_FlagControl,ax
+
+	pop	cx			;
+	pop	bx			;
 	ret				;
 ;===============================================================|
 ;		Work	mov	LD				|
@@ -1444,6 +1673,9 @@ I_Com41:				;
 ;		Bend & Bend Range(MIDI)				|
 ;===============================================================|
 I_Com42:				;
+	
+	
+	
 	ret				;
 ;===============================================================|
 ;		Track / Sound Type				|
@@ -1468,48 +1700,48 @@ I_Com44:				;
 I_Com45:				;
 	push	bx			;
 
-	mov	al,es:[si]		;ax←エンベロープ番号
+	mov	al,es:[si]		;ax←タイプ
 	inc	si			;
 	push	ax			;保存
 	xor	ax,ax			;
 	mov	al,es:[si]		;ax←エンベロープ番号
 	inc	si			;
 	and	ax,001fh		;
-	shl	ax,4			;
+	shl	ax,4			;ax←ax×16
 	pop	bx			;復帰
 	mov	bh,ah			;
 	cmp	bl,1			;
-	jnz	I_Com45_Expr		;
+	jz	I_Com45_Expr		;
 ;	cmp	bl,2			;まだ、未対応
-;	jnz	I_Com45_Pan		;
+;	jz	I_Com45_Pan		;
 
-I_Com45_Bend:					;音程
+I_Com45_Bend:					;音程 bl=0
 	mov	ds:[di].WTD_BendEmbAddress,al	;
-	mov	ax,ds:[si].WTD_FlagControl	;
+	mov	ax,ds:[di].WTD_FlagControl	;
 	shr	bx,1				;bx bit 7  =  No. bit 5
 	and	bx,WTD_Ctrl_EmbFreq		;
 	and	ax,WTD_Ctrl_EmbFreqR		;
 	or	ax,bx				;
-	mov	ds:[si].WTD_FlagControl,ax	;
+	mov	ds:[di].WTD_FlagControl,ax
 	jmp	I_Com45_End			;
 
-I_Com45_Expr:					;音量
+I_Com45_Expr:					;音量 bl=1
 	mov	ds:[di].WTD_ExprEmbAddress,al	;
-	mov	ax,ds:[si].WTD_FlagControl	;bx bit 8  =  No. bit 5
+	mov	ax,ds:[di].WTD_FlagControl	;bx bit 8  =  No. bit 5
 	and	bx,WTD_Ctrl_EmbVol		;
 	and	ax,WTD_Ctrl_EmbVolR		;
 	or	ax,bx				;
-	mov	ds:[si].WTD_FlagControl,ax	;
+	mov	ds:[di].WTD_FlagControl,ax
 	jmp	I_Com45_End			;
 
-I_Com45_Pan:					;音程
+I_Com45_Pan:					;音程 bl=2
 ;	mov	ds:[di].WTD_PanEmbAddress,al	;
-	mov	ax,ds:[si].WTD_FlagControl	;
+	mov	ax,ds:[di].WTD_FlagControl	;
 	shl	bx,1				;bx bit 9  =  No. bit 5
 	and	bx,WTD_Ctrl_EmbPan		;
 	and	ax,WTD_Ctrl_EmbPanR		;
 	or	ax,bx				;
-	mov	ds:[si].WTD_FlagControl,ax	;
+	mov	ds:[di].WTD_FlagControl,ax
 ;	jmp	I_Com45_End			;
 
 I_Com45_End:				;
@@ -1529,6 +1761,7 @@ I_Com47:				;
 ;		Program Bank Select(MIDI)			|
 ;===============================================================|
 I_Com48:				;
+	
 	ret				;
 ;===============================================================|
 ;		NULL 'I'					|
@@ -1646,6 +1879,18 @@ I_Com57:				;
 ;		Excluesiv Send(MIDI)				|
 ;===============================================================|
 I_Com58:				;
+	push	ds			;
+	push	cx			;
+
+I_Com58_Step1:				;
+	mov	al,byte ptr ds:[si]	;
+	inc	si			;
+	call	C_Send			;送信
+	cmp	al,0f7h			;0xF7だったら終わり。
+	jnz	I_Com58_Step1		;
+
+	pop	cx			;
+	pop	ds			;
 	ret				;
 ;===============================================================|
 ;		NULL 'Y'					|
@@ -1656,6 +1901,19 @@ I_Com59:				;
 ;		MIDI Send Data(MIDI)				|
 ;===============================================================|
 I_Com5a:				;
+	push	cx			;
+
+	xor	cx,cx
+	mov	cl,es:[si]		;
+	inc	si			;
+
+I_Com5a_Step1:				;
+	mov	al,byte ptr ds:[si]	;
+	inc	si			;
+	call	C_Send			;送信
+	loop	I_Com5a_Step1		;
+
+	pop	cx			;
 	ret				;
 ;===============================================================|
 ;		Loop Start					|
@@ -1846,6 +2104,11 @@ I_Com6e:				;
 	mov	al,es:[si]		;
 	inc	si			;
 	mov	ds:[di].WTD_NoiseMode,al
+
+	or	al,18h			;
+	mov	ah,1fh			;
+	call	SP_Set_Noise		;
+
 	ret				;
 ;===============================================================|
 ;		Octave						|
@@ -1889,6 +2152,19 @@ I_Com72:				;
 ;		Sweep 						|
 ;===============================================================|
 I_Com73:				;
+	mov	al,es:[si]		;
+	inc	si			;
+	mov	ah,es:[si]		;
+	inc	si			;
+
+	cmp	ds:[di].WTD_Channel,82h	;PCM Ch2であるか？
+	jnz	I_Com73_End		;
+
+	mov	ds:[di].WTD_SweepLevel,al
+	mov	ds:[di].WTD_SweepTime,ah
+	call	SP_Set_Sweep		;Sweep Modeの設定
+
+I_Com73_End:				;
 	ret				;
 ;===============================================================|
 ;		tempo						|
@@ -1928,14 +2204,30 @@ I_Com76:				;
 I_Com77:				;
 	ret				;
 ;===============================================================|
-;		MML:Hexca					|
+;		x						|
 ;===============================================================|
 I_Com78:				;
+	mov	al,es:[si]		;
+	inc	si			;
+
+	mov	ds:[di].WTD_VolumeUpDown,al
+
 	ret				;
 ;===============================================================|
 ;		Control Change(MIDI)				|
 ;===============================================================|
 I_Com79:				;
+	push	cx
+
+	mov	cl,es:[si]		;
+	inc	si			;
+	mov	al,es:[si]		;
+	inc	si			;
+
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
+
+	pop	cx			;
 	ret				;
 ;===============================================================|
 ;		NULL 'z'					|
@@ -2588,8 +2880,8 @@ I_SP_Mode:				;
 	and	ax,0001h		;and	al,01h
 	or	ax,0100h		;set	0,ah
 	mov	cl,ch			;
+	add	cl,4			;
 	shl	ax,cl			;
-	shr	ax,1			;
 
 	call	SP_Set_Channel		;
 
