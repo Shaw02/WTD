@@ -489,7 +489,7 @@ I_Com2a:				;
 	test	cl,cl			;
 	jz	I_Com2a_Step1		;
 	shl	ax,cl			;al = 1,4,16
-	shl	bx,cl			;
+	rol	bx,cl			;
 I_Com2a_Step1:				;
 	and	ax,015h			;Bit Mask
 	mov	cx,ds:[di].WTD_FlagControl

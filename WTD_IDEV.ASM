@@ -266,7 +266,7 @@ I_SP_Volume:				;
 	mov	cl,al			;
 
 ;パンポット読み込み
-	mov	al,ds:[di].WTD_Pan		;
+	mov	al,ds:[di].WTD_PanSet		;
 	shl	al,1				;
 	mov	ah,0ffh				;al←左のレベル
 	sub	ah,al				;ah←右のレベル

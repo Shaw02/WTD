@@ -230,13 +230,12 @@ cMCD_Macro:				;マクロ
 	mov	bl,ah			;bl←マクロ文字
 	push	cs:[pMML_File]		;
 	call	CREAD			;
-	pop	cs:[pMML_File]		;
-	mov	al,ah			;al←引数先頭文字
-	call	A2H8R			;
-	cmp	al,30h			;
+	pop	cs:[pMML_File]		;ah←引数先頭文字
+	cmp	ah,30h			;
 	jc	cMCD_Macro_Step0	;
-	cmp	al,3Ah			;
+	cmp	ah,3Ah			;
 	jnc	cMCD_Macro_Step0	;
+	call	A2H8R			;
 	mov	bh,ah			;bh←マクロ引数
 
 ;●マクロの検索

@@ -41,20 +41,201 @@ COMPAIL:				;コンパイル
 	CALL	c_Head_first		;ヘッダー設定
 	CALL	c_voice			;音色転送
 	CALL	c_Command		;パートコンパイル
-	CALL	c_Head_end		;ヘッダー設定
+	CALL	c_Head_end		;ヘッダー設定(一番最後に呼ぶ。)
 
-	CALL	WTD_SAVE		;ＦＳＰ形式でセーブする
+	cmp	cs:[cHCD_FlagFx],00h	;FX形式フラグが立ってるか？
+	jnz	COMPAIL_Step0		;立ってなかったら、終わり。
+	call	WTD_SAVE		;ＷＴＤ形式でセーブする
+COMPAIL_Step0:				;
 
-	RET				;RETURN
+	cmp	cs:[cHCD_FlagFx],01h	;FX形式フラグが立ってるか？
+	jnz	COMPAIL_Step1		;立ってなかったら、終わり。
+	call	FX_SAVE			;ＦＸ形式でセーブする。
+COMPAIL_Step1:				;
+
+COMPAIL_End:				;
+	ret				;RETURN
 ;---------------------------------------------------------------|
 ;		コンパイルデータのＦＳＰ形式セーブ		|
 ;---------------------------------------------------------------|
 WTD_SAVE:
-	MOV	DX,CS:[pWTD_File]	;
-	CALL	SOPEN			;
-	CALL	MSAVE			;
-	CALL	SCLOSE			;
-	RET				;
+	call	SOPEN			;
+	mov	dx,cs:[pWTD_File]	;
+	call	MSAVE			;
+	call	SCLOSE			;
+	ret				;
+FX_SAVE:
+	call	FXopen			;
+	mov	dx,07Fh			;
+	call	FXsave			;
+	mov	dx,cs:[pWTD_File]	;
+	call	MSAVE			;
+	call	SCLOSE			;
+	ret
+;---------------------------------------------------------------|
+;		１６進数コード～ASCII CODE(255)			|
+;---------------------------------------------------------------|
+;	処理							|
+;		１６進コードを１０進のアスキーコードに変換	|
+;	引数							|
+;		AH←変換したい数値				|
+;	返り値							|
+;		DX←変換した文字列の先頭アドレス		|
+;---------------------------------------------------------------|
+	DB	'-'			;符号
+ASC_8	DB	'$$$$$'			;
+HEX2ASC8:
+	PUSH	AX			
+	PUSH	BX			
+	PUSH	CX			;レジスタ保存
+	MOV	BX,OFFSET ASC_8		
+	MOV	AL,'$'			
+	MOV	CS:[BX],AL		
+	INC	BX			
+	MOV	CS:[BX],AL		
+	INC	BX			
+	MOV	CS:[BX],AL		
+	INC	BX			
+	MOV	CS:[BX],AL		
+	INC	BX			
+	MOV	CS:[BX],AL		
+
+	MOV	BX,OFFSET ASC_8		
+	MOV	AL,' '			;
+	CMP	AH,100			;
+	JC	H2A8L3			;１００の位ある？
+	
+	MOV	AL,AH			
+	XOR	AH,AH			
+	MOV	CH,100			
+	DIV	CH			
+	ADD	AL,30H			
+	MOV	CS:[BX],AL		
+	INC	BX			
+H2A8L3:	
+	CMP	AL,' '			;AL=" "だったら１００の位は無かった
+	JNZ	H2A8E2			
+	CMP	AH,10			;１０の位ある？
+	JC	H2A8L2			
+	
+H2A8E2:	MOV	AL,AH			
+	XOR	AH,AH			
+	MOV	CH,10			
+	DIV	CH			
+	ADD	AL,30H			
+	MOV	CS:[BX],AL		
+	INC	BX			
+H2A8L2:	
+	ADD	AH,30H			;一の位は必ず書く
+	MOV	CS:[BX],AH		;
+	
+	MOV	DX,OFFSET ASC_8		;アドレス
+	POP	CX			
+	POP	BX			
+	POP	AX			
+	RET				
+;---------------------------------------------------------------|
+;		１６進数コード～ASCII CODE(65535)		|
+;---------------------------------------------------------------|
+;	処理							|
+;		１６進コードを１０進のアスキーコードに変換	|
+;	引数							|
+;		AX←変換したい数値				|
+;	返り値							|
+;		DX←変換した文字列の先頭アドレス		|
+;---------------------------------------------------------------|
+	DB	'-'			;符号
+ASC_16	DB	'$$$$$$$'
+HEX2ASC16:
+	PUSH	AX			
+	PUSH	BX			
+	PUSH	CX			
+
+	PUSH	AX			
+	MOV	BX,OFFSET ASC_16	
+	MOV	AL,'$'			
+	MOV	CS:[BX],AL		
+	INC	BX			
+	MOV	CS:[BX],AL		
+	INC	BX			
+	MOV	CS:[BX],AL		
+	INC	BX			
+	MOV	CS:[BX],AL		
+	INC	BX			
+	MOV	CS:[BX],AL		
+	INC	BX			
+	MOV	CS:[BX],AL		
+	INC	BX			
+	MOV	CS:[BX],AL		
+;	INC	BX			
+;	MOV	CS:[BX],AL		
+	POP	AX			
+
+	MOV	BX,OFFSET ASC_16	
+	MOV	CL,' '			
+	MOV	DX,AX			
+	CMP	DX,10000		;１００００の位はある？
+	JC	H2A6L5			
+	
+	XOR	DX,DX			
+	MOV	CX,10000		
+	DIV	CX			
+	ADD	AL,30H			
+	MOV	CL,AL			
+	MOV	CS:[BX],CL		
+	INC	BX			
+H2A6L5:	
+	CMP	CL,' '			
+	JNZ	H2A6E4			
+	CMP	DX,1000			;１０００の位は？
+	JC	H2A6L4			
+	
+H2A6E4:	MOV	AX,DX			
+	XOR	DX,DX			
+	MOV	CX,1000			
+	DIV	CX			
+	ADD	AL,30H			
+	MOV	CL,AL			
+	MOV	CS:[BX],CL		
+	INC	BX			
+H2A6L4:	
+	CMP	CL,' '			
+	JNZ	H2A6E3			
+	CMP	DX,100			;１００の位
+	JC	H2A6L3			
+	
+H2A6E3:	MOV	AX,DX			
+	XOR	DX,DX			
+	MOV	CX,100			
+	DIV	CX			
+	ADD	AL,30H			
+	MOV	CL,AL			
+	MOV	CS:[BX],CL		
+	INC	BX			
+H2A6L3:	
+	CMP	CL,' '			
+	JNZ	H2A6E2			
+	CMP	DX,10			;１０の位は？
+	JC	H2A6L2			
+
+H2A6E2:	MOV	AX,DX			
+	XOR	DX,DX			
+	MOV	CX,10			
+	DIV	CX			
+	ADD	AL,30H			
+	MOV	CL,AL			
+	MOV	CS:[BX],CL		
+	INC	BX			
+H2A6L2:	
+	MOV	AX,DX			
+	ADD	AL,30H			
+	MOV	CS:[BX],AL		;１の位は必ず書く
+	
+	MOV	DX,OFFSET ASC_16	
+	POP	CX			
+	POP	BX			
+	POP	AX			
+	RET				
 ;---------------------------------------------------------------|
 ;		ASCII CODE→１６進コード(-127～255)		|
 ;			数値データがあるまでずっと		|
@@ -559,7 +740,7 @@ SOPEN:
 	MOV	AX,CS:[F_ADD]		;
 	MOV	SI,AX			;SI←ファイルアドレス
 	MOV	BX,AX			;
-SFLP1:					;拡張子を'.FSP'とする。
+SFLP1:					;拡張子を'.WTD'とする。
 	INC	BX			;
 	CMP	BYTE PTR CS:[BX],'.'	;
 	JNZ	SFLP1			;
@@ -592,6 +773,59 @@ SFL20:	MOV	AX,3C00H		;ファイルのオープン
 	JNC	SFL02			;
 	JMP	SOPEN_ERROR		;
 SFL02:	MOV	WORD PTR CS:[hWtd_File],AX	;
+
+	POP	DX			;
+	POP	CX			;
+	POP	BX			;
+	POP	AX			;
+	POP	DS			;
+	RET				;
+;---------------------------------------------------------------|
+;		セーブ用ファイルのオープン	FX		|
+;---------------------------------------------------------------|
+FXOPEN:
+	PUSH	DS			;
+	PUSH	AX			;
+	PUSH	BX			;
+	PUSH	CX			;
+	PUSH	DX			;
+
+	MOV	AX,CS			;
+	MOV	DS,AX			;DS←CS
+
+	MOV	AX,CS:[F_ADD]		;
+	MOV	SI,AX			;SI←ファイルアドレス
+	MOV	BX,AX			;
+FXFLP1:					;拡張子を'.FX'とする。
+	INC	BX			;
+	CMP	BYTE PTR CS:[BX],'.'	;
+	JNZ	FXFLP1			;
+FXFLP2:	INC	BX			;
+	MOV	AH,'F'			;
+	MOV	CS:[BX],AH		;
+	INC	BX			;
+	MOV	AH,'X'			;
+	MOV	CS:[BX],AH		;
+	INC	BX			;
+	MOV	AH,00H			;
+	MOV	CS:[BX],AH		;
+	INC	BX			;
+	MOV	AH,0AH			;
+	MOV	CS:[BX],AH		;
+	INC	BX			;
+	MOV	AH,0DH			;
+	MOV	CS:[BX],AH		;
+	INC	BX			;
+	MOV	AH,24H			;
+	MOV	CS:[BX],AH		;
+
+FXFL20:	MOV	AX,3C00H		;ファイルのオープン
+	MOV	DX,SI			;DX←ファイル名アドレス
+	MOV	CX,00H			;普通
+	INT	21H			;
+	JNC	FXFL02			;
+	JMP	SOPEN_ERROR		;
+FXFL02:	MOV	WORD PTR CS:[hWtd_File],AX	;
 
 	POP	DX			;
 	POP	CX			;
@@ -833,14 +1067,17 @@ VCLRET:	RET				;
 MREAD:					;
 	MOV	AX,CS:[segMml_File]	;
 	MOV	DS,AX			;
-	xor	dx,dx
+	mov	dx,00002h		;
 	MOV	CX,0FFFFH		;
-	MOV	BX,WORD PTR CS:[hMml_File]	;
+	MOV	BX,WORD PTR CS:[hMml_File]
 	MOV	AH,3FH			;
 	INT	21H			;
 	JNC	FL003			;
 	JMP	READ_ERROR		;
-FL003:	MOV	CS:[szMml_File],AX	;
+FL003:	add	ax,2			;
+	MOV	CS:[szMml_File],AX	;
+	mov	bx,0000h		;
+	mov	ds:[bx],0a0dh		;
 	RET				;
 ;---------------------------------------------------------------|
 ;		ファイル→メモリ転送（INC Data）		|
@@ -906,6 +1143,32 @@ SFL03:	POP	DS			;
 	POP	AX			;
 	RET				;
 ;---------------------------------------------------------------|
+;		メモリ→ファイル転送	FX			|
+;---------------------------------------------------------------|
+FXSAVE:					;
+	PUSH	AX			;
+	PUSH	BX			;
+	PUSH	CX			;
+	PUSH	DX			;
+	PUSH	DS			;
+
+	push	cs			;
+	pop	ds			;
+	mov	dx,offset FX		;ds:dx←ファイルアドレス
+	mov	cx,128			;cx←ファイルサイズ
+	mov	bx,cs:[hWtd_File]	;bx←ファイルハンドル
+	mov	ah,40h			;ax←メモリ内容のセーブ
+	INT	21H			;
+	JNC	FXFL03			;
+	JMP	READ_ERROR		;
+
+FXFL03:	POP	DS			;
+	POP	DX			;
+	POP	CX			;
+	POP	BX			;
+	POP	AX			;
+	RET				;
+;---------------------------------------------------------------|
 ;		メモリ→ファイル転送				|
 ;---------------------------------------------------------------|
 TMSAVE:					;
@@ -915,11 +1178,11 @@ TMSAVE:					;
 	PUSH	DX			;
 	PUSH	DS			;
 
-	MOV	AX,CS:[segMml_File]		;
+	MOV	AX,CS:[segMml_File]	;
 	MOV	DS,AX			;
-	MOV	CX,CS:[szMml_File]		;
-	xor	dx,dx
-	MOV	BX,CS:[hTest_File]		;
+	MOV	CX,CS:[szMml_File]	;
+	xor	dx,dx			;
+	MOV	BX,CS:[hTest_File]	;
 	MOV	AH,40H			;
 	INT	21H			;
 	JNC	TSFL03			;

@@ -874,8 +874,9 @@ I_Play_Pan_Step6:			;}
 
 ;パンポットの出力
 	cmp	ds:[di].WTD_PanSet,al	;同じならば、要らない。
-ifndef	hyoka	;------------------------廉価版は無し
 	jz	I_Play_Pan_End		;
+	mov	ds:[di].WTD_PanSet,al	;書き込み
+ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Pan	;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;パンポットセット
