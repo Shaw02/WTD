@@ -1,0 +1,9 @@
+name:		wtdtest
+info:		wtdtest
+mode:		x
+resource:	
+appid:		
+source:		Wtdtest.bin
+output:		Wtdtest.fx
+
+
