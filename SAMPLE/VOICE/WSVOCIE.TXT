@@ -1,0 +1,104 @@
+==================================================
+
+		Wonder Swan音色集
+
+			(c)Digitalis
+				S.W.
+				FUN-X
+==================================================
+
+　ＷＳの音色集です。
+適当に使って下さい。
+
+
+
+[ Sin     .wtv ]========================
+0	Sin Wave
+
+
+
+[ Triangle.wtv ]========================
+0	Triangle Wave		( FC )
+8	Saw Wave
+9	R.Saw Wave
+
+※( FC )は、ファミコンのch3と同一の音です。
+
+
+
+[ Square  .wtv ]========================
+0	Square Wave  DT 50	( FC )
+1	Square Wave  DT 46.875
+2	Square Wave  DT 43.75
+3	Square Wave  DT 40.625
+4	Square Wave  DT 37.5	( FC )
+5	Square Wave  DT 34.375
+6	Square Wave  DT 31.25
+7	Square Wave  DT 28.125
+8	Square Wave  DT 25	( FC )
+9	Square Wave  DT 21.875
+10	Square Wave  DT 18.75
+11	Square Wave  DT 15.625
+12	Square Wave  DT 12.5	( FC )
+13	Square Wave  DT  9.375
+14	Square Wave  DT  6.25
+15	Square Wave  DT  3.125
+
+※( FC )が、ファミコンにあるDT比です。
+
+
+
+[ Octave  .wtv ]========================
+0	Sin Wave		1octave
+1	Triangle Wave		1octave
+2	Saw Wave		1octave
+3	R.Saw Wave		1octave
+4	Square Wave  DT 50	1octave
+5	Square Wave  DT 37.5	1octave
+6	Square Wave  DT 25	1octave
+7	Square Wave  DT 12.5	1octave
+8	Sin Wave		2octave
+9	Triangle Wave		2octave
+10	Saw Wave		2octave
+11	R.Saw Wave		2octave
+12	Square Wave  DT 50	2octave
+13	Square Wave  DT 37.5	1octave
+14	Square Wave  DT 25	2octave
+15	Square Wave  DT 12.5	2octave
+
+※Wonder Swanでは、ハードウェアの特性上、
+　高音の音は出力(周波数)が不安定になるため、
+　音色レベルで高音の音色を作った。
+
+
+
+[ 整流    .wtv ]========================
+0	Sin Wave	半波整流
+1	Triangle Wave	半波整流
+2	Saw Wave	半波整流
+3	R.Saw Wave	半波整流
+4	Sin Wave	全波整流
+5	Triangle Wave	全波整流
+6	Saw Wave	全波整流
+7	R.Saw Wave	全波整流
+8	Sin Wave	半波整流	1octave
+9	Triangle Wave	半波整流	1octave
+10	Saw Wave	半波整流	1octave
+11	R.Saw Wave	半波整流	1octave
+12	Sin Wave	全波整流	1octave
+13	Triangle Wave	全波整流	1octave
+14	Saw Wave	全波整流	1octave
+15	R.Saw Wave	全波整流	1octave
+
+※シンセ系の音。
+
+
+
+[ I･V     .wtv ]========================
+0	Square Wave	完全5度和音	1octave
+1	Triangle Wave	完全5度和音	1octave
+
+※完全５度和音のつもりで作った音色です。
+　サンプリングレイトが少ないので無理があります。
+　（0.5倍音成分が入っています。）
+　・・・使い道あるかな？

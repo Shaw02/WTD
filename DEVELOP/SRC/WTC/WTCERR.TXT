@@ -1,0 +1,6 @@
+Microsoft (R) MASM Compatibility Driver
+Copyright (C) Microsoft Corp 1993.  All rights reserved.
+
+ Invoking: ML.EXE /I. /Zm /c /IC:\WWitch\WTD\SDK\include WTC.asm 
+
+ Assembling: WTC.asm

@@ -1,0 +1,36 @@
+#==============================================================================
+#	Wonder Swan Total Sound Driver
+#		Make file
+#				A.Waranabe (S.W.)
+#==============================================================================
+include ..\..\..\SDK\include\wtdsdk.mak
+
+PROJ = WTD
+PROJ1 = WTD_H
+
+INC_FILES =  ..\..\..\SDK\include\wtd.h ..\..\..\SDK\include\bank.inc ..\..\..\SDK\include\comm.inc ..\..\..\SDK\include\process.inc ..\..\..\SDK\include\service.inc ..\..\..\SDK\include\sound.inc ..\..\..\SDK\include\timer.inc ..\..\..\SDK\include\wtd_def.inc ..\..\..\SDK\include\wtd_ver.inc ..\..\..\SDK\include\wtc_def.inc 
+
+FILES = wtd.asm wtd_com.asm wtd_icmd.asm wtd_idev.asm wtd_ilf.asm wtd_int.asm wtd_snd.asm wtd_tim.asm
+
+AFLAG1 = /Dhyoka=1
+
+
+
+all: $(PROJ).fx $(PROJ1).fx
+	@del *.bak
+	@del *.obj
+	@del *.com
+	@del *.exe
+	@del *.bin
+
+$(PROJ).fx : $(FILES) $(INC_FILES)
+	@$(ASM) $(AFLAG) $(PROJ);>wtderror.txt
+	@$(LINKER) $(LFLAG) $(PROJ),,,$(LIBS);
+	@ren $(PROJ).com $(PROJ).bin
+	@mkfent $(PROJ).cf
+
+$(PROJ1).fx : $(FILES) $(INC_FILES)
+	@$(ASM) $(AFLAG) $(AFLAG1) $(PROJ),$(PROJ1).obj;
+	@$(LINKER) $(LFLAG) $(PROJ1),,,$(LIBS);
+	@ren $(PROJ1).com $(PROJ1).bin
+	@mkfent $(PROJ1).cf

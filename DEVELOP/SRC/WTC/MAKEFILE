@@ -1,0 +1,25 @@
+#==============================================================================
+#	Wonder Swan Total Sound Driver
+#		MML Compiler
+#			Make file
+#				A.Waranabe (S.W.)
+#==============================================================================
+include ..\..\..\SDK\include\wtdsdk.mak
+
+PROJ = WTC
+
+INC_FILES =  ..\..\..\SDK\include\wtd.h ..\..\..\SDK\include\bank.inc ..\..\..\SDK\include\comm.inc ..\..\..\SDK\include\process.inc ..\..\..\SDK\include\service.inc ..\..\..\SDK\include\sound.inc ..\..\..\SDK\include\timer.inc ..\..\..\SDK\include\wtd_def.inc ..\..\..\SDK\include\wtd_ver.inc ..\..\..\SDK\include\wtc_def.inc 
+
+FILES = wtc.asm wtc_com.asm wtc_hed.asm wtc_main.asm wtc_sub.asm wtc_voi.asm
+
+
+
+all: $(PROJ).com
+	@del *.bak
+	@del *.obj
+	@del *.exe
+	@del *.bin
+
+$(PROJ).com : $(FILES) $(INC_FILES)
+	@$(ASM) $(AFLAG) $(PROJ);>wtcerr.txt
+	@$(LINKER) $(LFLAG) $(PROJ),,,$(LIBS);
