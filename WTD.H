@@ -141,7 +141,7 @@ typedef struct {
 /*											*/
 /********************************************/
 /*
- *	構造体の詳細は、「取説.PDF」か「wtd_def.asm」を参照。
+ *	構造体の詳細は、Developer's Manualを参照。
  */
 
 /* 構造体定義 */
@@ -276,7 +276,7 @@ typedef struct{
 /*											*/
 /********************************************/
 /*
- *	構造体の詳細は、「取説.PDF」か「wtd_def.asm」を参照。
+ *	構造体の詳細は、Developer's Manualを参照。
  */
 typedef struct {
 	int		Flag;				/* Flag */

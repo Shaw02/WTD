@@ -109,7 +109,7 @@ cMCD_54	db	'Z',0,		0,5,	'Y',0,	0f0h	;Z
 	db		0				;
 cMCD_55	db	'!',0,		0,1,	'!',0,	0	;!	Work Sw
 cMCD_56	db	'"',0,		0,1,	'"',0,	11h,0	;"	Work Add
-cMCD_57	db	''',0,		0,1,	''',0,	11h,0	;'	Acsent
+cMCD_57	db	27h,0,		0,1,	27h,0,	11h,0	;'	Acsent
 cMCD_58	db	'(',0,		0,1,	'(',0,	0	;(	Volume Down
 cMCD_59	db	')',0,		0,1,	')',0,	0	;)	Volume Up
 cMCD_60	db	'0',0,		0,0,	0,	0	;0

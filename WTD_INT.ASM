@@ -2502,6 +2502,7 @@ I_SM_KeyOn_Out:
 	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Acsent
 	jz	I_SM_KeyOn_DeviceOut	;もしアクセントだったら、それ用。
 	mov	ah,ds:[di].WTD_AcsentVelocity
+	and	ds:[di].WTD_FlagControl,WTD_Ctrl_AcsentR
 I_SM_KeyOn_DeviceOut:			;
 	call	SM_KeyOn		;デバイス出力。
 

@@ -504,8 +504,6 @@ _MusicPlay_Loop1:				;
 	mov	ds:[di].WTD_GateTimeStepFirst,ax
 	mov	ds:[di].WTD_Expr,al		;
 	mov	ds:[di].WTD_ExprSet,al		;
-	mov	ds:[di].WTD_ExprPanSet,al	;Velocityと同一
-	mov	ds:[di].WTD_Velocity,al		;ExprPanと同一
 	mov	ax,1				;
 	mov	ds:[di].WTD_Leng,ax		;
 	mov	ds:[di].WTD_LengCounter,ax	;
@@ -519,6 +517,7 @@ _MusicPlay_Loop1:				;
 	mov	ax,64				;
 	mov	ds:[di].WTD_Pan,al		;
 	mov	ax,100				;
+	mov	ds:[di].WTD_Velocity,al		;ExprPanと同一
 	mov	ax,127				;
 	mov	ds:[di].WTD_AcsentVelocity,al	;
 	mov	ax,8192				;
@@ -657,6 +656,11 @@ _MusicStop_Loop1:			;
 	mov	cl,MIDI_Ctrl_Volume	;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
+
+	mov	ax,0			;モード　初期化
+	mov	dx,offset I_Table_Mode	;
+	call	I_Table_Jump		;
+
 
 	mov	ax,8000h			;
 	mov	ds:[di].WTD_FlagControl,ax	;演奏終了
