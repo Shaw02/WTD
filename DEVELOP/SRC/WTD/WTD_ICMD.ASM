@@ -1242,6 +1242,9 @@ endif
 	cmp	al,0f7h			;0xF7だったら終わり。
 	jnz	I_Com58_Step1		;
 
+	;ランニングステータスの初期化
+	mov	ds:[bp].WTD_WorkAdd_System+WTD_Sys_RunningStatus,0
+
 	pop	cx			;
 	pop	ds			;
 	ret				;
@@ -1271,6 +1274,9 @@ ifndef	hyoka
 endif
 
 	loop	I_Com5a_Step1		;
+
+	;ランニングステータスの初期化
+	mov	ds:[bp].WTD_WorkAdd_System+WTD_Sys_RunningStatus,0
 
 	pop	cx			;
 	ret				;

@@ -247,6 +247,7 @@ I_MusicEffect:					;
 	mov	ax,ds:[bx].WTD_Sys_MusicSegment	;
 	mov	es,ax				;es←演奏データセグメント
 
+
 ;演奏処理ルーチンの呼び出し
 	xor	cx,cx				;製品版は最大'20'。
 	mov	cl,ds:[bx].WTD_Sys_MusicPart	;廉価版は最大' 4'。

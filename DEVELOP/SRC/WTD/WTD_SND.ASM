@@ -615,6 +615,9 @@ SM_init	proc near			;
 	mov	si,offset MIDI_Ex_GmReset + 1
 	call	C_Send_Block		;ブロック送信
 
+	;ランニングステータスの初期化
+	mov	ds:[bp].WTD_WorkAdd_System+WTD_Sys_RunningStatus,0
+
 	pop	es			;レジスタ復帰
 	pop	si			;
 	pop	cx			;
@@ -711,7 +714,8 @@ SM_ControlByte	proc near		;
 	or	al,ch			;
 	call	SM_Send_With_Running_Status	;コマンドの送信
 	pop	ax			;復帰
-	mov	ah,cl			;
+	mov	ah,al			;
+	mov	al,cl			;
 	call	C_Send_Word		;データの送信
 
 	pop	cx			;レジスタ復帰
@@ -746,12 +750,12 @@ SM_ControlWord	proc near		;
 	call	SM_Send_With_Running_Status	;コマンドの送信
 	pop	ax			;復帰
 	push	ax			;
-	mov	al,ah			;
-	mov	ah,cl			;
-	call	C_Send_Word		;レジスタ(ah)，データの送信(al(LSB))
+	mov	al,cl			;
+	call	C_Send_Word		;レジスタ(ah)，データの送信(ah(LSB))
 	pop	ax			;復帰
-	mov	ah,cl			;
-	add	ah,MIDI_Ctrl_MSB	;
+	mov	ah,al			;
+	mov	al,cl			;
+	add	al,MIDI_Ctrl_MSB	;
 	call	C_Send_Word		;レジスタ(ah)，データの送信(al(MSB))
 
 	pop	cx			;レジスタ復帰

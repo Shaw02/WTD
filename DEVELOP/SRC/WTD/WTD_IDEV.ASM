@@ -216,11 +216,15 @@ ifndef	hyoka	;------------------------廉価版は無し
 ;バッファに書かれている内容を全てkeyOffし、空にする。
 	mov	cl,8				;８回ループ
 	xor	bx,bx				;
+
 I_SM_KeyOff_Loop:				;
 	mov	al,ds:[di+bx].WTD_KeySet	;バッファ読み込み
 	mov	ds:[di+bx].WTD_KeySet,0ffh	;空データの書き込み
 	inc	bx				;
+	cmp	al,0ffh				;
+	jz	I_SM_KeyOff_Step1		;
 	call	SM_KeyOff			;KeyOffの送信
+I_SM_KeyOff_Step1:
 	dec	cl				;カウンタディクリメント
 	jnz	I_SM_KeyOff_Loop		;
 ;
