@@ -1274,6 +1274,72 @@ VOI_FILE_CLOSE_L0:			;
 	POP	AX			;
 	RET				;
 ;---------------------------------------------------------------|
+;		カレントディレクトリの変更			|
+;---------------------------------------------------------------|
+Current_Directory_Mess1	DB	'カレントディレクトリを'
+Current_Directory	DB	132	DUP(00h)
+Current_Directory_Mess2	DB	'に変更しました。',0dh,0ah,24h
+Change_Current_Directory:
+	pusha				;
+	push	ds			;
+	push	es			;
+
+	;-------------------------------
+	;セグメントの設定
+	mov	ax,cs			;
+	mov	ds,ax			;
+	mov	es,ax			;
+
+	;-------------------------------
+	;カレントディレクトリを検索
+	MOV	BX,0081H		;
+	MOV	CH,CS:[BX - 1]		;
+	ADD	BL,CH			;BX←ファイル名が書かれている最後。
+
+Change_Current_Directory_Loop:		;
+	cmp	bx,0081h		;
+	jc	Change_Current_Directory_End
+	mov	al,cs:[bx]		;
+	dec	bx			;
+	cmp	al,'\'			;
+	jnz	Change_Current_Directory_Loop
+
+	;-------------------------------
+	;カレントディレクトリ名を設定
+	mov	cx,bx			;
+	sub	cx,0081h		;
+	mov	si,CS:[F_ADD]		;転送元
+	mov	di,offset Current_Directory
+	cld				;
+	rep	movsb			;
+	MOV	AH,00H			;
+	MOV	CS:[di],AH		;
+	INC	di			;
+	MOV	AH,24H			;
+	MOV	CS:[di],AH		;
+
+	;-------------------------------
+	;カレントディレクトリを変更する。
+	mov	dx,offset Current_Directory
+	mov	ah,3BH			;
+	int	21h			;
+
+	mov	dx,offset Current_Directory_Mess1
+	mov	ah,09H			;
+	int	21h			;
+
+	mov	dx,offset Current_Directory_Mess2
+	mov	ah,09H			;
+	int	21h			;
+
+	;-------------------------------
+	;終了
+Change_Current_Directory_End:
+	pop	es			;
+	pop	ds			;
+	popa				;
+	ret				;
+;---------------------------------------------------------------|
 ;								|
 ;		ＣＯＭファイルのメモリー最小化			|
 ;---------------------------------------------------------------|

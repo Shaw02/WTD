@@ -237,10 +237,10 @@ typedef struct {
 	char	PanEmbCounter;			/* 6F		EMBカウンター */
 	char	PanEmbMaxMin;			/* 60		EMB最大／最小値 */
 	char	PanEmbLevelSet;			/* 61		EMB変位ﾚﾍﾞﾙ */
-	int		ProgramRate				/* 62-63	音色を変える。 */
-	char	Program1st				/* 64		音色の初期値 */
-	char	Program2nd				/* 65		経時変化 */
-	char	Program3rd				/* 66		KeyOff後音色 */
+	int		ProgramRate;			/* 62-63	音色を変える。 */
+	char	Program1st;				/* 64		音色の初期値 */
+	char	Program2nd;				/* 65		経時変化 */
+	char	Program3rd;				/* 66		KeyOff後音色 */
 } Wtd;
 
 /* 構造体位置 */
@@ -337,7 +337,7 @@ typedef struct {
 	int		ComFIFO_Cnt;		/* 2A	FIFO Counter */
 	int		ComFIFO_Adr;		/* 2C	FIFO Address */
 	int		ComFIFO_Size;		/* 2E	FIFO Size */
-	char	RunningStatus		/* 30	MIDI Running Status */
+	char	RunningStatus;		/* 30	MIDI Running Status */
 } Wtd_Sys;
 
 /* Flag bit */

@@ -1546,10 +1546,11 @@ I_Com73_End:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com74:				;
+	call	I_Read16		;データは読む。
+
 	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
 	jnz	I_Com74_E		;効果音の場合、処理無し。
 
-	call	I_Read16		;
 	mov	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Tempo,ax
 	call	T_Set_Frection		;タイマーセット
 

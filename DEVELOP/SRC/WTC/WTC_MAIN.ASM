@@ -23,6 +23,8 @@ _main:
 	CLI				;割り込み禁止
 
 	CALL	FOPEN			;ファイルオープン
+	;FOPENの次に呼ぶこと。
+	CALL	Change_Current_Directory
 
 	CALL	MOPEN			;ＭＭＬファイル用メモリオープン
 	CALL	WOPEN			;ＷＴＤファイル用メモリオープン

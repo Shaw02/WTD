@@ -327,6 +327,8 @@ c_Head_end:				;
 ;---------------------------------------------------------------
 ;バージョン情報の表示
 
+	xor	bx,bx			;ds:bx←WTD File Segment Address
+
 	mov	dx,offset c_Head_Version
 	mov	ah,09h			;
 	int	21h			;"This Music Data is Version "
