@@ -111,12 +111,23 @@ SP_Set_Frection	proc near		;
 	push	cx			;
 	push	dx			;レジスタ保存
 
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
+	jnz	SP_Set_Frection_Step	;効果音パート？
+	mov	cl,ch			;
+	inc	cl			;
+	mov	dx,00800h		;
+	shl	dx,cl			;
+	test	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Flag,dx
+	jnz	SP_Set_Frection_End	;効果音鳴っているか？
+
+SP_Set_Frection_Step:			;
 	mov	dx,PCM_Com_Frection	;dx←I/O Address base
 	and	cx,PCM_Channel_mask	;
 	shr	cx,7			;cx = ch * 2
 	add	dx,cx			;dx←I/O Address
 	out	dx,ax			;out(dx),ax
 
+SP_Set_Frection_End:			;
 	pop	dx			;レジスタ復帰
 	pop	cx			;
 	ret				;
@@ -136,12 +147,23 @@ SP_Set_Volume	proc near		;
 	push	cx			;
 	push	dx			;レジスタ保存
 
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
+	jnz	SP_Set_Volume_Step	;効果音パート？
+	mov	cl,ch			;
+	inc	cl			;
+	mov	dx,00800h		;
+	shl	dx,cl			;
+	test	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Flag,dx
+	jnz	SP_Set_Volume_End	;効果音鳴っているか？
+
+SP_Set_Volume_Step:			;
 	mov	dx,PCM_Com_Volume	;dx←I/O Address base
 	and	cx,PCM_Channel_mask	;
 	shr	cx,8			;cx = cl
 	add	dx,cx			;dx←I/O Address
 	out	dx,al			;out(dx),ax
 
+SP_Set_Volume_End:			;
 	pop	dx			;レジスタ復帰
 	pop	cx			;
 	ret				;
@@ -158,10 +180,25 @@ SP_Set_Volume	endp			;
 ;		スウィープの設定				|
 ;===============================================================|
 SP_Set_Sweep	proc near		;
+	push	dx
+
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
+	jnz	SP_Set_Sweep_Step	;効果音パート？
+	mov	cl,ch			;
+	inc	cl			;
+	mov	dx,00800h		;
+	shl	dx,cl			;
+	test	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Flag,dx
+	jnz	SP_Set_Sweep_End	;効果音鳴っているか？
+
+SP_Set_Sweep_Step:			;
 	out	PCM_Com_SweepLevel,al	;出力
 	xchg	al,ah			;
 	out	PCM_Com_SweepTime,al	;出力
 	xchg	al,ah			;
+
+SP_Set_Sweep_End:			;
+	pop	dx			;
 	ret				;
 SP_Set_Sweep	endp			;
 ;===============================================================|
@@ -177,8 +214,21 @@ SP_Set_Sweep	endp			;
 ;===============================================================|
 SP_Set_Noise	proc near		;
 	push	dx			;レジスタの保存
+
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
+	jnz	SP_Set_Noise_Step	;効果音パート？
+	mov	cl,ch			;
+	inc	cl			;
+	mov	dx,00800h		;
+	shl	dx,cl			;
+	test	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Flag,dx
+	jnz	SP_Set_Noise_End	;効果音鳴っているか？
+
+SP_Set_Noise_Step:			;
 	mov	dx,PCM_Com_Noise	;dx←I/O Address
 	call	SP_Set_with_mask	;
+
+SP_Set_Noise_End:			;
 	pop	dx			;
 	ret				;レジスタの復帰
 SP_Set_Noise	endp			;
@@ -194,8 +244,23 @@ SP_Set_Noise	endp			;
 ;===============================================================|
 SP_Set_VoiceAdd	proc near		;
 	push	ax			;レジスタの保存
+	push	dx			;
+
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
+	jnz	SP_Set_VoiceAdd_Step	;効果音パート？
+	mov	cl,ch			;
+	inc	cl			;
+	mov	dx,00800h		;
+	shl	dx,cl			;
+	test	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Flag,dx
+	jnz	SP_Set_VoiceAdd_End	;効果音鳴っているか？
+
+SP_Set_VoiceAdd_Step:			;
 	shr	ax,6			;64Byte単位。64で割る。
 	out	PCM_Com_VoiceAddress,al	;出力
+
+SP_Set_VoiceAdd_End:			;
+	pop	dx			;
 	pop	ax			;レジスタの復帰
 	ret				;
 SP_Set_VoiceAdd	endp			;
@@ -212,8 +277,21 @@ SP_Set_VoiceAdd	endp			;
 ;===============================================================|
 SP_Set_Channel	proc near		;
 	push	dx			;レジスタの保存
+
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
+	jnz	SP_Set_Channel_Step	;効果音パート？
+	mov	cl,ch			;
+	inc	cl			;
+	mov	dx,00800h		;
+	shl	dx,cl			;
+	test	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Flag,dx
+	jnz	SP_Set_Channel_End	;効果音鳴っているか？
+
+SP_Set_Channel_Step:			;
 	mov	dx,PCM_Com_Channel	;dx←I/O Address
 	call	SP_Set_with_mask	;
+
+SP_Set_Channel_End:			;
 	pop	dx			;
 	ret				;レジスタの復帰
 SP_Set_Channel	endp			;
@@ -245,8 +323,21 @@ SP_Get_Channel	endp			;
 ;===============================================================|
 SP_Set_Output	proc near		;
 	push	dx			;レジスタの保存
+
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
+	jnz	SP_Set_Output_Step	;効果音パート？
+	mov	cl,ch			;
+	inc	cl			;
+	mov	dx,00800h		;
+	shl	dx,cl			;
+	test	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Flag,dx
+	jnz	SP_Set_Output_End	;効果音鳴っているか？
+
+SP_Set_Output_Step:			;
 	mov	dx,PCM_Com_Output	;dx←I/O Address
 	call	SP_Set_with_mask	;
+
+SP_Set_Output_End:			;
 	pop	dx			;
 	ret				;レジスタの復帰
 SP_Set_Output	endp			;
@@ -292,8 +383,21 @@ SP_Get_Random	endp			;
 ;===============================================================|
 SP_Set_VolumePCM	proc near	;
 	push	dx			;レジスタの保存
+
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
+	jnz	SP_Set_VolumePCM_Step	;効果音パート？
+	mov	cl,ch			;
+	inc	cl			;
+	mov	dx,00800h		;
+	shl	dx,cl			;
+	test	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Flag,dx
+	jnz	SP_Set_VolumePCM_End	;効果音鳴っているか？
+
+SP_Set_VolumePCM_Step:			;
 	mov	dx,PCM_Com_VolumePCM	;dx←I/O Address
 	call	SP_Set_with_mask	;
+
+SP_Set_VolumePCM_End:			;
 	pop	dx			;
 	ret				;レジスタの復帰
 SP_Set_VolumePCM	endp		;
@@ -325,9 +429,21 @@ SP_Get_VolumePCM	endp		;
 ;===============================================================|
 SP_Set_Voice	proc	near		;
 	push	cx			;
+	push	dx			;
 	push	di			;
 	push	si			;
 	push	es			;レジスタ保存
+
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
+	jnz	SP_Set_Voice_Step	;効果音パート？
+	mov	cl,ch			;
+	inc	cl			;
+	mov	dx,00800h		;
+	shl	dx,cl			;
+	test	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Flag,dx
+	jnz	SP_Set_Voice_End	;効果音鳴っているか？
+
+SP_Set_Voice_Step:			;
 
 	cld				;インクリメントモード
 
@@ -340,9 +456,11 @@ SP_Set_Voice	proc	near		;
 	mov	cx,8			;16byte転送する。
 	rep	movsw			;転送
 
+SP_Set_Voice_End:			;
 	pop	es			;レジスタ復帰
 	pop	si			;
 	pop	di			;
+	pop	dx
 	pop	cx			;
 	ret				;
 SP_Set_Voice	endp			;

@@ -1,0 +1,74 @@
+========================================================================
+		Ｗonder Swan Ｔotal Sound Ｄriver
+                         経歴
+                  Copyright (C)2001 A.Watanabe  ( S.W. )
+========================================================================
+
+Version 0.01β						2001. 5. 4
+		以下の機能を作製
+	●制御
+	・曲・効果音・PCM Voice制御システムの基礎開発完了
+	●ILファンクション
+	・Stay()		常駐・初期化
+	・StayOut()		常駐解除
+	・Init()		初期化
+	・MusicPlay()		演奏開始
+	・PcmPlay()		PCM Voice開始
+	・PcmStop()		PCM Voice停止
+	・PcmVoiceSet()		音色登録
+	・SoftEmbSet()		エンベロープ登録
+	・ChangeFar()		Farアドレス変換(offset = 000x)
+	・SoundSetChannel()	チャンネルモード設定
+	・SoundGetChannel()	チャンネルモード取得
+	・SoundSetOutput()	出力モード設定
+	・SoundGetOutput()	出力モード取得
+	・SoundGetRandom()	乱数取得
+	・SetMusicVolume()	演奏の音量設定
+	・GetMusicVolume()	演奏の音量取得
+	・SetEffectVolume()	効果音の音量設定
+	・GetEffectVolume()	効果音の音量取得
+	・SetPcmVolume()	PCM Voiceの音量設定
+	・GetPcmVolume()	PCM Voiceの音量取得
+	●データ・コマンド
+	・音階コード		c,d,e,f,f,g,a,b,r,+,#,-,=,&,.
+	・音色			@
+	・チャンネル		C
+	・ディチューン		D(音程),V(音量)
+	・キーオンディレイ	K
+	・無限ループ		L
+	・ゲートタイム		Q,U,q,u
+	・ベロシティー		k
+	・音長			l
+	・オクターブ		o
+	・パンポット		p
+	・テンポ		t
+	・音量・Expression	v
+
+Version 0.02β						2001. 5.17
+		以下の機能を追加・修正
+	●制御
+	・KeyCode		修正：数値をMIDIに合わせるのを忘れていた。
+				修正：休符の場合、0xFFを書くようにした。
+				修正：音長指定が無効になるバグがあった。
+	●ILファンクション
+	・MusicPlay()		修正：Velocityの初期値を0(無音)から100にした。
+	・MusicStop()		追加：実装を忘れていた。
+	●データ・コマンド
+	・パンポットコマンド	修正：MIDIに送信するのを忘れていた。
+	・テンポコマンド	修正：割り込み周期を設定するのを忘れていた。
+		その他
+	ビュアー＆セレクター「wmsvwtd.fx」の追加。「取説.pdf」に説明の追加。
+
+Version 0.03β						2001. 7. 1
+		以下の機能を追加・修正
+	●制御
+	・WTD_FlagControl	修正：ビットの並びを変更した。
+	・WTD_ExprEmbLevelSet	修正：MIDIでエンベロープ無効の場合、
+				　　　KeyOffで数値を操作しないようにした。
+	・WTD_TaiFlag		修正：フラグ内容が書き込まれていなかった。
+	・エンベロープ		修正：定義数が０だと暴走した。
+	●データ・コマンド
+	・モード・ダンパー	P
+	・ループ		[,:,]
+	・無限ループ		修正：無限ループになっていなかった。
+	ＭＭＬコンパイラ「wtc.com」の追加。「取説.pdf」に説明の追加。

@@ -519,14 +519,8 @@ I_Play_KeyOn:				;
 I_Play_KeyOn_Start:			;
 	pusha				;レジスタ保存
 
-;ハードウェアをKeyOn
-	mov	al,ds:[di].WTD_Key	;
-	add	al,ds:[di].WTD_KeyShift	;
-	mov	dx,offset I_Table_KeyOn	;
-	call	I_Table_Jump		;KeyOn
-
 ;前回の音符は、タイ？
-	test	ds:[di].WTD_FlagTai,2	;前回タイあったか？
+	test	ds:[di].WTD_FlagTai,02h	;前回タイあったか？
 	jnz	I_Play_KeyOn_StepEnd	;
 
 ;音程LFO
@@ -568,7 +562,7 @@ I_Play_KeyOn_End:			;
 ;			KeyOff (Hardware,Software)		|
 ;===============================================================|
 I_Play_KeyOff:
-	test	ds:[di].WTD_FlagTai,1	;タイ？
+	test	ds:[di].WTD_FlagTai,01h	;タイ？
 	jnz	I_Play_KeyOff_End	;
 
 I_Play_KeyOff_Start:			;
@@ -592,7 +586,10 @@ I_Play_KeyOff_Step1:				;
 	call	I_Play_KeyOff_Emb		;
 	jmp	I_Play_KeyOff_StepEnd		;
 I_Play_KeyOff_Step2:				;
+	test	ds:[di].WTD_Channel,80h		;MIDIパートの場合は操作しない。
+	jz	I_Play_KeyOff_Step3		;
 	mov	ds:[di].WTD_ExprEmbLevelSet,000h
+I_Play_KeyOff_Step3:				;
 
 I_Play_KeyOff_StepEnd:				;
 	popa					;レジスタ復帰
@@ -839,14 +836,17 @@ I_PlayKey_Auto_Step2:				;
 	ret				;
 ;---------------------------------------------------------------
 I_PlayKey:				;
-	pusha				;レジスタ保存
+	push	ax			;レジスタ保存
+	push	bx			;
+	push	cx			;
+	push	dx			;
 
 ;音程演算処理
 	mov	cl,al				;cl←コマンド
 	and	ax,07h				;al←音階情報(0～7)
 	sub	ax,1				;
 	jnc	I_PlayKey_Step1			;休符？
-	jmp	I_PlayKey_Step2			;
+	jmp	I_PlayKey_Step2R		;
 I_PlayKey_Step1:				;
 	mov	bx,offset I_PlayKey_Code	;
 	push	si				;
@@ -856,14 +856,14 @@ I_PlayKey_Step1:				;
 	mov	ch,al				;ch←音階情報
 	mov	al,ds:[di].WTD_Octave		;
 	mov	ah,12				;
-	mul	ah				;
+	imul	ah				;
 	add	al,ch				;al←Key Code
 
 ;半音演算処理
-	test	cl,8				;Sharp Flag Check
+	test	cl,008h				;Sharp Flag Check
 	jnz	I_PlayKey_Step3			;
 ;'#' Flag = '0'
-	test	cl,16				;Flat Flag Check
+	test	cl,010h				;Flat Flag Check
 	jnz	I_PlayKey_Step4			;
 ;'#b' Flag = '00'
 	call	I_PlayKey_Auto			;自動半音処理
@@ -875,7 +875,7 @@ I_PlayKey_Step4:				;
 	jmp	I_PlayKey_Step2			;
 ;'#' Flag = '1'
 I_PlayKey_Step3:				;
-	test	cl,16				;Flat Flag Check
+	test	cl,010h				;Flat Flag Check
 	jnz	I_PlayKey_Step5			;
 ;'#b' Flag = '10'
 	inc	al				;音程＋１
@@ -886,17 +886,23 @@ I_PlayKey_Step5:				;
 ;	jmp	I_PlayKey_Step2			;自動半音　無し
 
 I_PlayKey_Step2:				;
+	add	al,12				;KeyCode補正(MIDI単位)
+I_PlayKey_Step2R:				;
 	mov	ds:[di].WTD_Key,al		;音程保存
+;ハードウェアをKeyOn
+	add	al,ds:[di].WTD_KeyShift		;
+	mov	dx,offset I_Table_KeyOn		;
+	call	I_Table_Jump			;KeyOn
 
 ;タイフラグチェック
-	test	cl,32				;タイフラグチェック
+	test	cl,020h				;タイフラグチェック
 	jz	I_PlayKey_Step6			;cy←0
 	stc					;cy←1
 I_PlayKey_Step6:				;
-	shl	ds:[di].WTD_FlagTai,1		;シフト
+	rcl	ds:[di].WTD_FlagTai,1		;シフト
 
 ;音長フラグのチェック
-	test	cl,64				;音長フラグチェック
+	test	cl,040h				;音長フラグチェック
 	jnz	I_PlayKey_Step7			;
 ;音長指定無しの場合
 	mov	ax,ds:[di].WTD_LengDefault	;
@@ -916,7 +922,10 @@ I_PlayKey_Step8:				;
 	mov	ds:[di].WTD_LengCounter,ax	;
 
 I_PlayKey_StepE:			;
-	popa				;
+	pop	dx			;
+	pop	cx			;
+	pop	bx			;
+	pop	ax			;
 	ret				;レジスタ復帰
 ;****************************************************************
 ;*								*
@@ -969,7 +978,7 @@ I_PlayCommand_JumpTable:
 	dw	offset I_Com24		;24 $		(MML:Macro)
 	dw	offset I_Com25		;25 %		(MML:Step)
 	dw	offset I_Com26		;26 &		(MML:Tai)
-	dw	offset I_Com27		;27 '	Acsebt
+	dw	offset I_Com27		;27 '	Acsent
 	dw	offset I_Com28		;28 (	Volume down
 	dw	offset I_Com29		;29 )	Volume up
 	dw	offset I_Com2a		;2a *	LFO Switch
@@ -1263,6 +1272,28 @@ I_Com39:				;
 ;		Loop Jump					|
 ;===============================================================|
 I_Com3a:				;
+;読み込み
+	mov	dx,es:[si]		;
+	inc	si			;
+	inc	si			;
+
+;カウンタ・読み込み
+	push	bx			;
+	xor	bx,bx			;
+	mov	bl,ds:[di].WTD_LoopCountPointer
+	mov	al,ds:[di + bx].WTD_LoopCount
+	pop	bx			;
+
+;カウンタ・ディクリメント
+	cmp	al,1			;
+	jz	I_Com3d_Step		;
+
+	ret				;終了
+;---------------------------------------------------------------
+I_Com3d_Step:				;カウンター = 1 の場合。
+	dec	ds:[di].WTD_LoopCountPointer
+	mov	si,dx			;
+
 	ret				;
 ;===============================================================|
 ;		Loop Jump Flags					|
@@ -1341,26 +1372,39 @@ I_Com45:				;
 	shl	ax,4			;
 	pop	bx			;復帰
 	mov	bh,ah			;
-	test	bl,1			;
-	jnz	I_Com45_Bend		;
+	cmp	bl,1			;
+	jnz	I_Com45_Expr		;
+	cmp	bl,2			;
+	jnz	I_Com45_Pan		;
 
-I_Com45_Expr:					;音量
-	mov	ds:[di].WTD_ExprEmbAddress,al	;
+I_Com45_Bend:					;音程
+	mov	ds:[di].WTD_BendEmbAddress,al	;
 	mov	ax,ds:[si].WTD_FlagControl	;
-	and	bx,00100h			;
-	and	ax,0feffh			;
+	shr	bx,1				;bx bit 7  =  No. bit 5
+	and	bx,WTD_Ctrl_EmbFreq		;
+	and	ax,WTD_Ctrl_EmbFreqR		;
 	or	ax,bx				;
 	mov	ds:[si].WTD_FlagControl,ax	;
 	jmp	I_Com45_End			;
 
-I_Com45_Bend:					;音程
-	mov	ds:[di].WTD_BendEmbAddress,al	
-	mov	ax,ds:[si].WTD_FlagControl	;
-	shl	bx,1				;
-	and	bx,00200h			;
-	and	ax,0fdffh			;
+I_Com45_Expr:					;音量
+	mov	ds:[di].WTD_ExprEmbAddress,al	;
+	mov	ax,ds:[si].WTD_FlagControl	;bx bit 8  =  No. bit 5
+	and	bx,WTD_Ctrl_EmbVol		;
+	and	ax,WTD_Ctrl_EmbVolR		;
 	or	ax,bx				;
 	mov	ds:[si].WTD_FlagControl,ax	;
+	jmp	I_Com45_End			;
+
+I_Com45_Pan:					;音程
+	mov	ds:[di].WTD_BendEmbAddress,al	;
+	mov	ax,ds:[si].WTD_FlagControl	;
+	shl	bx,1				;bx bit 9  =  No. bit 5
+	and	bx,WTD_Ctrl_EmbPan		;
+	and	ax,WTD_Ctrl_EmbPanR		;
+	or	ax,bx				;
+	mov	ds:[si].WTD_FlagControl,ax	;
+;	jmp	I_Com45_End			;
 
 I_Com45_End:				;
 	ret				;
@@ -1408,6 +1452,7 @@ I_Com4c:				;
 	or	ax,ax			;演奏終了か？
 	jz	I_Com4c_Step1		;
 	mov	si,ax			;ループ
+	ret				;
 
 I_Com4c_Step1:				;
 	or	ds:[di].WTD_FlagControl,WTD_Ctrl_PlayEnd
@@ -1439,7 +1484,11 @@ I_Com4f:				;
 ;		PCM Mode / MIDI Damper				|
 ;===============================================================|
 I_Com50:				;
-	ret				;
+	mov	al,es:[si]		;
+	inc	si			;読み込み
+	mov	dx,offset I_Table_Mode	;
+	call	I_Table_Jump		;設定
+	ret				;終了
 ;===============================================================|
 ;		Gate time 'Q'					|
 ;===============================================================|
@@ -1505,6 +1554,22 @@ I_Com5a:				;
 ;		Loop Start					|
 ;===============================================================|
 I_Com5b:				;
+
+;読み込み
+	mov	al,es:[si]		;
+	inc	si			;
+
+;設定
+	inc	ds:[di].WTD_LoopCountPointer
+
+;カウンタ書き込み
+	push	bx			;
+	xor	bx,bx			;
+	mov	bl,ds:[di].WTD_LoopCountPointer
+	mov	ds:[di + bx].WTD_LoopCount,al
+	pop	bx			;
+
+;終了
 	ret				;
 ;===============================================================|
 ;		NULL '\'					|
@@ -1515,6 +1580,27 @@ I_Com5c:				;
 ;		Loop End					|
 ;===============================================================|
 I_Com5d:				;
+
+;読み込み
+	mov	dx,es:[si]		;
+	inc	si			;
+	inc	si			;
+
+;カウンタ・ディクリメント
+	push	bx			;
+	xor	bx,bx			;
+	mov	bl,ds:[di].WTD_LoopCountPointer
+	sub	ds:[di + bx].WTD_LoopCount,1
+	pop	bx			;
+	jnz	I_Com5d_Step		;
+
+	dec	ds:[di].WTD_LoopCountPointer
+
+	ret				;終了
+;---------------------------------------------------------------
+I_Com5d_Step:				;カウンター <> 0 の場合。
+	mov	si,dx			;
+
 	ret				;
 ;===============================================================|
 ;		Tai (add lengs)					|
@@ -1636,6 +1722,11 @@ I_Com70:				;
 	mov	al,es:[si]		;
 	inc	si			;
 	mov	ds:[di].WTD_Pan,al	;
+
+	mov	cl,MIDI_Ctrl_Pan	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
+
 	ret				;
 ;===============================================================|
 ;		Gate time 'q'					|
@@ -1667,6 +1758,7 @@ I_Com74:				;
 	inc	si			;
 	inc	si			;
 	mov	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Tempo,ax
+	call	T_Set_Frection		;タイマーセット
 
 I_Com74_E:				;
 	ret				;
@@ -1842,6 +1934,10 @@ I_Effect_Return_End:
 ;		（中略）					|
 ;		pop	bp					|
 ;		ret						|
+;								|
+;	デバイスアクセス部で、bpレジスタを使用しているので、	|
+;	注意する。						|
+;								|
 ;===============================================================|
 I_Table_Jump:				;
 	push	dx			;
@@ -1910,8 +2006,9 @@ I_SP_KeyOn:				;
 ;キーコードの分解（キー，オクターブ）
 	xor	ah,ah				;ax←KeyCode
 	mov	cl,12				;
-	div	cl				;ah←Key(余) / al←Octave(商)
+	idiv	cl				;ah←Key(余) / al←Octave(商)
 ;オクターブの書き込み
+	dec	al				;オクターブ補正(Drv値)
 	mov	ds:[di].WTD_OctaveSet,al	;オクターブ書き込み
 ;テーブル読み込み（ベンド変換）
 	mov	al,ah				;
@@ -1941,8 +2038,9 @@ I_SM_KeyOn:				;
 ;キーコードの分解（キー，オクターブ）
 	xor	ah,ah				;ax←KeyCode
 	mov	cl,12				;
-	div	cl				;ah←Key(余) / al←Octave(商)
+	idiv	cl				;ah←Key(余) / al←Octave(商)
 ;オクターブの書き込み
+	dec	al				;
 	mov	ds:[di].WTD_OctaveSet,al	;オクターブ書き込み
 ;レジスタ復帰
 	pop	cx				;
@@ -1991,7 +2089,7 @@ I_Table_KeyOff:
 	dw	I_SM_KeyOff		
 ;-------------[	WS内蔵PCM ]-------------
 I_SP_KeyOff:				;
-;	処理無し			;
+	mov	ds:[di].WTD_KeySet,0ffh	;空データの書き込み
 	ret				;
 ;-------------[	外部MIDI  ]-------------
 I_SM_KeyOff:				;

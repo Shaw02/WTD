@@ -19,7 +19,7 @@
 IL:						;IL構造体先頭
 IL_Link_Pos	dw	0			;未使用
 		dw	0			;
-IL_N_Methods	dw	38			;ファンクション数
+IL_N_Methods	dw	24			;ファンクション数
 IL_GetInfo	dw	offset _GetInfo		;ILinfo構造体を得る
 		dw	0			;far *TEST_GetInfo();
 IL_F00		dw	offset _Stay		;
@@ -68,37 +68,6 @@ IL_F21		dw	offset _SetPcmVolume	;
 		dw	0			;
 IL_F22		dw	offset _GetPcmVolume	;
 		dw	0			;
-;
-;	サウンドサブルーチン動作テスト
-;
-IL_T01		dw	offset _Test_S_Frec	;
-		dw	0			;(ch,pitch)
-IL_T02		dw	offset _Test_S_Volume	;
-		dw	0			;(ch,volume)
-IL_T03		dw	offset _Test_S_Sweep	;
-		dw	0			;(lv,time)
-IL_T04		dw	offset _Test_S_Noise	;
-		dw	0			;(data,mask)
-IL_T05		dw	offset _Test_S_Voice	;
-		dw	0			;(ch,far *address)
-IL_T20		dw	offset _Test_M_KeyOff	;
-		dw	0			;(ch,key)
-IL_T21		dw	offset _Test_M_KeyOn	;
-		dw	0			;(ch,key,press)
-IL_T22		dw	offset _Test_M_KeyPress	;
-		dw	0			;(ch,key,press)
-IL_T23		dw	offset _Test_M_ControlB	;
-		dw	0			;(ch,reg,data)
-IL_T24		dw	offset _Test_M_ControlW	;
-		dw	0			;(ch,reg,data)
-IL_T25		dw	offset _Test_M_Program	;
-		dw	0			;(ch,prog)
-IL_T26		dw	offset _Test_M_BProgram	;
-		dw	0			;(ch,bank,prog)
-IL_T27		dw	offset _Test_M_ChPress	;
-		dw	0			;(ch,press)
-IL_T28		dw	offset _Test_M_Pitch	;
-		dw	0			;(ch,pitch)
 ;===============================================================|
 ;		ILinfo構造体定義（全てポインタ）		|
 ;===============================================================|
@@ -151,7 +120,7 @@ _GetInfo	endp			;
 ;		無し						|
 ;	返り値							|
 ;		ax	00h	正常終了			|
-;		ax	01h	本体RAM容量が足りない		|
+;		ax	01h	heap領域が足りない		|
 ;	処理							|
 ;		WTD本体の常駐					|
 ;===============================================================|
@@ -456,6 +425,8 @@ _MusicPlay_Chk2:
 
 ;WS内蔵PCM波形データの登録
 _MusicPlay_Loop2:				;
+	cmp	ch,0				;
+	jz	_MusicPlay_Loop2_End		;
 	xor	ax,ax				;
 	mov	al,es:[bx]			;音色番号
 	inc	bx				;
@@ -468,9 +439,12 @@ _MusicPlay_Loop2:				;
 	add	bx,16				;
 	dec	ch				;
 	jnz	_MusicPlay_Loop2		;
+_MusicPlay_Loop2_End:				;
 
 ;エンベロープデータの登録
 _MusicPlay_Loop3:				;
+	cmp	cl,0				;
+	jz	_MusicPlay_Loop3_End		;
 	xor	ax,ax				;
 	mov	al,es:[bx]			;音色番号
 	inc	bx				;
@@ -481,8 +455,9 @@ _MusicPlay_Loop3:				;
 	call	near ptr _SoftEmbSet		;登録
 	add	sp,+6				;
 	add	bx,16				;
-	dec	ch				;
+	dec	cl				;
 	jnz	_MusicPlay_Loop3		;
+_MusicPlay_Loop3_End:				;
 
 ;レジスタ復帰
 	pop	bx				;
@@ -493,7 +468,7 @@ _MusicPlay_Loop3:				;
 ;チャンネル数の取得
 	mov	ch,es:[bx].WTD_Mus_Part	;チャンネル数の取得
 	cmp	ch,MusicMaxPart		;パート数チェック
-	jnc	_MusicPlay_Step2	;
+	jc	_MusicPlay_Step2	;
 	mov	ch,MusicMaxPart		;最大値を越えてたら最大値に。
 _MusicPlay_Step2:			;
 
@@ -509,18 +484,9 @@ _MusicPlay_Loop1:				;
 	mov	ds:[di].WTD_FlagSharp,al	;
 	mov	ds:[di].WTD_FlagFlat,al		;
 	mov	ds:[di].WTD_Channel,cl		;
-	mov	ds:[di].WTD_LoopCountPointer,al	;
 	mov	ds:[di].WTD_KeyOffTime,ax	;
 	mov	ds:[di].WTD_KeyOnDelay,ax	;
 	mov	ds:[di].WTD_KeyShift,al		;
-	mov	ds:[di].WTD_KeySet + 0,al	;
-	mov	ds:[di].WTD_KeySet + 1,al	;
-	mov	ds:[di].WTD_KeySet + 2,al	;
-	mov	ds:[di].WTD_KeySet + 3,al	;
-	mov	ds:[di].WTD_KeySet + 4,al	;
-	mov	ds:[di].WTD_KeySet + 5,al	;
-	mov	ds:[di].WTD_KeySet + 6,al	;
-	mov	ds:[di].WTD_KeySet + 7,al	;
 	mov	ds:[di].WTD_KeySetPointer,al	;
 	mov	ds:[di].WTD_BendDetune,ax	;
 	mov	ds:[di].WTD_BendEmbAddress,al	;
@@ -541,12 +507,22 @@ _MusicPlay_Loop1:				;
 	mov	ds:[di].WTD_Pan,al		;
 	mov	ax,100				;
 	mov	ds:[di].WTD_Expr,al		;
+	mov	ds:[di].WTD_Velocity,al		;
 	mov	ax,127				;
 	mov	ds:[di].WTD_AcsentVelocity,al	;
-	mov	ax,0ffh				;
-	mov	ds:[di].WTD_Voice,al		;
 	mov	ax,8192				;
 	mov	ds:[di].WTD_Bend,ax		;
+	mov	ax,0ffffh			;
+	mov	ds:[di].WTD_Voice,al		;
+	mov	ds:[di].WTD_LoopCountPointer,al	;
+	mov	ds:[di].WTD_KeySet + 0,al	;
+	mov	ds:[di].WTD_KeySet + 1,al	;
+	mov	ds:[di].WTD_KeySet + 2,al	;
+	mov	ds:[di].WTD_KeySet + 3,al	;
+	mov	ds:[di].WTD_KeySet + 4,al	;
+	mov	ds:[di].WTD_KeySet + 5,al	;
+	mov	ds:[di].WTD_KeySet + 6,al	;
+	mov	ds:[di].WTD_KeySet + 7,al	;
 	mov	ax,es:[bx]			;
 	mov	ds:[di].WTD_Address,ax		;
 
@@ -611,6 +587,9 @@ _MusicPlay	endp			;
 _MusicStop	proc far		;
 	pusha				;
 	push	ds			;
+	pushf				;
+
+	cli				;割り込み禁止
 
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
@@ -618,24 +597,69 @@ _MusicStop	proc far		;
 ;ワークアドレスの取得
 	push	SRAM_Segment			;
 	pop	ds				;ds←SRAMセグメント
-	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
+	mov	bp,ds:[ProcContext_heap]	;ds:bp←ワークエリアアドレス
 
 ;構造体アドレスの設定
-	mov	di,bx				;
+	mov	di,bp				;
 	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
-	mov	si,bx				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
+	mov	bx,bp				;
+	add	bx,WTD_WorkAdd_System		;ds:bx←System
+	mov	si,bx				;ds:si←ds:bx
 
 ;---------------------------------------------------------------
 ;個別構造体設定
 
+;チャンネル数
+	xor	cx,cx					;
+	mov	ch,MusicMaxPart				;全トラック
+
+_MusicStop_Loop1:			;
+
+;初期化すべき事項
+	mov	dx,offset I_Table_KeyOff
+	call	I_Table_Jump		;キーオフ
+
+	mov	ax,0			;エクスプレッション = 0
+	mov	dx,offset I_Table_Volume
+	call	I_Table_Jump		;(エンベロープ音量。)
+
+	mov	ax,8192			;ベンド = 8192
+	mov	dx,offset I_Table_Frection
+	call	I_Table_Jump		;
+
+	mov	ax,0			;音色 = 0
+	mov	dx,offset I_Table_Voice	;
+	call	I_Table_Jump		;
+
+	mov	ax,64			;パンポット = 64
+	mov	cl,MIDI_Ctrl_Pan	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
+
+	mov	ax,100			;音量 = 100
+	mov	cl,MIDI_Ctrl_Volume	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
+
+	mov	ax,8000h			;
+	mov	ds:[di].WTD_FlagControl,ax	;演奏終了
 ;
 ;	その他
 ;
+	add	di,WTD_WorkChSize	;構造体分、加算
+	add	bx,2			;アドレスインクリメント
+	inc	cl			;
+	dec	ch			;
+	jz	_MusicStop_Step1	;
+	jmp	_MusicStop_Loop1	;
 
+_MusicStop_Step1:			;
 ;---------------------------------------------------------------
 ;共通構造体設定
 
+	mov	ax,ds:[si].WTD_Sys_Flag			;
+	and	ax,WTD_Sys_MusicR			;演奏ディセーブル
+	mov	ds:[si].WTD_Sys_Flag,ax			;終了リセット
 ;
 ;	その他
 ;
@@ -643,9 +667,12 @@ _MusicStop	proc far		;
 ;タイマー（効果音、PCMは必要無し）
 	mov	ax,Timer_Tempo120			;
 	mov	ds:[si].WTD_Sys_Tempo,ax		;
+	xor	ax,ax					;
+	mov	ds:[si].WTD_Sys_TempoCounter,ax		;
 
 ;---------------------------------------------------------------
 
+	popf				;
 	pop	ds			;
 	popa				;
 	retf				;終了
@@ -1574,380 +1601,3 @@ _GetPcmVolume	proc far		;
 	pop	bx			;
 	retf				;終了
 _GetPcmVolume	endp			;
-;****************************************************************
-;*								*
-;*		ＩＬのファンクション				*
-;*			サブルーチンの動作テスト		*
-;*								*
-;****************************************************************
-;===============================================================|
-;	char	(far *_Test_S_Frec)();				|
-;===============================================================|
-;	引き数							|
-;		char	ch					|
-;		int	pitch					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		周波数の設定					|
-;===============================================================|
-_Test_S_Frec	proc far		;
-	push	bp			;
-	mov	bp,sp			;bp←sp
-	push	ax			;
-	push	cx			;
-	
-	mov	ch,byte ptr [bp + 06h]	;channel
-	mov	ax,word ptr [bp + 08h]	;pitch bend
-	call	SP_Set_Frection		;
-	
-	pop	cx			;
-	pop	ax			;
-	pop	bp			;
-	retf				;
-_Test_S_Frec	endp			;
-;===============================================================|
-;	char	(far *_Test_S_Volume)(ch,vol);			|
-;===============================================================|
-;	引き数							|
-;		char	ch					|
-;		char	volume					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		音量の設定					|
-;===============================================================|
-_Test_S_Volume	proc far		;
-	push	bp			;
-	mov	bp,sp			;bp←sp
-	push	ax			;
-	push	cx			;
-	
-	mov	ch,byte ptr [bp + 06h]	;ch
-	mov	al,byte ptr [bp + 08h]	;volume
-	call	SP_Set_Volume		;
-	
-	pop	cx			;
-	pop	ax			;
-	pop	bp			;
-	retf				;
-_Test_S_Volume	endp			;
-;===============================================================|
-;	char	(far *_Test_S_Sweep)(lv,time);			|
-;===============================================================|
-;	引き数							|
-;		char	lv					|
-;		char	time					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		すうぃーぷの設定				|
-;===============================================================|
-_Test_S_Sweep	proc far		;
-	push	bp			;
-	mov	bp,sp			;bp←sp
-	push	ax			;
-
-	mov	al,byte ptr [bp + 06h]	;ch
-	mov	ah,byte ptr [bp + 08h]	;volume
-	call	SP_Set_Sweep		;
-
-	pop	ax			;
-	pop	bp			;
-	retf				;
-_Test_S_Sweep	endp			;
-;===============================================================|
-;	char	(far *_Test_S_Noise)(data,mask);		|
-;===============================================================|
-;	引き数							|
-;		char	noise					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		ノイズの設定					|
-;===============================================================|
-_Test_S_Noise	proc far		;
-	push	bp			;
-	mov	bp,sp			;bp←sp
-	push	ax			;
-
-	mov	al,byte ptr [bp + 06h]	;data
-	mov	ah,byte ptr [bp + 08h]	;mask
-	call	SP_Set_Noise		;
-
-	pop	ax			;
-	pop	bp			;
-	retf				;
-_Test_S_Noise	endp			;
-;===============================================================|
-;	char	(far *_Test_S_Voice)(char ch,char far *add);	|
-;===============================================================|
-;	引き数							|
-;		char	ch					|
-;		char far *add					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		音色						|
-;===============================================================|
-_Test_S_Voice	proc far		;
-	push	bp			;
-	mov	bp,sp			;bp←sp
-	push	ax			;
-	push	cx			;
-	
-	mov	ch,byte ptr [bp + 06h]	;ch
-	lds	si,[bp + 08h]		;volume
-	call	SP_Set_Voice		;
-	
-	pop	cx			;
-	pop	ax			;
-	pop	bp			;
-	retf				;
-_Test_S_Voice	endp			;
-;===============================================================|
-;	char	(far *_Test_M_KeyOff)(ch,key);			|
-;===============================================================|
-;	引き数							|
-;		char	ch					|
-;		char	key					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		keyoff						|
-;===============================================================|
-_Test_M_KeyOff	proc far		;
-	push	bp			;
-	mov	bp,sp			;bp←sp
-	push	ax			;
-	push	cx			;
-	
-	mov	ch,byte ptr [bp + 06h]	;ch
-	mov	al,byte ptr [bp + 08h]	;key
-	call	SM_KeyOff		;
-
-	pop	cx			;
-	pop	ax			;
-	pop	bp			;
-	retf				;
-_Test_M_KeyOff	endp			;
-;===============================================================|
-;	char	(far *_Test_M_KeyOn)(ch,key,press);		|
-;===============================================================|
-;	引き数							|
-;		char	ch					|
-;		char	key					|
-;		char	press					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		keyon						|
-;===============================================================|
-_Test_M_KeyOn	proc far		;
-	push	bp			;
-	mov	bp,sp			;bp←sp
-	push	ax			;
-	push	cx			;
-	
-	mov	ch,byte ptr [bp + 06h]	;ch
-	mov	al,byte ptr [bp + 08h]	;key
-	mov	ah,byte ptr [bp + 0ah]	;velocity
-	call	SM_KeyOn		;
-
-	pop	cx			;
-	pop	ax			;
-	pop	bp			;
-	retf				;
-_Test_M_KeyOn	endp			;
-;===============================================================|
-;	char	(far *_Test_M_KeyPress)(ch,key,press);		|
-;===============================================================|
-;	引き数							|
-;		char	ch					|
-;		char	key					|
-;		char	press					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		After Thuch					|
-;===============================================================|
-_Test_M_KeyPress	proc far	;
-	push	bp			;
-	mov	bp,sp			;bp←sp
-	push	ax			;
-	push	cx			;
-	
-	mov	ch,byte ptr [bp + 06h]	;ch
-	mov	al,byte ptr [bp + 08h]	;key
-	mov	ah,byte ptr [bp + 0ah]	;pressior
-	call	SM_KeyPress		;
-
-	pop	cx			;
-	pop	ax			;
-	pop	bp			;
-	retf				;
-_Test_M_KeyPress	endp		;
-;===============================================================|
-;	char	(far *_Test_M_ControlB)(ch,reg,data);		|
-;===============================================================|
-;	引き数							|
-;		char	ch					|
-;		char	reg					|
-;		char	data					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		Control Change Byte				|
-;===============================================================|
-_Test_M_ControlB	proc far	;
-	push	bp			;
-	mov	bp,sp			;bp←sp
-	push	ax			;
-	push	cx			;
-	
-	mov	ch,byte ptr [bp + 06h]	;ch
-	mov	cl,byte ptr [bp + 08h]	;control reg
-	mov	al,byte ptr [bp + 0ah]	;control data
-	call	SM_ControlByte		;
-
-	pop	cx			;
-	pop	ax			;
-	pop	bp			;
-	retf				;
-_Test_M_ControlB	endp		;
-;===============================================================|
-;	char	(far *_Test_M_ControlW)(ch,reg,data);		|
-;===============================================================|
-;	引き数							|
-;		char	ch					|
-;		char	reg					|
-;		int	data					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		Control Change Word				|
-;===============================================================|
-_Test_M_ControlW	proc far	;
-	push	bp			;
-	mov	bp,sp			;bp←sp
-	push	ax			;
-	push	cx			;
-	
-	mov	ch,byte ptr [bp + 06h]	;ch
-	mov	cl,byte ptr [bp + 08h]	;control reg
-	mov	ax,word ptr [bp + 0ah]	;control data
-	call	SM_ControlWord		;
-
-	pop	cx			;
-	pop	ax			;
-	pop	bp			;
-	retf				;
-_Test_M_ControlW	endp		;
-;===============================================================|
-;	char	(far *_Test_M_Program)(ch,prog);		|
-;===============================================================|
-;	引き数							|
-;		char	ch					|
-;		char	prog					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		Program Change					|
-;===============================================================|
-_Test_M_Program	proc far		;
-	push	bp			;
-	mov	bp,sp			;bp←sp
-	push	ax			;
-	push	cx			;
-	
-	mov	ch,byte ptr [bp + 06h]	;ch
-	mov	al,byte ptr [bp + 08h]	;program
-	call	SM_Program		;
-
-	pop	cx			;
-	pop	ax			;
-	pop	bp			;
-	retf				;
-_Test_M_Program	endp			;
-;===============================================================|
-;	char	(far *_Test_M_BProgram)(ch,prog);		|
-;===============================================================|
-;	引き数							|
-;		char	ch					|
-;		int	bank					|
-;		char	prog					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		Program Change with bank select			|
-;===============================================================|
-_Test_M_BProgram	proc far	;
-	push	bp			;
-	mov	bp,sp			;bp←sp
-	push	ax			;
-	push	bx
-	push	cx			;
-	
-	mov	ch,byte ptr [bp + 06h]	;ch
-	mov	al,byte ptr [bp + 08h]	;program
-	mov	bx,word ptr [bp + 0ah]	;bank
-	call	SM_BankProgram		;
-
-	pop	cx			;
-	pop	bx			;
-	pop	ax			;
-	pop	bp			;
-	retf				;
-_Test_M_BProgram	endp		;
-;===============================================================|
-;	char	(far *_Test_M_ChPress)(ch,press);		|
-;===============================================================|
-;	引き数							|
-;		char	ch					|
-;		char	press					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		Program Change with bank select			|
-;===============================================================|
-_Test_M_ChPress	proc far		;
-	push	bp			;
-	mov	bp,sp			;bp←sp
-	push	ax			;
-	push	cx			;
-	
-	mov	ch,byte ptr [bp + 06h]	;ch
-	mov	al,byte ptr [bp + 08h]	;pressior
-	call	SM_ChPress		;
-
-	pop	cx			;
-	pop	ax			;
-	pop	bp			;
-	retf				;
-_Test_M_ChPress	endp			;
-;===============================================================|
-;	char	(far *_Test_M_Pitch)(ch,pitch);			|
-;===============================================================|
-;	引き数							|
-;		char	ch					|
-;		char	pitch					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		Program Change with bank select			|
-;===============================================================|
-_Test_M_Pitch	proc far		;
-	push	bp			;
-	mov	bp,sp			;bp←sp
-	push	ax			;
-	push	cx			;
-	
-	mov	ch,byte ptr [bp + 06h]	;ch
-	mov	ax,word ptr [bp + 08h]	;pressior
-	call	SM_PitchBend		;
-
-	pop	cx			;
-	pop	ax			;
-	pop	bp			;
-	retf				;
-_Test_M_Pitch	endp			;
