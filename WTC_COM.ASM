@@ -76,30 +76,32 @@ cMCD_26	db	'x',0,		0,5,	'x',0,	11h,0	;x	Volume UpDown
 cMCD_27	db	'y',0,		0,5,	'y',0,	11h,11h,0   ;y	Conroll Change
 cMCD_28	db	'z',0,		0,0,	0,	0	;z
 cMCD_29	db	'A',0,		0,0,	0,	0	;A
-cMCD_30	db	'B',0,		0,0,	0,	0	;B
+cMCD_30	db	'B',0,		0,8,	'B',0,	0f0h	;B	Bend
+	dw		offset cMCD_lb
+	db		0
 cMCD_31	db	'C',0,		0,1,	'C',0,	11h,0	;C	Channel
 cMCD_32	db	'D',0,		0,1,	'D',0,	12h,0	;D	Detune
 cMCD_33	db	'E',0,		0,5,	'E',0,	11h,11h,0   ;E	Emb
-cMCD_34	db	'F',0,		0,0,	0,	0	;F
-cMCD_35	db	'G',0,		0,0,	0,	0	;G
-cMCD_36	db	'H',0,		0,0,	0,	0	;H
+cMCD_34	db	'F',0,		0,8,	'F',0,	11h,0	;F	Volume
+cMCD_35	db	'G',0,		0,8,	'G',0,	11h,0	;G	Plessior
+cMCD_36	db	'H',0,		0,8,	'H',0,	11h,11h,0   ;H	Bank
 cMCD_37	db	'I',0,		0,0,	0,	0	;I
 cMCD_38	db	'J',0,		0,0,	0,	0	;J
-cMCD_39	db	'K',0,		0,1,	'K',0,	12h,0	;K
+cMCD_39	db	'K',0,		0,1,	'K',0,	12h,0	;K	KeyDelay
 cMCD_40	db	'L',0,		0,3,	0,	0f0h	;L	Loop
 	dw		offset cMCD_lL			;
 	db		0				;
-cMCD_41	db	'N',0,		0,0,	0,	0	;N
-cMCD_42	db	'M',0,		0,0,	0,	0	;M
-cMCD_43	db	'O',0,		0,0,	0,	0	;O
-cMCD_44	db	'P',0,		0,3,	'P',0,	11h,0	;P
-cMCD_45	db	'Q',0,		0,1,	'Q',0,	11h,0	;Q
-cMCD_46	db	'R',0,		0,0,	0,	0	;R
-cMCD_47	db	'S',0,		0,0,	0,	0	;S
-cMCD_48	db	'T',0,		0,0,	0,	0	;T
-cMCD_49	db	'U',0,		0,1,	'U',0,	11h,0	;U
-cMCD_50	db	'V',0,		0,0,	'V',0,	12h,0	;V
-cMCD_51	db	'W',0,		0,0,	0,	0	;W
+cMCD_41	db	'N',0,		0,8,	'N',0,	11h,0	;N	NPR
+cMCD_42	db	'M',0,		0,8,	'M',0,	11h,11h,11h,0 ; Mod
+cMCD_43	db	'O',0,		0,8,	'O',0,	11h,0	;O	Son
+cMCD_44	db	'P',0,		0,3,	'P',0,	11h,0	;P	Switch
+cMCD_45	db	'Q',0,		0,1,	'Q',0,	11h,0	;Q	Gate time
+cMCD_46	db	'R',0,		0,8,	'R',0,	11h,0	;R	Bless
+cMCD_47	db	'S',0,		0,8,	'S',0,	11h,0	;S	Soft
+cMCD_48	db	'T',0,		0,8,	'T',0,	11h,0	;T	Foot
+cMCD_49	db	'U',0,		0,1,	'U',0,	11h,0	;U	Gate time
+cMCD_50	db	'V',0,		0,1,	'V',0,	12h,0	;V	V dev
+cMCD_51	db	'W',0,		0,8,	'W',0,	11h,0	;W	Blance
 cMCD_52	db	'X',0,		0,5,	'X',0,	0f0h	;X
 	dw		offset cMCD_lX			;
 	db		0				;
@@ -140,7 +142,9 @@ cMCD_76	db	'<',0,		0,1,	'<',0,	0	;<
 cMCD_77	db	'>',0,		0,1,	'>',0,	0	;>
 cMCD_78	db	'@',0,		0,1,	'@',0,	11h,0	;@
 cMCD_79	db	'_',0,		0,1,	'_',0,	11h,0	;_
-cMCD_80	db	'{',0,		0,0,	0,	0	;{
+cMCD_80	db	'{',0,		0,8,	'{',0,	0f0h	;{
+	dw		offset cMCD_trance		;
+	db		0				;
 ;===============================================================
 ;現在コンパイル中のチャンネル。
 cMCD_ChannelWTD	db	?		;コンパイル中の。
@@ -230,6 +234,22 @@ cMCD_st:
 	popa				;
 	ret				;
 ;---------------------------------------------------------------
+cMCD_lB:				;'B'コマンド
+	push	ax			;
+	
+	call	A2H16R			;
+	call	CSET16			;
+	
+	test	ax,8000h		;
+	jz	cMCD_lB_End		;
+	
+	call	A2H8R			;
+	call	CSET			;
+
+cMCD_lB_End:				;
+	pop	ax			;
+	ret				;
+;---------------------------------------------------------------
 cMCD_lL:				;'L'コマンド
 	push	ax			;
 	
@@ -247,7 +267,7 @@ cMCD_lX:				;'X'コマンド
 
 cMCD_lX_Loop:				;
 	call	A2H8R			;読み込み
-	call	CSET
+	call	CSET			;
 
 	cmp	ah,0f7h			;トラックの複数指定。
 	jz	cMCD_lX_Loop		;
@@ -362,6 +382,57 @@ cMCD_Loop_Jump:				;
 ;---------------------------------------------------------------
 cMCD_Loop_Flag:				;
 	ret				;
+;---------------------------------------------------------------
+cMCD_tranceFlag	db	00h
+cMCD_trance:
+	pusha				;レジスタ保存
+
+	mov	bx,offset cMCD_tranceFlag
+	call	CREAD			;読み込み
+	cmp	ah,'='			;
+	jz	cMCD_tranceNatu		;
+	cmp	ah,'+'			;
+	jz	cMCD_tranceSharp	;
+	cmp	ah,'#'			;
+	jz	cMCD_tranceSharp	;
+	cmp	ah,'-'			;
+	jz	cMCD_tranceFlat		;
+	cmp	ah,'b'			;
+	jz	cMCD_tranceFlat		;
+cMCD_tranceLoop:
+	call	CREAD			;
+	cmp	ah,'}'			;
+	jz	cMCD_tranceEnd		;
+	sub	ah,'c'			;
+	jnc	cMCD_tranceStep0	;
+	add	ah,7			;
+cMCD_tranceStep0:			;
+	mov	cl,ah			;
+	mov	al,01h			;
+	cmp	cl,0			;
+	jz	cMCD_tranceStep1	;
+	shl	al,cl			;
+cMCD_tranceStep1:			;
+	or	cs:[cMCD_tranceFlag],al	;
+	jmp	cMCD_tranceLoop		;
+
+cMCD_tranceSharp:				;
+	mov	cs:[cMCD_tranceFlag],000h	;初期化
+	jmp	cMCD_tranceLoop			;
+
+cMCD_tranceFlat:				;
+	mov	cs:[cMCD_tranceFlag],080h	;初期化
+	jmp	cMCD_tranceLoop			;
+
+cMCD_tranceNatu:				;
+	mov	cs:[cMCD_tranceFlag],000h	;初期化
+
+cMCD_tranceEnd:
+	mov	ah,cs:[cMCD_tranceFlag]	;
+	call	CSET			;
+
+	popa				;レジスタ復帰
+	ret
 ;===============================================================
 c_Command_Adrs:				;コマンド・データのアドレス。
 	dw	81			;数量

@@ -29,19 +29,18 @@ I_PlayKey_Code:
 I_PlayKey_Auto:				;オートの半音処理(未解決)
 	push	cx			;レジスタ保存
 
-	dec	cl			;
 	and	cl,07h			;cl←音程(0～7)
 
 ;＃処理
 	mov	ch,ds:[di].WTD_FlagSharp	;
-	shl	ch,cl				;
+	shr	ch,cl				;
 	jnc	I_PlayKey_Auto_Step1		;チェック
 	inc	al				;KeyCode ++
 I_PlayKey_Auto_Step1:				;
 
 ;ｂ処理
 	mov	ch,ds:[di].WTD_FlagFlat		;
-	shl	ch,cl				;
+	shr	ch,cl				;
 	jnc	I_PlayKey_Auto_Step2		;チェック
 	dec	al				;KeyCode --
 I_PlayKey_Auto_Step2:				;
@@ -651,9 +650,31 @@ I_Com41:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com42:				;
-	
-	
-	
+	mov	ax,es:[si]		;
+	inc	si			;
+	inc	si			;
+	rol	ax,1			;
+	shr	ax,1			;Bit 7 Reset & Bit 7 -> Cy Flag
+	mov	ds:[di].WTD_Bend,ax	;
+	jnc	I_Com42_End		;
+
+	mov	al,00h			;
+	mov	cl,MIDI_Ctrl_RegLSB	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
+
+	mov	al,00h			;
+	mov	cl,MIDI_Ctrl_RegMSB	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
+
+	mov	al,es:[si]		;
+	inc	si			;
+	mov	cl,MIDI_Ctrl_DataEntly	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
+
+I_Com42_End:				;
 	ret				;
 ;===============================================================|
 ;		Track / Sound Type				|
@@ -733,19 +754,33 @@ I_Com45_End:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com46:				;
+	mov	al,es:[si]		;
+	inc	si			;
+	mov	cl,MIDI_Ctrl_Volume	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
 	ret				;
 ;===============================================================|
 ;		Channel Pressior(MIDI)				|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com47:				;
+	mov	al,es:[si]		;
+	inc	si			;
+	mov	dx,offset I_Table_PolyChPress
+	call	I_Table_Jump		;
 	ret				;
 ;===============================================================|
 ;		Program Bank Select(MIDI)			|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com48:				;
-	
+	mov	ax,es:[si]		;
+	inc	si			;
+	inc	si			;
+	mov	cl,MIDI_Ctrl_Bank	;
+	mov	dx,offset I_Table_CtrlChgW
+	call	I_Table_Jump		;
 	ret				;
 ;===============================================================|
 ;		NULL 'I'					|
@@ -798,18 +833,47 @@ I_Com4c_Step2:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com4d:				;
+	mov	al,es:[si]		;
+	inc	si			;
+	mov	cl,MIDI_Ctrl_Mod	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
 	ret				;
 ;===============================================================|
 ;		NPRN(MIDI)					|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com4e:				;
+	mov	al,es:[si]		;
+	inc	si			;
+	mov	cl,MIDI_Ctrl_NonRegLSB	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
+
+	mov	al,es:[si]		;
+	inc	si			;
+	mov	cl,MIDI_Ctrl_NonRegMSB	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
+
+	mov	al,es:[si]		;
+	inc	si			;
+	mov	cl,MIDI_Ctrl_DataEntly	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
+
 	ret				;
 ;===============================================================|
-;		NULL 'O'					|
+;		ソヌーテート					|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com4f:				;
+	mov	al,es:[si]		;
+	shl	al,6			;
+	inc	si			;読み込み
+	mov	cl,MIDI_Ctrl_S		;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
 	ret				;
 ;===============================================================|
 ;		PCM Mode / MIDI Damper				|
@@ -831,22 +895,38 @@ I_Com51:				;
 	mov	ds:[di].WTD_GateTime8,al
 	ret				;
 ;===============================================================|
-;		NULL 'R'					|
+;		Bress						|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com52:				;
+	mov	al,es:[si]		;
+	inc	si			;読み込み
+	mov	cl,MIDI_Ctrl_Bress	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
 	ret				;
 ;===============================================================|
-;		NULL 'S'					|
+;		Soft						|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com53:				;
+	mov	al,es:[si]		;
+	shl	al,6			;
+	inc	si			;読み込み
+	mov	cl,MIDI_Ctrl_Soft	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
 	ret				;
 ;===============================================================|
-;		Cut off fillter(MIDI)				|
+;		Foot						|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com54:				;
+	mov	al,es:[si]		;
+	inc	si			;読み込み
+	mov	cl,MIDI_Ctrl_Foot	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
 	ret				;
 ;===============================================================|
 ;		Gate Time(U)					|
@@ -869,10 +949,15 @@ I_Com56:				;
 	mov	ds:[di].WTD_ExprDetune,ax
 	ret				;
 ;===============================================================|
-;		NULL 'W'					|
+;		Balance						|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com57:				;
+	mov	al,es:[si]		;
+	inc	si			;読み込み
+	mov	cl,MIDI_Ctrl_Blance	;
+	mov	dx,offset I_Table_CtrlChgB
+	call	I_Table_Jump		;
 	ret				;
 ;===============================================================|
 ;		Excluesiv Send(MIDI)				|
@@ -1274,6 +1359,25 @@ I_Com7a:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com7b:				;
+	mov	al,es:[si]		;
+	inc	si			;
+	cmp	al,0			;
+	jz	I_Com7b_Step0		;
+	rol	al,1			;
+	shr	al,1			;Bit 7 Reset & Bit 7 -> Cy Flag
+	jc	I_Com7b_Step2		;
+	jmp	I_Com7b_Step1		;
+I_Com7b_Step0:				;
+	mov	ds:[di].WTD_FlagSharp,al
+	mov	ds:[di].WTD_FlagFlat,al	;
+	jmp	I_Com7b_End		;
+I_Com7b_Step1:				;
+	mov	ds:[di].WTD_FlagSharp,al
+	jmp	I_Com7b_End		;
+I_Com7b_Step2:				;
+	mov	ds:[di].WTD_FlagFlat,al	;
+;	jmp	I_Com7b_End		;
+I_Com7b_End:				;
 	ret				;
 ;===============================================================|
 ;		NULL '|'					|
