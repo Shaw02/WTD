@@ -2,10 +2,8 @@ del WTDMAKE.wup
 del readme.wup
 del 取説.wup
 del devloper.wup
-del WTDMAKE.com
-del readme.COM
-del 取説.COM
-del devloper.COM
+del 取説doc.wup
+del dev_doc.wup
 DEL wtdil.lzh
 
 
@@ -31,6 +29,8 @@ c:\lsic86\WSP -W -A .\OLD_WTD\wtd.asm wtd.asm WTDMAKE.WUP
 c:\lsic86\WSP -W -A .\OLD_WTD\wtd_h.asm wtd_h.asm WTDMAKE.WUP
 c:\lsic86\WSP -W -A .\OLD_WTD\wtd_ilf.asm wtd_ilf.asm WTDMAKE.WUP
 c:\lsic86\WSP -W -A .\OLD_WTD\wtd_int.asm wtd_int.asm WTDMAKE.WUP
+c:\lsic86\WSP -W -A .\OLD_WTD\wtd_icom.asm wtd_icom.asm WTDMAKE.WUP
+c:\lsic86\WSP -W -A .\OLD_WTD\wtd_idev.asm wtd_idev.asm WTDMAKE.WUP
 c:\lsic86\WSP -W -A .\OLD_WTD\wtd_tim.asm wtd_tim.asm WTDMAKE.WUP
 c:\lsic86\WSP -W -A .\OLD_WTD\wtd_com.asm wtd_com.asm WTDMAKE.WUP
 c:\lsic86\WSP -W -A .\OLD_WTD\wtd_snd.asm wtd_snd.asm WTDMAKE.WUP
@@ -60,23 +60,19 @@ c:\lsic86\WSP -W -A .\OLD_WTD\wmsv_his.txt wmsv_his.txt WTDMAKE.WUP
 c:\lsic86\WSP -W -A .\OLD_WTD\fspnet.txt fspnet.txt WTDMAKE.WUP
 
 c:\lsic86\WSP -W -A .\OLD_WTD\readme.doc readme.doc WTDMAKE.WUP
-c:\lsic86\WSP -W -A .\OLD_WTD\取説.doc 取説.doc WTDMAKE.WUP
-c:\lsic86\WSP -W -A .\OLD_WTD\devloper.doc devloper.doc WTDMAKE.WUP
 
-c:\lsic86\WSP -W -A .\OLD_WTD\取説_表.xls 取説_表.xls WTDMAKE.WUP
-c:\lsic86\WSP -W -A .\OLD_WTD\dev_表.xls dev_表.xls WTDMAKE.WUP
+c:\lsic86\WSP -W -A .\OLD_WTD\取説.doc 取説.doc 取説doc.WUP
+c:\lsic86\WSP -W -A .\OLD_WTD\devloper.doc devloper.doc dev_doc.WUP
+
 c:\lsic86\WSP -W -A .\OLD_WTD\buy.xls buy.xls WTDMAKE.WUP
 
-c:\lsic86\WSP -S WTDMAKE.WUP WTDMAKE.COM
 
 c:\lsic86\WSP -W -A .\OLD_WTD\readme.pdf readme.pdf readme.WUP
-c:\lsic86\WSP -S readme.WUP readme.COM
 c:\lsic86\WSP -W -A .\OLD_WTD\取説.pdf 取説.pdf 取説.WUP
-c:\lsic86\WSP -S 取説.WUP 取説.COM
 c:\lsic86\WSP -W -A .\OLD_WTD\devloper.PDF devloper.PDF devloper.WUP
-c:\lsic86\WSP -S devloper.WUP devloper.COM
 
 
 c:\lsic86\lha a wtdil.lzh  wtdil.hed
-c:\lsic86\lha a wtdil.lzh  WTDMAKE.com readme.COM 取説.COM devloper.COM
+c:\lsic86\lha a wtdil.lzh  WTDMAKE.wup readme.wup
+c:\lsic86\lha a wtdil.lzh  取説.wup devloper.wup 取説doc.wup dev_doc.wup
 

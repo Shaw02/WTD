@@ -244,7 +244,7 @@ WTD_Ctrl_Acsent		equ	00040h		;次の音階はアクセント
 WTD_Ctrl_EmbFreq	equ	00080h		;音程エンベロープ 上位bit
 WTD_Ctrl_EmbVol		equ	00100h		;音量エンベロープ 上位bit
 WTD_Ctrl_EmbPan		equ	00200h		;パンエンベロープ 上位bit
-WTD_Ctrl_Vol0		equ	00400h		;音量＝０
+WTD_Ctrl_Vol0		equ	00400h		;音量＝０ & Relase
 WTD_Ctrl_WorkSw		equ	00800h		;次のコマンドは、ワーク参照
 WTD_Ctrl_WorkCy		equ	01000h		;ワーク演算結果、オーバーフロー
 WTD_Ctrl_WorkZe		equ	02000h		;ワーク演算結果、０になった。
@@ -262,7 +262,7 @@ WTD_Ctrl_AcsentR	equ	0ffbfh		;次の音階はアクセント
 WTD_Ctrl_EmbFreqR	equ	0ff7fh		;音程エンベロープ 上位bit
 WTD_Ctrl_EmbVolR	equ	0feffh		;音量エンベロープ 上位bit
 WTD_Ctrl_EmbPanR	equ	0fdffh		;パンエンベロープ 上位bit
-WTD_Ctrl_Vol0R		equ	0fbffh		;音量＝０
+WTD_Ctrl_Vol0R		equ	0fbffh		;音量＝０ & Relase
 WTD_Ctrl_WorkSwR	equ	0f7ffh		;次のコマンドは、ワーク参照
 WTD_Ctrl_WorkCyR	equ	0efffh		;ワーク演算結果、オーバーフロー
 WTD_Ctrl_WorkZeR	equ	0dfffh		;ワーク演算結果、０になった。

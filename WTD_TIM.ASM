@@ -53,6 +53,7 @@ Timer_Tempo120		equ	125	;timebase 48 / Tempo 120
 ;	処理							|
 ;		deviceの初期設定				|
 ;===============================================================|
+	even				;偶数アドレス配置
 T_open	proc near			;
 	push	ax			;レジスタ保存
 
@@ -78,6 +79,7 @@ T_open	endp				;
 ;	処理							|
 ;		deviceの初期化					|
 ;===============================================================|
+	even				;偶数アドレス配置
 T_close	proc near			;
 	push	ax			;レジスタ保存
 
@@ -101,6 +103,7 @@ T_close	endp				;
 ;	処理							|
 ;		タイマー周期をTempo120にする。			|
 ;===============================================================|
+	even				;偶数アドレス配置
 T_init	proc near			;
 	push	ax			;レジスタ保存
 
@@ -121,6 +124,7 @@ T_init	endp				;
 ;	処理							|
 ;		モードの設定					|
 ;===============================================================|
+	even				;偶数アドレス配置
 T_Set_Status	proc near		;
 	push	dx			;レジスタ保存
 	mov	dx,TIMER_Status		;dx←I/O Address
@@ -138,9 +142,8 @@ T_Set_Status	endp			;
 ;	処理							|
 ;		モードの設定					|
 ;===============================================================|
-T_Set_Frection	proc near
-
+	even				;偶数アドレス配置
+T_Set_Frection	proc near		;
 	out	Timer_MaxCountH,ax	;出力
-
 	ret				;
-T_Set_Frection	endp
+T_Set_Frection	endp			;

@@ -56,6 +56,7 @@ PcmVoiceMode_Reset	equ	2000h	;Channel Mode  PCM Voice Mode Reset
 ;	処理							|
 ;		deviceの初期化					|
 ;===============================================================|
+	even				;偶数アドレス配置
 SP_init	proc near			;
 	push	ax			;
 	push	cx			;
@@ -107,6 +108,7 @@ SP_init	endp				;
 ;	処理							|
 ;		周波数のセット					|
 ;===============================================================|
+	even				;偶数アドレス配置
 SP_Set_Frection	proc near		;
 	push	cx			;
 	push	dx			;レジスタ保存
@@ -143,6 +145,7 @@ SP_Set_Frection	endp			;
 ;	処理							|
 ;		音量のセット					|
 ;===============================================================|
+	even				;偶数アドレス配置
 SP_Set_Volume	proc near		;
 	push	cx			;
 	push	dx			;レジスタ保存
@@ -179,6 +182,7 @@ SP_Set_Volume	endp			;
 ;	処理							|
 ;		スウィープの設定				|
 ;===============================================================|
+	even				;偶数アドレス配置
 SP_Set_Sweep	proc near		;
 	push	dx
 
@@ -212,6 +216,7 @@ SP_Set_Sweep	endp			;
 ;	処理							|
 ;		ノイズモードの設定				|
 ;===============================================================|
+	even				;偶数アドレス配置
 SP_Set_Noise	proc near		;
 	push	dx			;レジスタの保存
 
@@ -242,6 +247,7 @@ SP_Set_Noise	endp			;
 ;	処理							|
 ;		音色テーブルのアドレス設定			|
 ;===============================================================|
+	even				;偶数アドレス配置
 SP_Set_VoiceAdd	proc near		;
 	push	ax			;レジスタの保存
 	push	dx			;
@@ -275,6 +281,7 @@ SP_Set_VoiceAdd	endp			;
 ;	処理							|
 ;		チャンネルモードの設定				|
 ;===============================================================|
+	even				;偶数アドレス配置
 SP_Set_Channel	proc near		;
 	push	dx			;レジスタの保存
 
@@ -305,6 +312,7 @@ SP_Set_Channel	endp			;
 ;	処理							|
 ;		チャンネルモードの取得				|
 ;===============================================================|
+	even				;偶数アドレス配置
 SP_Get_Channel	proc near		;
 	xor	ax,ax			;
 	in	al,PCM_Com_Channel	;入力
@@ -321,6 +329,7 @@ SP_Get_Channel	endp			;
 ;	処理							|
 ;		出力モードの設定				|
 ;===============================================================|
+	even				;偶数アドレス配置
 SP_Set_Output	proc near		;
 	push	dx			;レジスタの保存
 
@@ -351,6 +360,7 @@ SP_Set_Output	endp			;
 ;	処理							|
 ;		出力モードの取得				|
 ;===============================================================|
+	even				;偶数アドレス配置
 SP_Get_Output	proc near		;
 	xor	ax,ax			;
 	in	al,PCM_Com_Output	;入力
@@ -366,6 +376,7 @@ SP_Get_Output	endp			;
 ;	処理							|
 ;		疑似乱数の取得					|
 ;===============================================================|
+	even				;偶数アドレス配置
 SP_Get_Random	proc near		;
 	in	ax,PCM_Com_Random	;入力
 	ret				;
@@ -381,6 +392,7 @@ SP_Get_Random	endp			;
 ;	処理							|
 ;		出力モードの設定				|
 ;===============================================================|
+	even				;偶数アドレス配置
 SP_Set_VolumePCM	proc near	;
 	push	dx			;レジスタの保存
 
@@ -412,6 +424,7 @@ SP_Set_VolumePCM	endp		;
 ;	処理							|
 ;		出力モードの設定				|
 ;===============================================================|
+	even				;偶数アドレス配置
 SP_Get_VolumePCM	proc near	;
 	in	al,PCM_Com_VolumePCM	;入力
 	ret				;
@@ -427,6 +440,7 @@ SP_Get_VolumePCM	endp		;
 ;	処理							|
 ;		音色を設定する					|
 ;===============================================================|
+	even				;偶数アドレス配置
 SP_Set_Voice	proc	near		;
 	push	cx			;
 	push	dx			;
@@ -471,6 +485,7 @@ SP_Set_Voice	endp			;
 ;	al		set data				|
 ;	ah		set bit					|
 ;---------------------------------------------------------------|
+	even				;偶数アドレス配置
 SP_Set_with_mask:			;
 	push	ax			;
 	push	cx			;レジスタ保存
@@ -555,6 +570,7 @@ MIDI_Channel_mask	equ	0Fh	;マスク
 ;===============================================================|
 ;			エクスクルーシブ			|
 ;===============================================================|
+	even				;偶数アドレス配置
 MIDI_Ex_GmReset		db	6,0f0h,7eh,7fh,09h,01h,0f7h
 MIDI_Ex_GsReset		db	0
 MIDI_Ex_XgReset		db	0
@@ -568,6 +584,7 @@ MIDI_Ex_XgReset		db	0
 ;	処理							|
 ;			GM Resetの送信				|
 ;===============================================================|
+	even				;偶数アドレス配置
 SM_init	proc near			;
 	push	cx			;
 	push	si			;
@@ -596,6 +613,7 @@ SM_init	endp				;
 ;	処理							|
 ;		KeyOff						|
 ;===============================================================|
+	even				;偶数アドレス配置
 SM_KeyOff:				;
 	xor	ah,ah			;発音停止(KeyOff)
 ;===============================================================|
@@ -610,6 +628,7 @@ SM_KeyOff:				;
 ;	処理							|
 ;		KeyOn						|
 ;===============================================================|
+	even				;偶数アドレス配置
 SM_KeyOn	proc near		;
 	push	cx			;レジスタ保存
 
@@ -636,6 +655,7 @@ SM_KeyOn	endp			;
 ;	処理							|
 ;		キープレッシャー（アフタータッチ）の送信	|
 ;===============================================================|
+	even				;偶数アドレス配置
 SM_KeyPress	proc near		;
 	push	cx			;レジスタ保存
 
@@ -662,6 +682,7 @@ SM_KeyPress	endp			;
 ;	処理							|
 ;		Control Change					|
 ;===============================================================|
+	even				;偶数アドレス配置
 SM_ControlByte	proc near		;
 	push	cx			;レジスタ保存
 
@@ -689,6 +710,7 @@ SM_ControlByte	endp			;
 ;	処理							|
 ;		Control Change					|
 ;===============================================================|
+	even				;偶数アドレス配置
 SM_ControlWord	proc near		;
 	push	ax			;
 	push	cx			;レジスタ保存
@@ -726,6 +748,7 @@ SM_ControlWord	endp			;
 ;	処理							|
 ;		Program Change					|
 ;===============================================================|
+	even				;偶数アドレス配置
 SM_Program	proc near		;
 	push	cx			;
 	push	ax			;レジスタ保存
@@ -752,6 +775,7 @@ SM_Program	endp			;
 ;	処理							|
 ;		Program ChangeとBank Selectの送信		|
 ;===============================================================|
+	even				;偶数アドレス配置
 SM_BankProgram	proc near		;
 	push	cx			;レジスタの保存
 
@@ -779,6 +803,7 @@ SM_BankProgram	endp			;
 ;	処理							|
 ;		キープレッシャー（アフタータッチ）の送信	|
 ;===============================================================|
+	even				;偶数アドレス配置
 SM_ChPress	proc near		;
 	push	cx			;
 	push	ax			;レジスタ保存
@@ -804,6 +829,7 @@ SM_ChPress	endp			;
 ;	処理							|
 ;		Pitch Bendの送信				|
 ;===============================================================|
+	even				;偶数アドレス配置
 SM_PitchBend	proc near		;
 	push	cx			;レジスタ保存
 

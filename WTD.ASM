@@ -42,7 +42,9 @@ include	sound.inc	;定義ファイル　サウンド
 include	wtd_def.inc	;定義ファイル　ドライバー
 include wtd_ver.inc	;バージョン情報
 include	wtd_ilf.asm	;IL構造体,ILinfo構造体,ILファンクション
-include	wtd_int.asm	;割り込みメインルーチン
+include	wtd_int.asm	;割り込み　メインルーチン
+include	wtd_icom.asm	;割り込み　コマンド解釈部
+include	wtd_idev.asm	;割り込み　デバイス制御部
 include	wtd_tim.asm	;タイマー制御用サブルーチン
 include	wtd_snd.asm	;サウンド制御用サブルーチン
 include	wtd_com.asm	;シリアル制御用サブルーチン
