@@ -1,0 +1,5 @@
+name: wtdsv
+info: WMSV for WTD
+mode: rx
+output: wtdsv.fx
+source: wtdsv.bin

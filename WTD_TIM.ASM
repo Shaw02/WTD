@@ -12,6 +12,7 @@
 ;===============================================================|
 Int_Enable		equ	0b2h	;
 Int_Eoi			equ	0b6h	;
+BankSram		equ	0c1h	;
 TIMER_Status		equ	0a2h	;Timer Status
 TIMER_MaxCountH		equ	0a4h	;Hblank Load Count
 TIMER_MaxCountV		equ	0a6h	;Vblank Load Count

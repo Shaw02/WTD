@@ -12,7 +12,12 @@
  *	IL構造体の定義以外は、'wtd_def.asm'と同等の定義となっています。
  */
 
+#ifndef _IL_WTD_H_
+#define _IL_WTD_H_
+
+#include	<sys/types.h>
 #include	<sys/indirect.h>
+#include	<sys/process.h>
 
 /********************************************/
 /*											*/
@@ -182,7 +187,7 @@ typedef struct {
 	char	BendEmbCounter;			/* 3B		EMBカウンター */
 	char	BendEmbMaxMin;			/* 3C		EMB最大／最小値 */
 	char	BendEmbLevelSet;		/* 3D		EMB変位ﾚﾍﾞﾙ */
-	char	Pan;					/* 3E		パンポット */
+	char	Null_3E;				/* 3E		未使用 */
 	char	ExprPanSet;				/* 3F		出力/ｳﾞｪﾛｼﾃｨｰ */
 	char	ExprSet;				/* 40		出力音量/ｴｸｽﾌﾟﾚｯｼｮﾝ */
 	char	Expr;					/* 41		音量/ｴｸｽﾌﾟﾚｯｼｮﾝ */
@@ -206,13 +211,34 @@ typedef struct {
 	int		GateTimeStepLast;		/* 56-57	ｹﾞｰﾄﾀｲﾑ(q) */
 	int		GateTimeStepFirst;		/* 58-59	ｹﾞｰﾄﾀｲﾑ(u) */
 	char	VolumeUpDown;			/* 5A		相対ボリュームの増減値 */
+	int		ModDecay;				/* 5B-5C	ﾓｼﾞｭﾚｰｼｮﾝ ﾃﾞｨｹｲﾚｲﾄ */
+	char	ModLevel;				/* 5D		ﾓｼﾞｭﾚｰｼｮﾝ ﾚﾍﾞﾙ */
+	char	Null_5E;				/* 5E		未使用 */
+	char	Null_5F;				/* 5F		未使用 */
+	char	PanSet;					/* 60		出力パンポット */
+	char	Pan;					/* 61		パンポット */
+	int		PanDetune;				/* 62-63	音量増減値 */
+	char	PanLfoDecayRate;		/* 64		LFOディケイレイト */
+	char	PanLfoSpeedRate;		/* 65		LFOスピード */
+	int		PanLfoLevel;			/* 66-67	LFO変位ﾚﾍﾞﾙ */
+	char	PanLfoCount;			/* 68		LFO変化回数 */
+	char	PanLfoRateCounter;		/* 69		LFOレイト用カウンタ */
+	int		PanLfoLevelSet;			/* 6A-6B	LFO現在の変位ﾚﾍﾞﾙ */
+	char	PanLfoCountCounter;		/* 6C		LFO回数用カウンタ */
+	char	PanEmbAddress;			/* 6D		EMB番号（ｱﾄﾞﾚｽ） */
+	char	PanEmbRate;				/* 6E		EMBレイト */
+	char	PanEmbCounter;			/* 6F		EMBカウンター */
+	char	PanEmbMaxMin;			/* 60		EMB最大／最小値 */
+	char	PanEmbLevelSet;			/* 61		EMB変位ﾚﾍﾞﾙ */
 } Wtd;
 
 /* 構造体位置 */
-#define	WTD_BendLFO		Wtd 0.BendLFO
-#define	WTD_ExprLFO		Wtd 0.ExprLFO
-#define	WTD_BendEmb		Wtd 0.BendEmb
-#define	WTD_ExprEmb		Wtd 0.ExprEmb
+#define	WTD_BendLFO		Wtd.BendLfoDecayRate
+#define	WTD_ExprLFO		Wtd.ExprLfoDecayRate
+#define	WTD_PanLFO		Wtd.PanLfoDecayRate
+#define	WTD_BendEmb		Wtd.BendEmbAddress
+#define	WTD_ExprEmb		Wtd.ExprEmbAddress
+#define	WTD_PanEmb		Wtd.PanEmbAddress
 
 /* ChLFO構造体 */
 typedef struct{
@@ -388,3 +414,6 @@ typedef struct{
 typedef struct{
 	char	Null;			/* この構造体は、未使用 */
 } WTD_MusEx;
+
+
+#endif _IL_WTD_H_

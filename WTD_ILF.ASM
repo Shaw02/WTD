@@ -203,7 +203,10 @@ _Stay_00:
 ;---------------------------------------------------------------
 ;デバイスの初期化
 
+ifndef	hyoka	;------------------------廉価版は無し
 	call	C_open			;通信回線の初期化
+endif	;--------------------------------
+
 	push	cs			;
 	call	near ptr _Init		;ドライバーの初期化
 	call	T_open			;タイマーの初期化
@@ -250,7 +253,10 @@ _StayOut	proc far		;
 	call	T_close			;タイマー割り込みの停止、復帰
 	push	cs			;
 	call	near ptr _Init		;ドライバーの初期化
+
+ifndef	hyoka	;------------------------廉価版は無し
 	call	C_close			;通信回線の遮断
+endif	;--------------------------------
 
 ;---------------------------------------------------------------
 ;ワークエリアの取得
@@ -325,8 +331,10 @@ _Init	proc far			;
 ;デバイスの初期化
 
 	call	SP_init			;デバイスの初期化
+
+ifndef	hyoka	;------------------------廉価版は無し
 	call	SM_init			;GM Resetの送信
-;	割り込み周期のリセット		;タイマー割り込み周期の初期設定
+endif	;--------------------------------
 
 ;---------------------------------------------------------------
 
@@ -488,6 +496,8 @@ _MusicPlay_Loop1:				;
 	mov	ds:[di].WTD_KeyOnDelay,ax	;
 	mov	ds:[di].WTD_KeyShift,al		;
 	mov	ds:[di].WTD_KeySetPointer,al	;
+	mov	ds:[di].WTD_ModDecay,ax		;
+	mov	ds:[di].WTD_ModLevel,al		;
 	mov	ds:[di].WTD_BendDetune,ax	;
 	mov	ds:[di].WTD_BendEmbAddress,al	;
 	mov	ds:[di].WTD_BendEmbRate,al	;
@@ -500,10 +510,16 @@ _MusicPlay_Loop1:				;
 	mov	ds:[di].WTD_ExprEmbCounter,al	;
 	mov	ds:[di].WTD_ExprEmbMaxMin,al	;
 	mov	ds:[di].WTD_ExprEmbLevelSet,al	;
+	mov	ds:[di].WTD_PanDetune,ax	;
+	mov	ds:[di].WTD_PanEmbAddress,al	;
+	mov	ds:[di].WTD_PanEmbRate,al	;
+	mov	ds:[di].WTD_PanEmbCounter,al	;
+	mov	ds:[di].WTD_PanEmbMaxMin,al	;
+	mov	ds:[di].WTD_PanEmbLevelSet,al	;
 	mov	ds:[di].WTD_GateTimeStepLast,ax	;
 	mov	ds:[di].WTD_GateTimeStepFirst,ax
 	mov	ds:[di].WTD_Expr,al		;
-	mov	ds:[di].WTD_ExprSet,al		;
+	mov	ds:[di].WTD_ExprSet,al		;初期値0にしておくこと。
 	mov	ax,1				;
 	mov	ds:[di].WTD_Leng,ax		;
 	mov	ds:[di].WTD_LengCounter,ax	;
@@ -622,15 +638,16 @@ _MusicStop	proc far		;
 
 ;チャンネル数
 	xor	cx,cx					;
-	mov	ch,MusicMaxPart				;全トラック
+	mov	ch,ds:[si].WTD_Sys_MusicPart		;使用トラック数
+	or	ch,ch					;
+	jz	_MusicStop_Step1			;
 
-_MusicStop_Loop1:			;
+_MusicStop_Loop1:					;
+	mov	cl,ds:[di].WTD_Channel			;
 
 ;初期化すべき事項
 	mov	ax,003Fh			;
-	mov	ds:[di].WTD_FlagControl,ax	;演奏終了
-
-	call	I_Play_KeyOff		;キーオフ
+	or	ds:[di].WTD_FlagControl,ax	;演奏終了
 
 	mov	dx,offset I_Table_KeyOff
 	call	I_Table_Jump		;キーオフ
@@ -648,14 +665,18 @@ _MusicStop_Loop1:			;
 	call	I_Table_Jump		;
 
 	mov	ax,64			;パンポット = 64
+ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Pan	;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
+endif	;--------------------------------
 
 	mov	ax,100			;音量 = 100
+ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Volume	;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
+endif	;--------------------------------
 
 	mov	ax,0			;モード　初期化
 	mov	dx,offset I_Table_Mode	;
@@ -663,15 +684,14 @@ _MusicStop_Loop1:			;
 
 
 	mov	ax,8000h			;
-	mov	ds:[di].WTD_FlagControl,ax	;演奏終了
+	or	ds:[di].WTD_FlagControl,ax	;演奏終了
 ;
 ;	その他
 ;
 	add	di,WTD_WorkChSize	;構造体分、加算
-	add	bx,2			;アドレスインクリメント
-	inc	cl			;
 	dec	ch			;
 	jz	_MusicStop_Step1	;
+	jc	_MusicStop_Step1	;
 	jmp	_MusicStop_Loop1	;
 
 _MusicStop_Step1:			;
@@ -745,8 +765,8 @@ _EffectPlay	proc far		;
 
 ;---------------------------------------------------------------
 ;演奏アドレスの設定
-	push	word ptr [bp + 08h]	;
-	push	word ptr [bp + 06h]	;引数の取得
+	push	word ptr [bp + 08h]	;引数の取得	Segment
+	push	word ptr [bp + 06h]	;		Offset
 	push	cs			;データ変換
 	call	near ptr _ChangeFar	;dxax = wtdIL.ChangeFar(*Effect);
 	add	sp,+4			;
@@ -760,17 +780,167 @@ _EffectPlay	proc far		;
 ;---------------------------------------------------------------
 ;データ形式チェック
 
-;
-;	ＷＴＤの曲・効果音形式データであるかチェックする。
-;
+;ヘッダー文字列チェック
+	cmp	word ptr es:[bx].WTD_Mus_Name,'TW'	;'WTD',0
+	jz	_EffectPlay_Chk1			;
+	mov	ax,1					;
+	jmp	_EffectPlay_End				;
+_EffectPlay_Chk1:
+
+;バージョンチェック
+	mov	ax,es:[bx].WTD_Mus_Version	;
+	xchg	ah,al				;ax←Effect Data Version
+	push	bx				;
+	mov	bx,WTdIL_Version_N		;
+	cmp	bx,ax				;if (Ver - ax >= 0) then NG
+	pop	bx				;
+	jnc	_EffectPlay_Chk2		;
+	mov	ax,2				;
+	jmp	_EffectPlay_End			;
+_EffectPlay_Chk2:				;
+
+
+;---------------------------------------------------------------
+;データ登録
+
+;初期設定
+	mov	ch,es:[bx].WTD_Mus_Voice	;数の取得 Voice
+	mov	cl,es:[bx].WTD_Mus_Emb		;数の取得 Emb
+	push	bx				;
+	mov	bx,es:[bx].WTD_Mus_DataAdr	;
+
+;WS内蔵PCM波形データの登録
+_EffectPlay_Loop2:				;
+	cmp	ch,0				;
+	jz	_EffectPlay_Loop2_End		;
+	xor	ax,ax				;
+	mov	al,es:[bx]			;音色番号
+	inc	bx				;
+	push	es				;
+	push	bx				;波形データ
+	push	ax				;
+	push	cs				;
+	call	near ptr _PcmVoiceSet		;登録
+	add	sp,+6				;
+	add	bx,16				;
+	dec	ch				;
+	jnz	_EffectPlay_Loop2		;
+_EffectPlay_Loop2_End:				;
+
+;エンベロープデータの登録
+_EffectPlay_Loop3:				;
+	cmp	cl,0				;
+	jz	_EffectPlay_Loop3_End		;
+	xor	ax,ax				;
+	mov	al,es:[bx]			;音色番号
+	inc	bx				;
+	push	es				;
+	push	bx				;エンベロープデータ
+	push	ax				;
+	push	cs				;
+	call	near ptr _SoftEmbSet		;登録
+	add	sp,+6				;
+	add	bx,16				;
+	dec	cl				;
+	jnz	_EffectPlay_Loop3		;
+_EffectPlay_Loop3_End:				;
+
+;レジスタ復帰
+	pop	bx				;
 
 ;---------------------------------------------------------------
 ;個別ワークの設定
 
+;チャンネル数の取得
+	mov	ch,es:[bx].WTD_Mus_Part	;チャンネル数の取得
+	cmp	ch,EffectMaxPart	;パート数チェック
+	jc	_EffectPlay_Step2	;
+	mov	ch,EffectMaxPart	;最大値を越えてたら最大値に。
+_EffectPlay_Step2:			;
+
+;演奏パート数保存
+	push	cx			;レジスタ保存
+	mov	cl,0			;トラック番号用カウンタ
+	add	bx,WTD_Mus_PartAdr	;演奏アドレス
+
+_EffectPlay_Loop1:				;
+	mov	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
+	xor	ax,ax				;
+	mov	ds:[di].WTD_FlagTai,al		;
+	mov	ds:[di].WTD_FlagSharp,al	;
+	mov	ds:[di].WTD_FlagFlat,al		;
+	mov	ds:[di].WTD_Channel,cl		;
+	mov	ds:[di].WTD_KeyOffTime,ax	;
+	mov	ds:[di].WTD_KeyOnDelay,ax	;
+	mov	ds:[di].WTD_KeyShift,al		;
+	mov	ds:[di].WTD_KeySetPointer,al	;
+	mov	ds:[di].WTD_ModDecay,ax		;
+	mov	ds:[di].WTD_ModLevel,al		;
+	mov	ds:[di].WTD_BendDetune,ax	;
+	mov	ds:[di].WTD_BendEmbAddress,al	;
+	mov	ds:[di].WTD_BendEmbRate,al	;
+	mov	ds:[di].WTD_BendEmbCounter,al	;
+	mov	ds:[di].WTD_BendEmbMaxMin,al	;
+	mov	ds:[di].WTD_BendEmbLevelSet,al	;
+	mov	ds:[di].WTD_ExprDetune,ax	;
+	mov	ds:[di].WTD_ExprEmbAddress,al	;
+	mov	ds:[di].WTD_ExprEmbRate,al	;
+	mov	ds:[di].WTD_ExprEmbCounter,al	;
+	mov	ds:[di].WTD_ExprEmbMaxMin,al	;
+	mov	ds:[di].WTD_ExprEmbLevelSet,al	;
+	mov	ds:[di].WTD_PanDetune,ax	;
+	mov	ds:[di].WTD_PanEmbAddress,al	;
+	mov	ds:[di].WTD_PanEmbLevelSet,al	;
+	mov	ds:[di].WTD_GateTimeStepLast,ax	;
+	mov	ds:[di].WTD_GateTimeStepFirst,ax
+	mov	ds:[di].WTD_Expr,al		;
+	mov	ds:[di].WTD_ExprSet,al		;初期値0にしておくこと。
+	mov	ax,1				;
+	mov	ds:[di].WTD_Leng,ax		;
+	mov	ds:[di].WTD_LengCounter,ax	;
+	mov	ds:[di].WTD_VolumeUpDown,al	;
+	mov	ax,4				;
+	mov	ds:[di].WTD_Octave,al		;
+	mov	ax,8				;
+	mov	ds:[di].WTD_GateTime8,al	;
+	mov	ax,48				;
+	mov	ds:[di].WTD_LengDefault,ax	;
+	mov	ax,64				;
+	mov	ds:[di].WTD_Pan,al		;
+	mov	ax,100				;
+	mov	ds:[di].WTD_Velocity,al		;ExprPanと同一
+	mov	ax,127				;
+	mov	ds:[di].WTD_AcsentVelocity,al	;
+	mov	ax,8192				;
+	mov	ds:[di].WTD_Bend,ax		;
+	mov	ax,0ffffh			;
+	mov	ds:[di].WTD_Voice,al		;
+	mov	ds:[di].WTD_LoopCountPointer,al	;
+	mov	ds:[di].WTD_Key,al		;
+	mov	ds:[di].WTD_KeySet + 0,al	;
+	mov	ds:[di].WTD_KeySet + 1,al	;
+	mov	ds:[di].WTD_KeySet + 2,al	;
+	mov	ds:[di].WTD_KeySet + 3,al	;
+	mov	ds:[di].WTD_KeySet + 4,al	;
+	mov	ds:[di].WTD_KeySet + 5,al	;
+	mov	ds:[di].WTD_KeySet + 6,al	;
+	mov	ds:[di].WTD_KeySet + 7,al	;
+	mov	ax,es:[bx]			;
+	mov	ds:[di].WTD_Address,ax		;
+
 ;
 ;	その他の設定
 ;
+	add	di,WTD_WorkChSize	;構造体分、加算
+	add	bx,2			;アドレスインクリメント
+	inc	cl			;
+	dec	ch			;
+	jz	_EffectPlay_Step1	;
+	jmp	_EffectPlay_Loop1	;
 
+_EffectPlay_Step1:			;
+
+	pop	cx			;レジスタ復帰
 ;---------------------------------------------------------------
 ;共通ワークの設定
 
@@ -779,9 +949,12 @@ _EffectPlay	proc far		;
 	or	ax,WTD_Sys_Effect			;演奏イネーブル
 	mov	ds:[si].WTD_Sys_Flag,ax			;終了リセット
 
+	mov	ds:[si].WTD_Sys_EffectPart,ch		;パート数
 ;
 ;	その他の設定
 ;
+
+;	現在は、特に無し
 
 ;---------------------------------------------------------------
 
@@ -812,6 +985,9 @@ _EffectPlay	endp			;
 _EffectStop	proc far		;
 	pusha				;
 	push	ds			;
+	pushf				;
+
+	cli				;割り込み禁止
 
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
@@ -819,30 +995,66 @@ _EffectStop	proc far		;
 ;ワークアドレスの取得
 	push	SRAM_Segment			;
 	pop	ds				;ds←SRAMセグメント
-	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
+	mov	bp,ds:[ProcContext_heap]	;ds:bp←ワークエリアアドレス
 
 ;構造体アドレスの設定
-	mov	di,bx				;
-	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
-	mov	si,bx				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
+	mov	di,bp				;
+	add	di,WTD_WorkAdd_ECh0		;ds:di←channel
+	mov	bx,bp				;
+	add	bx,WTD_WorkAdd_System		;ds:bx←System
+	mov	si,bx				;ds:si←ds:bx
 
 ;---------------------------------------------------------------
 ;個別構造体設定
 
+;チャンネル数
+	xor	cx,cx					;
+	mov	ch,ds:[si].WTD_Sys_EffectPart		;使用トラック数
+	or	ch,ch					;
+	jz	_EffectStop_Step1			;
+
+_EffectStop_Loop1:					;
+	mov	cl,ds:[di].WTD_Channel			;
+
+;初期化すべき事項
+	mov	ax,003Fh			;
+	or	ds:[di].WTD_FlagControl,ax	;演奏終了
+
+	mov	dx,offset I_Table_KeyOff	;
+	call	I_Table_Jump			;キーオフ
+
+	push	cx				;
+	mov	ch,cl				;チャンネルの取得
+	call	I_Effect_Return			;効果音復帰処理
+	pop	cx				;
+
+	mov	ax,8000h			;
+	or	ds:[di].WTD_FlagControl,ax	;演奏終了
 ;
 ;	その他
 ;
+	add	di,WTD_WorkChSize		;構造体分、加算
+	dec	ch				;
+	jz	_EffectStop_Step1		;
+	jc	_EffectStop_Step1		;
+	jmp	_EffectStop_Loop1		;
 
+_EffectStop_Step1:				;
 ;---------------------------------------------------------------
 ;共通構造体設定
 
+	mov	ax,ds:[si].WTD_Sys_Flag		;
+	and	ax,WTD_Sys_EffectR		;演奏ディセーブル
+	mov	ds:[si].WTD_Sys_Flag,ax		;終了リセット
 ;
 ;	その他
 ;
 
+;	現在は、処理無し。
+
 ;---------------------------------------------------------------
 
+	popf				;
 	pop	ds			;
 	popa				;
 	retf				;終了

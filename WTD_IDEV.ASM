@@ -135,6 +135,7 @@ I_SP_KeyOn:				;
 ;-------------[	外部MIDI  ]-------------
 	even				;偶数アドレス配置
 I_SM_KeyOn:				;
+ifndef	hyoka	;------------------------廉価版は無し
 	push	bx			;
 	push	ax			;レジスタ保存
 
@@ -181,6 +182,7 @@ I_SM_KeyOn_DeviceOut:			;
 
 	pop	ax			;レジスタ復帰
 	pop	bx			;
+endif	;--------------------------------
 	ret				;
 ;===============================================================|
 ;			KeyOff					|
@@ -205,6 +207,7 @@ I_SP_KeyOff:				;
 ;-------------[	外部MIDI  ]-------------
 	even				;偶数アドレス配置
 I_SM_KeyOff:				;
+ifndef	hyoka	;------------------------廉価版は無し
 	push	bx			;
 	push	ax			;レジスタ保存
 
@@ -224,6 +227,7 @@ I_SM_KeyOff_Loop:				;
 ;
 	pop	ax			;レジスタ復帰
 	pop	bx			;
+endif	;--------------------------------
 	ret				;
 ;===============================================================|
 ;			Volume					|
@@ -325,6 +329,7 @@ I_SP_Volume_End:
 ;-------------[	外部MIDI  ]-------------
 	even				;偶数アドレス配置
 I_SM_Volume:				;
+ifndef	hyoka	;------------------------廉価版は無し
 	shr	al,1			;al÷2 (Range:0～127)
 	cmp	ds:[di].WTD_ExprSet,al	;
 	jz	I_SM_Volume_End		;前回と同じだったらいらない。
@@ -336,6 +341,7 @@ I_SM_Volume:				;
 	pop	cx			;レジスタ復帰
 
 I_SM_Volume_End:			;
+endif	;--------------------------------
 	ret				;
 ;===============================================================|
 ;			Frection(Pitch　Bend)			|
@@ -383,12 +389,14 @@ I_SP_Frection_End:			;
 ;-------------[	外部MIDI  ]-------------
 	even				;偶数アドレス配置
 I_SM_Frection:				;
+ifndef	hyoka	;------------------------廉価版は無し
 	cmp	ds:[di].WTD_BendSet,ax	;前回と同じだったらいらない。
 	jz	I_SM_Frection_End	;
 
 	mov	ds:[di].WTD_BendSet,ax	;
 	call	SM_PitchBend		;
 I_SM_Frection_End:			;
+endif	;--------------------------------
 	ret				;
 ;===============================================================|
 ;			Voice & Program				|
@@ -430,12 +438,14 @@ I_SP_Voice_End:				;
 ;-------------[	外部MIDI  ]-------------
 	even				;偶数アドレス配置
 I_SM_Voice:				;
+ifndef	hyoka	;------------------------廉価版は無し
 	cmp	ds:[di].WTD_Program,al	;前回と同じだったらいらない。
 	jz	I_SM_Voice_End		;
 
 	mov	ds:[di].WTD_Program,al	;
 	call	SM_Program		;
 I_SM_Voice_End:				;
+endif	;-------------------------------
 	ret				;
 ;===============================================================|
 ;			Poly Key Pressior			|
@@ -461,7 +471,9 @@ I_SP_PolyKeyPress:			;
 ;-------------[	外部MIDI  ]-------------
 	even				;偶数アドレス配置
 I_SM_PolyKeyPress:			;
+ifndef	hyoka	;------------------------廉価版は無し
 	call	SM_KeyPress		;
+endif	;--------------------------------
 	ret				;
 ;===============================================================|
 ;			Poly Channel Pressior			|
@@ -486,7 +498,9 @@ I_SP_PolyChPress:			;
 ;-------------[	外部MIDI  ]-------------
 	even				;偶数アドレス配置
 I_SM_PolyChPress:			;
+ifndef	hyoka	;------------------------廉価版は無し
 	call	SM_ChPress		;
+endif	;--------------------------------
 	ret				;
 ;===============================================================|
 ;			Control Change Byte			|
@@ -512,6 +526,7 @@ I_SP_CtrlChgB:				;
 ;-------------[	外部MIDI  ]-------------
 	even				;偶数アドレス配置
 I_SM_CtrlChgB:				;
+ifndef	hyoka	;------------------------廉価版は無し
 	push	bp			;
 	mov	bp,sp			;
 	push	cx			;レジスタ保存
@@ -521,6 +536,7 @@ I_SM_CtrlChgB:				;
 
 	pop	cx			;レジスタ復帰
 	pop	bp			;
+endif	;--------------------------------
 	ret				;
 ;===============================================================|
 ;			Control Change Word			|
@@ -546,6 +562,7 @@ I_SP_CtrlChgW:				;
 ;-------------[	外部MIDI  ]-------------
 	even				;偶数アドレス配置
 I_SM_CtrlChgW:				;
+ifndef	hyoka	;------------------------廉価版は無し
 	push	bp			;
 	mov	bp,sp			;
 	push	cx			;レジスタ保存
@@ -555,6 +572,7 @@ I_SM_CtrlChgW:				;
 
 	pop	cx			;レジスタ復帰
 	pop	bp			;
+endif	;--------------------------------
 	ret				;
 ;===============================================================|
 ;	WS内蔵PCM Channelモード	/ MIDI Dumper Switch		|
@@ -591,6 +609,7 @@ I_SP_Mode:				;
 ;-------------[	外部MIDI  ]-------------
 	even				;偶数アドレス配置
 I_SM_Mode:				;
+ifndef	hyoka	;------------------------廉価版は無し
 	push	cx			;レジスタ保存
 
 	shl	al,6			;数値を64倍する。
@@ -599,4 +618,5 @@ I_SM_Mode:				;
 	call	SM_ControlWord		;ダンパースイッチの送信
 
 	pop	cx			;レジスタ復帰
+endif	;--------------------------------
 	ret				;

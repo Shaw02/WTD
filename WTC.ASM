@@ -21,14 +21,8 @@ WTD_MML_Compiler_:
 ;=======================================================================|
 ;				define					|
 ;=======================================================================|
-hyoka			equ	0
-if	hyoka
-WtdIL_Name		equ	'WTD_h',0
-MusicMaxPart		equ	4	;廉価版は4 パート
-else
 WtdIL_Name		equ	'WTD',0
 MusicMaxPart		equ	20	;製品版は20パート
-endif
 EffectMaxPart		equ	3	;効果音は3 パート
 ;=======================================================================|
 ;				Start Up				|
@@ -37,6 +31,7 @@ EffectMaxPart		equ	3	;効果音は3 パート
 ;=======================================================================|
 ;				Start					|
 ;=======================================================================|
+include bank.inc	;バンク
 include wtd_ver.inc	;WTD Version infomation
 include wtd_def.inc	;WTD Define infomation
 include wtc_def.inc	;Define

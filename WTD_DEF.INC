@@ -16,10 +16,6 @@
 ;===============================================================|
 ;		Wander Swan Segment Address			|
 ;===============================================================|
-;'sys/bank.h'に同等の定義がある。
-BANK_SRAM_ADDRESS	equ	01000h	;SRAM　のセグメントアドレス
-BANK_ROM0_ADDRESS	equ	02000h	;ROM0　のセグメントアドレス
-BANK_ROM1_ADDRESS	equ	03000h	;ROM1　のセグメントアドレス
 ;セグメントアドレス定義
 IRAM_Segment		equ	0000h	;本体RAM
 SRAM_Segment		equ	BANK_SRAM_ADDRESS
@@ -28,26 +24,6 @@ FROM_Segment		equ	BANK_ROM0_ADDRESS
 ;		本体RAM Work Address				|
 ;===============================================================|
 Hblank_intvector	equ	000bch		;割り込みベクタ(02fh×4)
-;===============================================================|
-;		FreyaOS process control block			|
-;===============================================================|
-;	'sys/process.h'に同等の定義がある。			|
-;---------------------------------------------------------------|
-;構造体定義
-ProcContext		struc			;
-ProcContext_id		db	4	dup(?)	; mark: "LCC"/"TCC"
-ProcContext_pid		dw	?		; pid of process
-ProcContext_ppid	dw	?		; pid of parent process
-ProcContext_pcbid	dw	?		; pcbid of process
-ProcContext_ppcbib	dw	?		; parent's pcbid
-ProcContext_ilib	dd	?		; IlibIL for this process
-ProcContext_proc	dd	?		; ProcIL for this process
-ProcContext_cwfs	dd	?		; current working filesystem
-ProcContext_currentdir	db	64	dup(?)	; current working directory
-ProcContext_argv	dw 	?		; execution arguments
-ProcContext_resource	dd	?		; poiter to resource
-ProcContext_heap	dw	?		; poiter to free heap area
-ProcContext		ends			;
 ;===============================================================|
 ;		Micro Soft  RIFF and Wave data formats		|
 ;===============================================================|
@@ -180,7 +156,7 @@ WTD_BendEmbRate		db	?		;3A	EMBレイト
 WTD_BendEmbCounter	db	?		;3B	EMBカウンター
 WTD_BendEmbMaxMin	db	?		;3C	EMB最大／最小値
 WTD_BendEmbLevelSet	db	?		;3D	EMB変位ﾚﾍﾞﾙ
-WTD_Pan			db	?		;3E	パンポット
+WTD_Null_3E		db	?		;3E	未使用
 WTD_ExprPanSet		db	?		;3F	出力/ｳﾞｪﾛｼﾃｨｰ
 WTD_ExprSet		db	?		;40	出力音量/ｴｸｽﾌﾟﾚｯｼｮﾝ
 WTD_Expr		db	?		;41	音量/ｴｸｽﾌﾟﾚｯｼｮﾝ
@@ -204,13 +180,35 @@ WTD_GateTime8		db	?		;55	ｹﾞｰﾄﾀｲﾑ（Q,U)
 WTD_GateTimeStepLast	dw	?		;56-57	ｹﾞｰﾄﾀｲﾑ(q)
 WTD_GateTimeStepFirst	dw	?		;58-59	ｹﾞｰﾄﾀｲﾑ(u)
 WTD_VolumeUpDown	db	?		;5A	相対ボリュームの増減値
+WTD_ModDecay		dw	?		;5B-5C	ﾓｼﾞｭﾚｰｼｮﾝ ﾃﾞｨｹｲﾚｲﾄ
+WTD_ModLevel		db	?		;5D	ﾓｼﾞｭﾚｰｼｮﾝ ﾚﾍﾞﾙ
+WTD_Null_5E		db	?		;5E	未使用
+WTD_Null_5F		db	?		;5F	未使用
+WTD_PanSet		db	?		;60	出力パンポット
+WTD_Pan			db	?		;61	パンポット
+WTD_PanDetune		dw	?		;62-63	音量増減値
+WTD_PanLfoDecayRate	db	?		;64	LFOディケイレイト
+WTD_PanLfoSpeedRate	db	?		;65	LFOスピード
+WTD_PanLfoLevel		dw	?		;66-67	LFO変位ﾚﾍﾞﾙ
+WTD_PanLfoCount		db	?		;68	LFO変化回数
+WTD_PanLfoRateCounter	db	?		;69	LFOレイト用カウンタ
+WTD_PanLfoLevelSet	dw	?		;6A-6B	LFO現在の変位ﾚﾍﾞﾙ
+WTD_PanLfoCountCounter	db	?		;6C	LFO回数用カウンタ
+WTD_PanEmbAddress	db	?		;6D	EMB番号（ｱﾄﾞﾚｽ）
+WTD_PanEmbRate		db	?		;6E	EMBレイト
+WTD_PanEmbCounter	db	?		;6F	EMBカウンター
+WTD_PanEmbMaxMin	db	?		;60	EMB最大／最小値
+WTD_PanEmbLevelSet	db	?		;61	EMB変位ﾚﾍﾞﾙ
+
 WTD			ends
 ;---------------------------------------------------------------
 ;構造体位置
 WTD_BendLFO		equ	WTD_BendLfoDecayRate	;ChLFO構造体先頭
 WTD_ExprLFO		equ	WTD_ExprLfoDecayRate	;ChLFO構造体先頭
+WTD_PanLFO		equ	WTD_PanLfoDecayRate	;ChLFO構造体先頭
 WTD_BendEmb		equ	WTD_BendEmbAddress	;ChEmb構造体先頭
 WTD_ExprEmb		equ	WTD_ExprEmbAddress	;ChEmb構造体先頭
+WTD_PanEmb		equ	WTD_PanEmbAddress	;ChEmb構造体先頭
 
 ;ChLFO構造体
 WTD_ChLfo		struc

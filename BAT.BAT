@@ -1,0 +1,1 @@
+kmmake -f wtdsv.mak > f.txt

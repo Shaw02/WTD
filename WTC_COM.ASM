@@ -41,12 +41,12 @@ c_Command_Data:
 cMCD_0	db	0dh,0ah,'C',0,	0,1,	0,	0f0h	;<CR+LF>+'C'
 	dw		offset cMCD_CH			;
 	db		0				;
-cMCD_1	db	0dh,0ah,'!',0,	0,1,	0,	0f0h	;<CR+LF>+'!'
-	dw		offset cMCD_Macro		;
-	db		0				;
-cMCD_2	db	0dh,0ah,0,	0,1,	0,	0f0h	;<CR+LF>改行
+cMCD_1	db	0dh,0ah,0,	0,1,	0,	0f0h	;<CR+LF>改行
 	dw		offset cMCD_CR			;
 	db		0				;－最初に改行チェック
+cMCD_2	db	'$',0,		0,1,	0,	0f0h	;<CR+LF>+'$'
+	dw		offset cMCD_Macro		;
+	db		0				;
 cMCD_3	db	'a',0,		0,1,	0,	86h,0	;a	ラ
 cMCD_4	db	'b',0,		0,1,	0,	87h,0	;b	シ
 cMCD_5	db	'c',0,		0,1,	0,	81h,0	;c	ド
@@ -92,7 +92,7 @@ cMCD_40	db	'L',0,		0,3,	0,	0f0h	;L	Loop
 	dw		offset cMCD_lL			;
 	db		0				;
 cMCD_41	db	'N',0,		0,8,	'N',0,	11h,0	;N	NPR
-cMCD_42	db	'M',0,		0,8,	'M',0,	11h,11h,11h,0 ; Mod
+cMCD_42	db	'M',0,		0,0ah,	'M',0,	12h,11h,0   ;M	Mod
 cMCD_43	db	'O',0,		0,8,	'O',0,	11h,0	;O	Son
 cMCD_44	db	'P',0,		0,3,	'P',0,	11h,0	;P	Switch
 cMCD_45	db	'Q',0,		0,1,	'Q',0,	11h,0	;Q	Gate time
@@ -114,24 +114,24 @@ cMCD_56	db	'"',0,		0,1,	'"',0,	11h,0	;"	Work Add
 cMCD_57	db	27h,0,		0,1,	27h,0,	11h,0	;'	Acsent
 cMCD_58	db	'(',0,		0,1,	'(',0,	0	;(	Volume Down
 cMCD_59	db	')',0,		0,1,	')',0,	0	;)	Volume Up
-cMCD_60	db	'0',0,		0,0,	0,	0	;0
-cMCD_61	db	'1',0,		0,0,	0,	0	;1
-cMCD_62	db	'2',0,		0,0,	0,	0	;2
-cMCD_63	db	'3',0,		0,0,	0,	0	;3
-cMCD_64	db	'4',0,		0,0,	0,	0	;4
-cMCD_65	db	'5',0,		0,0,	0,	0	;5
-cMCD_66	db	'6',0,		0,0,	0,	0	;6
-cMCD_67	db	'7',0,		0,0,	0,	0	;7
-cMCD_68	db	'8',0,		0,0,	0,	0	;8
-cMCD_69	db	'9',0,		0,0,	0,	0	;9
-cMCD_70	db	'*',0,		0,4,	'*',0,	11h,11h,0 ;*	LFO Switch
-cMCD_71	db	'/',0,		0,5,	'/',0,	11h,11h,0 ;/	Emb Switch
+cMCD_60	db	'0',0,		1,0,	'0',0,	11h,11h,0   ;0	ld
+cMCD_61	db	'1',0,		1,0,	'1',0,	11h,11h,0   ;1	add
+cMCD_62	db	'2',0,		1,0,	'2',0,	11h,11h,0   ;2	sub
+cMCD_63	db	'3',0,		1,0,	'3',0,	11h,11h,0   ;3	and
+cMCD_64	db	'4',0,		1,0,	'4',0,	11h,11h,0   ;4	or
+cMCD_65	db	'5',0,		1,0,	'5',0,	11h,11h,0   ;5	xor
+cMCD_66	db	'6',0,		1,0,	'6',0,	11h,11h,0   ;6	set
+cMCD_67	db	'7',0,		1,0,	'7',0,	11h,11h,0   ;7	reset
+cMCD_68	db	'8',0,		1,0,	'8',0,	11h,11h,0   ;8	cmp
+cMCD_69	db	'9',0,		1,0,	'9',0,	11h,11h,0   ;9	test
+cMCD_70	db	'*',0,		0,4,	'*',0,	11h,11h,0   ;*	LFO Switch
+cMCD_71	db	'/',0,		0,5,	'/',0,	11h,11h,0   ;/	Emb Switch
 cMCD_72	db	':',0,		0,3,	':',0,	0f0h	;:	Loop Jump
 	dw		offset cMCD_Loop_Jump		;
 	db		0				;
-cMCD_73	db	';',0,		0,0,	0,	0	;;	Loop Flag
-;	dw		offset cMCD_Loop_Flag		;
-;	db		0				;
+cMCD_73	db	3bh,0,		1,0,	3bh,0,	11h,0f0h    ;;	Loop Flag
+	dw		offset cMCD_Loop_Jump		;
+	db		0				;
 cMCD_74	db	'[',0,		0,3,	'[',0,	0f0h	;[	Loop Start
 	dw		offset cMCD_Loop_Start		;
 	db		0				;
@@ -149,6 +149,8 @@ cMCD_80	db	'{',0,		0,8,	'{',0,	0f0h	;{
 ;現在コンパイル中のチャンネル。
 cMCD_ChannelWTD	db	?		;コンパイル中の。
 cMCD_ChannelMML	db	?		;ＭＭＬ中の。
+cMCD_MacroCount	dw	-2		;マクロのスタックポインタ
+cMCD_MacroAdr	dw	8	dup(0)	;マクロのスタックエリア
 ;無限ループアドレス
 cMCD_LoopL	dw	0000h		;
 ;音長'l'
@@ -163,7 +165,11 @@ cMCD_CRS:				;Serach
 	pusha				;改行検査から実行する。
 	jmp	cMCD_CR_Loop		;
 ;- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-cMCD_CR:				;制御文字であるかチェックし、
+cMCD_CR:
+	call	cMCD_MacroEndChk	;マクロの終了かどうかをチェック
+	jc	cMCD_CR_EndM		;
+
+					;制御文字であるかチェックし、
 	pusha				;そうでなかったら、改行検査を行う。
 	call	CREAD			;
 	cmp	ah,21h			;制御文字であるか？
@@ -180,17 +186,23 @@ cMCD_CR_Step:				;
 ;終了
 cMCD_CR_End:				;
 	popa				;レジスタ復帰
+cMCD_CR_EndM:				;
 	ret				;
 ;---------------------------------------------------------------
 cMCD_CH:				;チャンネル設定
+	call	cMCD_MacroEndChk	;マクロの終了かどうかをチェック
+	jc	cMCD_CH_EndM		;
 	pusha				;
 
+	mov	ah,0ffh			;ダミーの設定
+	mov	cs:[cMCD_ChannelMML],ah	;保存
 cMCD_CH_Loop:				;
 	call	A2H8R			;読み込み
-	mov	cs:[cMCD_ChannelMML],ah	;保存
 
 	cmp	ah,cs:[cMCD_ChannelWTD]	;比較
-	jz	cMCD_CH_End		;同じだったら終わる。
+	jnz	cMCD_CH_Step		;
+	call	cMCD_CH_Set		;同じだったら設定。
+cMCD_CH_Step:				;
 
 	call	CREAD			;カンマがあったら、
 	cmp	ah,','			;トラックの複数指定。
@@ -199,15 +211,89 @@ cMCD_CH_Loop:				;
 ;終了
 cMCD_CH_End:
 	popa				;レジスタ復帰
+cMCD_CH_EndM:				;
 	ret				;
+cMCD_CH_Set:
+	mov	cs:[cMCD_ChannelMML],ah	;保存
+	ret
 ;---------------------------------------------------------------
 cMCD_Macro:				;マクロ
+	call	cMCD_MacroEndChk	;マクロの終了かどうかをチェック
+	jc	cMCD_Macro_EndM		;
+
+;●レジスタの保存
 	pusha				;
 
-;
-;	後回しにする。
-;
+;●マクロ名の取得
+	xor	bx,bx			;
+	call	CREAD			;
+	mov	bl,ah			;bl←マクロ文字
+	push	cs:[pMML_File]		;
+	call	CREAD			;
+	pop	cs:[pMML_File]		;
+	mov	al,ah			;al←引数先頭文字
+	call	A2H8R			;
+	cmp	al,30h			;
+	jc	cMCD_Macro_Step0	;
+	cmp	al,3Ah			;
+	jnc	cMCD_Macro_Step0	;
+	mov	bh,ah			;bh←マクロ引数
 
+;●マクロの検索
+cMCD_Macro_Step0:			;
+	mov	dx,cs:[pMML_File]	;dx←MMLのポインタ
+	xor	ax,ax			;ポインタを先頭に
+	mov	cs:[pMML_File],ax	;
+cMCD_Macro_Loop0:			;
+	call	cread			;
+	jnc	cMCD_Macro_Step1	;
+	jmp	MACRO_ERROR		;存在しないマクロの呼び出し
+cMCD_Macro_Step1:			;
+	cmp	ah,'$'			;
+	jnz	cMCD_Macro_Loop0	;
+	call	CREAD			;
+	mov	cl,ah			;cl←マクロ文字
+	push	cs:[pMML_File]		;ポインタ復帰
+	mov	ch,0			;
+	call	CREAD			;
+	pop	cs:[pMML_File]		;ポインタ復帰
+	cmp	ah,30h			;
+	jc	cMCD_Macro_Step2	;
+	cmp	ah,3Ah			;
+	jnc	cMCD_Macro_Step2	;
+	call	A2H8R			;
+	mov	ch,ah			;ch←番号
+cMCD_Macro_Step2:			;
+	cmp	bx,cx			;
+	jnz	cMCD_Macro_Loop0	;
+
+;●マクロ
+	add	cs:[cMCD_MacroCount],2	;
+	mov	bx,cs:[cMCD_MacroCount]	;マクロのポインタ
+	cmp	bx,10			;
+	jc	cMCD_Macro_Step3	;マクロを呼びすぎ。
+	jmp	MACRO_ERROR2		;
+cMCD_Macro_Step3:			;
+	mov	cs:[cMCD_MacroAdr + bx],dx
+
+;●レジスタの復帰
+	popa				;レジスタ復帰
+cMCD_Macro_EndM:			;
+	ret				;
+;---------------------------------------------------------------
+cMCD_MacroEndChk:			;マクロの終了？
+	pusha				;
+
+	cmp	cs:[cMCD_MacroCount],-2	;マクロのスタックは空？
+	jz	cMCD_MacroEndChk_End	;空だったら、終了
+
+	mov	bx,cs:[cMCD_MacroCount]	;マクロのポインタ
+	sub	cs:[cMCD_MacroCount],2	;
+	mov	ax,cs:[cMCD_MacroAdr + bx]
+	mov	cs:[pMML_File],ax	;
+
+	stc				;Cy←'h'
+cMCD_MacroEndChk_End:			;
 	popa				;レジスタ復帰
 	ret				;
 ;---------------------------------------------------------------
@@ -378,9 +464,6 @@ cMCD_Loop_Jump:				;
 
 	pop	bx			;
 	pop	ax			;
-	ret				;
-;---------------------------------------------------------------
-cMCD_Loop_Flag:				;
 	ret				;
 ;---------------------------------------------------------------
 cMCD_tranceFlag	db	00h

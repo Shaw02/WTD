@@ -23,22 +23,23 @@ WanderSwanTotalSoundDriver_:
 ;	　演奏開始ファンクションのところで、チェックする。
 ;	パート数を追加する場合は、その分だけワークを確保する事。
 ;
-hyoka			equ	0
-if	hyoka
+ifdef	hyoka	;------------------------
 WtdIL_Name		equ	'WTD_h',0
 MusicMaxPart		equ	4	;廉価版は4 パート
-else
+else	;--------------------------------
 WtdIL_Name		equ	'WTD',0
 MusicMaxPart		equ	20	;製品版は20パート
-endif
+endif	;--------------------------------
 EffectMaxPart		equ	3	;効果音は3 パート
 ;=======================================================================|
 ;				Start					|
 ;=======================================================================|
+include process.inc	;定義ファイル　プロセス
 include	service.inc	;定義ファイル　割り込み
 include	timer.inc	;定義ファイル　タイマー
 include	comm.inc	;定義ファイル　通信
 include	sound.inc	;定義ファイル　サウンド
+include	bank.inc	;定義ファイル　バンク
 include	wtd_def.inc	;定義ファイル　ドライバー
 include wtd_ver.inc	;バージョン情報
 include	wtd_ilf.asm	;IL構造体,ILinfo構造体,ILファンクション

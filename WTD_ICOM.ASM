@@ -10,6 +10,56 @@
 ;****************************************************************
 ;*								*
 ;*			割り込みルーチン			*
+;*				データ読み込み			*
+;*								*
+;****************************************************************
+;===============================================================|
+;		Command Read					|
+;===============================================================|
+;	●処理							|
+;		　データの読み込み				|
+;		　ワークフラグが立っていた場合は、ワークから	|
+;	●引数							|
+;		es:si	演奏中のアドレス			|
+;	●返値							|
+;		es:si	次の引数又はコマンドのアドレス		|
+;		al(ax)	引数					|
+;								|
+;===============================================================|
+;●8bit版========================================================
+I_Read8:				;
+	mov	al,es:[si]		;データ読み込み
+	inc	si			;ポインタ・インクリメント
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_WorkSw
+	jz	I_Read8_End		;ワークからであるか？
+
+	push	bx			;	{ワーク読み込み}
+	mov	bh,ds:[di].WTD_WorkAddress
+	mov	bl,al			;bx←ワークオフセットアドレス
+	mov	al,ds:[bx]		;
+	pop	bx			;
+
+I_Read8_End:				;
+	ret				;終了
+;●16bit版=======================================================
+I_Read16:				;
+	mov	ax,es:[si]		;データ読み込み
+	inc	si			;ポインタ・インクリメント
+	inc	si			;
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_WorkSw
+	jz	I_Read16_End		;ワークからであるか？
+
+	push	bx			;	{ワーク読み込み}
+	mov	bh,ds:[di].WTD_WorkAddress
+	mov	bl,al			;bx←ワークオフセットアドレス
+	mov	ax,ds:[bx]		;
+	pop	bx			;
+
+I_Read16_End:				;
+	ret				;終了
+;****************************************************************
+;*								*
+;*			割り込みルーチン			*
 ;*				演奏・効果音制御部		*
 ;*				音階コマンド(80h～FFh)		*
 ;*								*
@@ -299,20 +349,20 @@ I_PlayCommand_JumpTable:
 ;===============================================================|
 	even				;偶数アドレス配置
 I_PlayCommand:				;
-	push	ax			;
-	push	bx			;レジスタ保存
+	push	dx			;レジスタ保存
 
-	mov	bx,offset I_PlayCommand_JumpTable
-	and	ax,007fh		;
-	shl	ax,1			;
-	add	bx,ax			;
+	push	bx			;
+	mov	bx,ax			
+	and	bx,007fh		;
+	shl	bx,1			;
+	mov	dx,word ptr cs:[I_PlayCommand_JumpTable + bx]
+	pop	bx			;
 	
-	call	word ptr cs:[bx]	;サブルーチンの呼び出し
+	call	dx			;サブルーチンの呼び出し
 	
-	pop	bx			;レジスタ復帰
-	pop	ax			;
-I_ComNull:				;
-	ret				;
+	pop	dx			;レジスタ復帰
+	and	ds:[di].WTD_FlagControl,WTD_Ctrl_WorkSwR
+	ret				;ワーク・スイッチのリセット
 ;===============================================================|
 ;		NULL						|
 ;===============================================================|
@@ -363,8 +413,7 @@ I_Com21:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com22:				;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
 	mov	ds:[di].WTD_WorkAddress,al
 	ret				;
 ;===============================================================|
@@ -396,8 +445,7 @@ I_Com26:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com27:				;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
 	mov	ds:[di].WTD_AcsentVelocity,al
 	or	ds:[di].WTD_FlagControl,WTD_Ctrl_Acsent
 	ret				;
@@ -435,8 +483,7 @@ I_Com2a:				;
 	inc	si			;
 	shl	cl,1			;cl = 0,2,4 (bit)
 	xor	ax,ax			;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
 	and	ax,00001h		;Bit Mask
 	mov	bx,0FFFEh		;Bit Mask
 	test	cl,cl			;
@@ -490,8 +537,7 @@ I_Com2f:				;
 	shl	cl,1			;cl = 0,2,4 (bit)
 	inc	cl			;cl = 1,3,5 (bit)
 	xor	ax,ax			;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
 	and	ax,00001h		;Bit Mask
 	mov	bx,0FFFEh		;Bit Mask
 	test	cl,cl			;
@@ -509,64 +555,212 @@ I_Com2f_Step1:				;
 	pop	bx			;
 	ret				;
 ;===============================================================|
+;		Work	フラグ変化				|
+;===============================================================|
+	even				;偶数アドレス配置
+I_Com3x_Flag:
+
+;キャリーフラグ
+	pushf				;レジスタ保存
+	jnc	I_Com3x_Flag_CyL	;
+I_Com3x_Flag_CyH:			;Cy="H"
+	or	ds:[di].WTD_FlagControl,WTD_Ctrl_WorkCy
+	jmp	I_Com3x_Flag_Step0	;
+I_Com3x_Flag_CyL:			;Cy="L"
+	and	ds:[di].WTD_FlagControl,WTD_Ctrl_WorkCyR
+;	jmp	I_Com3x_Flag_Step0	;
+I_Com3x_Flag_Step0:			;
+	popf				;レジスタ復帰
+
+;ゼローフラグ
+	pushf				;レジスタ保存
+	jnc	I_Com3x_Flag_ZeL	;
+I_Com3x_Flag_ZeH:			;Ze="H"
+	or	ds:[di].WTD_FlagControl,WTD_Ctrl_WorkZe
+	jmp	I_Com3x_Flag_Step1	;
+I_Com3x_Flag_ZeL:			;Ze="L"
+	and	ds:[di].WTD_FlagControl,WTD_Ctrl_WorkZeR
+;	jmp	I_Com3x_Flag_Step1	;
+I_Com3x_Flag_Step1:			;
+	popf				;レジスタ復帰
+
+	ret
+;===============================================================|
 ;		Work	mov	LD				|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com30:				;
+	push	bx			;
+;アドレスの取得
+	mov	ah,ds:[di].WTD_WorkAddress
+	call	I_Read8			;
+	mov	bx,ax			;bx←アドレス
+	call	I_Read8			;al←数値
+
+	mov	ds:[bx],al		;代入
+
+	pop	bx			;
 	ret				;
 ;===============================================================|
 ;		Work	add	ADD				|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com31:				;
+	push	bx			;
+;アドレスの取得
+	mov	ah,ds:[di].WTD_WorkAddress
+	call	I_Read8			;
+	mov	bx,ax			;bx←アドレス
+	call	I_Read8			;al←数値
+
+	add	ds:[bx],al		;加算
+	call	I_Com3x_Flag		;フラグ変化
+
+	pop	bx			;
 	ret				;
 ;===============================================================|
 ;		Work	sub	SUB				|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com32:				;
+	push	bx			;
+;アドレスの取得
+	mov	ah,ds:[di].WTD_WorkAddress
+	call	I_Read8			;
+	mov	bx,ax			;bx←アドレス
+	call	I_Read8			;al←数値
+
+	sub	ds:[bx],al		;加算
+	call	I_Com3x_Flag		;フラグ変化
+
+	pop	bx			;
 	ret				;
 ;===============================================================|
 ;		Work	and	AND				|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com33:				;
+	push	bx			;
+;アドレスの取得
+	mov	ah,ds:[di].WTD_WorkAddress
+	call	I_Read8			;
+	mov	bx,ax			;bx←アドレス
+	call	I_Read8			;al←数値
+
+	and	ds:[bx],al		;加算
+	call	I_Com3x_Flag		;フラグ変化
+
+	pop	bx			;
 	ret				;
 ;===============================================================|
 ;		Work	or	OR				|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com34:				;
+	push	bx			;
+;アドレスの取得
+	mov	ah,ds:[di].WTD_WorkAddress
+	call	I_Read8			;
+	mov	bx,ax			;bx←アドレス
+	call	I_Read8			;al←数値
+
+	or	ds:[bx],al		;加算
+	call	I_Com3x_Flag		;フラグ変化
+
+	pop	bx			;
 	ret				;
 ;===============================================================|
 ;		Work	xor	XOR				|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com35:				;
+	push	bx			;
+;アドレスの取得
+	mov	ah,ds:[di].WTD_WorkAddress
+	call	I_Read8			;
+	mov	bx,ax			;bx←アドレス
+	call	I_Read8			;al←数値
+
+	xor	ds:[bx],al		;加算
+	call	I_Com3x_Flag		;フラグ変化
+
+	pop	bx			;
 	ret				;
 ;===============================================================|
 ;		Work		SET				|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com36:				;
+	push	bx			;
+	push	cx
+;アドレスの取得
+	mov	ah,ds:[di].WTD_WorkAddress
+	call	I_Read8			;
+	mov	bx,ax			;bx←アドレス
+	call	I_Read8			;al←数値
+
+	mov	cl,al			;
+	mov	al,001h			;
+	shl	al,cl			;
+	or	ds:[bx],al		;ビットセット
+	call	I_Com3x_Flag		;フラグ変化
+
+	pop	cx			;
+	pop	bx			;
 	ret				;
 ;===============================================================|
 ;		Work		RES				|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com37:				;
+	push	bx			;
+;アドレスの取得
+	mov	ah,ds:[di].WTD_WorkAddress
+	call	I_Read8			;
+	mov	bx,ax			;bx←アドレス
+	call	I_Read8			;al←数値
+
+	mov	cl,al			;
+	mov	al,0FEh			;
+	shl	al,cl			;
+	and	ds:[bx],al		;ビットリセット
+	call	I_Com3x_Flag		;フラグ変化
+
+	pop	bx			;
 	ret				;
 ;===============================================================|
 ;		Work	cmp	CP				|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com38:				;
+	push	bx			;
+;アドレスの取得
+	mov	ah,ds:[di].WTD_WorkAddress
+	call	I_Read8			;
+	mov	bx,ax			;bx←アドレス
+	call	I_Read8			;al←数値
+
+	cmp	ds:[bx],al		;加算
+	call	I_Com3x_Flag		;フラグ変化
+
+	pop	bx			;
 	ret				;
 ;===============================================================|
 ;		work	test					|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com39:				;
+	push	bx			;
+;アドレスの取得
+	mov	ah,ds:[di].WTD_WorkAddress
+	call	I_Read8			;
+	mov	bx,ax			;bx←アドレス
+	call	I_Read8			;al←数値
+
+	test	ds:[bx],al		;加算
+	call	I_Com3x_Flag		;フラグ変化
+
+	pop	bx			;
 	ret				;
 ;===============================================================|
 ;		Loop Jump					|
@@ -602,6 +796,20 @@ I_Com3d_Step:				;カウンター = 1 の場合。
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com3b:				;
+	mov	ax,ds:[di].WTD_FlagControl
+	and	ax,WTD_Ctrl_WorkCy + WTD_Ctrl_WorkZe
+	shr	ax,4			;ah←WTD内部のフラグ
+	call	I_Read8			;al←曲データ中のフラグ
+	mov	dx,es:[si]		;
+	inc	si			;
+	inc	si			;dx←ループ先
+	cmp	al,ah			;比較
+	jnz	I_Com3b_End		;
+
+	dec	ds:[di].WTD_LoopCountPointer
+	mov	si,dx			;ループ抜け
+
+I_Com3b_End:				;
 	ret				;
 ;===============================================================|
 ;		Octave down					|
@@ -634,8 +842,7 @@ I_Com3f:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com40:				;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
 	mov	dx,offset I_Table_Voice	;
 	call	I_Table_Jump		;
 	ret				;
@@ -650,14 +857,13 @@ I_Com41:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com42:				;
-	mov	ax,es:[si]		;
-	inc	si			;
-	inc	si			;
+	call	I_Read16		;
 	rol	ax,1			;
 	shr	ax,1			;Bit 7 Reset & Bit 7 -> Cy Flag
 	mov	ds:[di].WTD_Bend,ax	;
 	jnc	I_Com42_End		;
 
+ifndef	hyoka	;------------------------廉価版は無し
 	mov	al,00h			;
 	mov	cl,MIDI_Ctrl_RegLSB	;
 	mov	dx,offset I_Table_CtrlChgB
@@ -667,12 +873,15 @@ I_Com42:				;
 	mov	cl,MIDI_Ctrl_RegMSB	;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
+endif	;--------------------------------
 
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
+
+ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_DataEntly	;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
+endif	;--------------------------------
 
 I_Com42_End:				;
 	ret				;
@@ -681,18 +890,24 @@ I_Com42_End:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com43:				;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
 	mov	ds:[di].WTD_Channel,al	;
+	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
+	jz	I_Com43_End		;効果音か？
+	and	al,07h			;
+	mov	cl,al			;
+	inc	cl			;
+	mov	ax,0800h		;
+	shl	ax,cl			;
+	or	ds:[bx].WTD_Sys_Flag,ax	;
+I_Com43_End:				;
 	ret				;
 ;===============================================================|
 ;		Frection Detune					|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com44:				;
-	mov	ax,es:[si]		;
-	inc	si			;
-	inc	si			;
+	call	I_Read16		;
 	mov	ds:[di].WTD_BendDetune,ax
 	ret				;
 ;===============================================================|
@@ -706,16 +921,15 @@ I_Com45:				;
 	inc	si			;
 	push	ax			;保存
 	xor	ax,ax			;
-	mov	al,es:[si]		;ax←エンベロープ番号
-	inc	si			;
+	call	I_Read8			;ax←エンベロープ番号
 	and	ax,001fh		;
 	shl	ax,4			;ax←ax×16
 	pop	bx			;復帰
 	mov	bh,ah			;
 	cmp	bl,1			;
 	jz	I_Com45_Expr		;
-;	cmp	bl,2			;まだ、未対応
-;	jz	I_Com45_Pan		;
+	cmp	bl,2			;
+	jz	I_Com45_Pan		;
 
 I_Com45_Bend:					;音程 bl=0
 	mov	ds:[di].WTD_BendEmbAddress,al	;
@@ -737,7 +951,7 @@ I_Com45_Expr:					;音量 bl=1
 	jmp	I_Com45_End			;
 
 I_Com45_Pan:					;音程 bl=2
-;	mov	ds:[di].WTD_PanEmbAddress,al	;
+	mov	ds:[di].WTD_PanEmbAddress,al	;
 	mov	ax,ds:[di].WTD_FlagControl	;
 	shl	bx,1				;bx bit 9  =  No. bit 5
 	and	bx,WTD_Ctrl_EmbPan		;
@@ -754,19 +968,21 @@ I_Com45_End:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com46:				;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
+
+ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Volume	;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
+endif	;--------------------------------
+
 	ret				;
 ;===============================================================|
 ;		Channel Pressior(MIDI)				|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com47:				;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
 	mov	dx,offset I_Table_PolyChPress
 	call	I_Table_Jump		;
 	ret				;
@@ -775,12 +991,14 @@ I_Com47:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com48:				;
-	mov	ax,es:[si]		;
-	inc	si			;
-	inc	si			;
+	call	I_Read16		;
+
+ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Bank	;
 	mov	dx,offset I_Table_CtrlChgW
 	call	I_Table_Jump		;
+endif	;--------------------------------
+
 	ret				;
 ;===============================================================|
 ;		NULL 'I'					|
@@ -799,13 +1017,11 @@ I_Com4a:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com4b:				;
-	mov	ax,es:[si]		;
-	inc	si			;
-	inc	si			;
+	call	I_Read16		;
 	mov	ds:[di].WTD_KeyOnDelay,ax
 	ret				;
 ;===============================================================|
-;		Loop						|
+;		Loop	'L'					|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com4c:				;
@@ -823,8 +1039,7 @@ I_Com4c_Step1:				;
 	jz	I_Com4c_Step2		;効果音か？
 	mov	ch,ds:[di].WTD_Channel	;ch←チャンネル番号
 	cmp	ch,80h			;
-	jz	I_Com4c_Step2		;ＷＳ音源？
-	and	ch,03h			;
+	jc	I_Com4c_Step2		;ＷＳ音源？
 	call	I_Effect_Return		;効果音からの復帰
 I_Com4c_Step2:				;
 	ret				;
@@ -833,34 +1048,46 @@ I_Com4c_Step2:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com4d:				;
-	mov	al,es:[si]		;
-	inc	si			;
-	mov	cl,MIDI_Ctrl_Mod	;
-	mov	dx,offset I_Table_CtrlChgB
-	call	I_Table_Jump		;
+	call	I_Read16		;
+	mov	ds:[di].WTD_ModDecay,ax	;
+	call	I_Read8			;
+	mov	ds:[di].WTD_ModLevel,al	;
+
+;ifndef	hyoka	;------------------------廉価版は無し
+;	mov	cl,MIDI_Ctrl_Mod	;
+;	mov	dx,offset I_Table_CtrlChgB
+;	call	I_Table_Jump		;
+;endif	;--------------------------------
+
 	ret				;
 ;===============================================================|
 ;		NPRN(MIDI)					|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com4e:				;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
+
+ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_NonRegLSB	;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
+endif	;--------------------------------
 
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
+
+ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_NonRegMSB	;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
+endif	;--------------------------------
 
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
+
+ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_DataEntly	;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
+endif	;--------------------------------
 
 	ret				;
 ;===============================================================|
@@ -868,20 +1095,22 @@ I_Com4e:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com4f:				;
-	mov	al,es:[si]		;
+	call	I_Read8			;
 	shl	al,6			;
-	inc	si			;読み込み
+
+ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_S		;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
+endif	;--------------------------------
+
 	ret				;
 ;===============================================================|
 ;		PCM Mode / MIDI Damper				|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com50:				;
-	mov	al,es:[si]		;
-	inc	si			;読み込み
+	call	I_Read8			;
 	mov	dx,offset I_Table_Mode	;
 	call	I_Table_Jump		;設定
 	ret				;終了
@@ -890,8 +1119,7 @@ I_Com50:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com51:				;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
 	mov	ds:[di].WTD_GateTime8,al
 	ret				;
 ;===============================================================|
@@ -899,42 +1127,50 @@ I_Com51:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com52:				;
-	mov	al,es:[si]		;
-	inc	si			;読み込み
+	call	I_Read8			;
+
+ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Bress	;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
+endif	;--------------------------------
+
 	ret				;
 ;===============================================================|
 ;		Soft						|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com53:				;
-	mov	al,es:[si]		;
+	call	I_Read8			;
 	shl	al,6			;
-	inc	si			;読み込み
+
+ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Soft	;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
+endif	;--------------------------------
+
 	ret				;
 ;===============================================================|
 ;		Foot						|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com54:				;
-	mov	al,es:[si]		;
-	inc	si			;読み込み
+	call	I_Read8			;
+
+ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Foot	;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
+endif	;--------------------------------
+
 	ret				;
 ;===============================================================|
 ;		Gate Time(U)					|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com55:				;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
 	or	al,080h			;
 	mov	ds:[di].WTD_GateTime8,al
 	ret				;
@@ -943,9 +1179,7 @@ I_Com55:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com56:				;
-	mov	ax,es:[si]		;
-	inc	si			;
-	inc	si			;
+	call	I_Read16		;
 	mov	ds:[di].WTD_ExprDetune,ax
 	ret				;
 ;===============================================================|
@@ -953,11 +1187,14 @@ I_Com56:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com57:				;
-	mov	al,es:[si]		;
-	inc	si			;読み込み
+	call	I_Read8			;
+
+ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Blance	;
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
+endif	;--------------------------------
+
 	ret				;
 ;===============================================================|
 ;		Excluesiv Send(MIDI)				|
@@ -968,9 +1205,13 @@ I_Com58:				;
 	push	cx			;
 
 I_Com58_Step1:				;
-	mov	al,byte ptr ds:[si]	;
+	mov	al,byte ptr es:[si]	;
 	inc	si			;
+
+ifndef	hyoka
 	call	C_Send			;送信
+endif
+
 	cmp	al,0f7h			;0xF7だったら終わり。
 	jnz	I_Com58_Step1		;
 
@@ -995,9 +1236,13 @@ I_Com5a:				;
 	inc	si			;
 
 I_Com5a_Step1:				;
-	mov	al,byte ptr ds:[si]	;
+	mov	al,byte ptr es:[si]	;
 	inc	si			;
+
+ifndef	hyoka
 	call	C_Send			;送信
+endif
+
 	loop	I_Com5a_Step1		;
 
 	pop	cx			;
@@ -1069,8 +1314,7 @@ I_Com5e:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com5f:				;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
 	mov	ds:[di].WTD_KeyShift,al	;
 	ret				;
 ;===============================================================|
@@ -1144,8 +1388,7 @@ I_Com6a:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com6b:				;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
 	mov	ds:[di].WTD_Velocity,al	;
 	ret				;
 ;===============================================================|
@@ -1180,26 +1423,21 @@ I_Com6d:				;
 	mov	bp,WTD_ExprLFO		;
 	cmp	al,1			;
 	jz	I_Com6d_Step		;
-;	mov	bp,WTD_PanLFO		;
-;	cmp	al,2			;
-;	jz	I_Com6d_Step		;
+	mov	bp,WTD_PanLFO		;
+	cmp	al,2			;
+	jz	I_Com6d_Step		;
 I_Com6d_Step:				;
 
-	mov	al,es:[si]		;DR
-	inc	si			;
+	call	I_Read8			;DR
 	mov	ds:[di+bp].WTD_ChLfo_DecayRate,al
 
-	mov	al,es:[si]		;SR
-	inc	si			;
+	call	I_Read8			;SR
 	mov	ds:[di+bp].WTD_ChLfo_SpeedRate,al
 
-	mov	ax,es:[si]		;Lv
-	inc	si			;
-	inc	si			;
+	call	I_Read16		;Lv
 	mov	ds:[di+bp].WTD_ChLfo_Level,ax
 
-	mov	al,es:[si]		;Cnt
-	inc	si			;
+	call	I_Read8			;Cnt
 	mov	ds:[di+bp].WTD_ChLfo_Count,al
 
 	pop	bp			;
@@ -1209,8 +1447,7 @@ I_Com6d_Step:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com6e:				;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
 	mov	ds:[di].WTD_NoiseMode,al
 
 	or	al,18h			;
@@ -1223,8 +1460,7 @@ I_Com6e:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com6f:				;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
 	mov	ds:[di].WTD_Octave,al	;
 	ret				;
 ;===============================================================|
@@ -1234,13 +1470,8 @@ I_Com6f:				;
 I_Com70:				;
 	push	cx			;
 
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
 	mov	ds:[di].WTD_Pan,al	;
-
-	mov	cl,MIDI_Ctrl_Pan	;
-	mov	dx,offset I_Table_CtrlChgB
-	call	I_Table_Jump		;
 
 	pop	cx			;
 	ret				;
@@ -1249,9 +1480,7 @@ I_Com70:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com71:				;
-	mov	ax,es:[si]		;
-	inc	si			;
-	inc	si			;
+	call	I_Read16		;
 	mov	ds:[di].WTD_GateTimeStepLast,ax
 	ret				;
 ;===============================================================|
@@ -1265,10 +1494,10 @@ I_Com72:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com73:				;
-	mov	al,es:[si]		;
-	inc	si			;
-	mov	ah,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
+	mov	ah,al			;
+	call	I_Read8			;
+	xchg	al,ah			;
 
 	cmp	ds:[di].WTD_Channel,82h	;PCM Ch2であるか？
 	jnz	I_Com73_End		;
@@ -1287,9 +1516,7 @@ I_Com74:				;
 	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
 	jnz	I_Com74_E		;効果音の場合、処理無し。
 
-	mov	ax,es:[si]		;
-	inc	si			;
-	inc	si			;
+	call	I_Read16		;
 	mov	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Tempo,ax
 	call	T_Set_Frection		;タイマーセット
 
@@ -1300,9 +1527,7 @@ I_Com74_E:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com75:				;
-	mov	ax,es:[si]		;
-	inc	si			;
-	inc	si			;
+	call	I_Read16		;
 	mov	ds:[di].WTD_GateTimeStepFirst,ax
 	ret				;
 ;===============================================================|
@@ -1310,8 +1535,7 @@ I_Com75:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com76:				;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
 	mov	ds:[di].WTD_Expr,al	;
 	ret				;
 ;===============================================================|
@@ -1325,11 +1549,8 @@ I_Com77:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com78:				;
-	mov	al,es:[si]		;
-	inc	si			;
-
+	call	I_Read8			;
 	mov	ds:[di].WTD_VolumeUpDown,al
-
 	ret				;
 ;===============================================================|
 ;		Control Change(MIDI)				|
@@ -1338,10 +1559,9 @@ I_Com78:				;
 I_Com79:				;
 	push	cx
 
-	mov	cl,es:[si]		;
-	inc	si			;
-	mov	al,es:[si]		;
-	inc	si			;
+	call	I_Read8			;
+	mov	cl,al			;
+	call	I_Read8			;
 
 	mov	dx,offset I_Table_CtrlChgB
 	call	I_Table_Jump		;
