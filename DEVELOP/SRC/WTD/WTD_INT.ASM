@@ -894,8 +894,8 @@ I_Play_Pan:				;
 	pusha				;
 
 ;パンポット読み込み
-	xor	ax,ax			;
 	mov	al,ds:[di].WTD_Pan	;
+	and	ax,0007fh		;
 
 	test	ds:[di].WTD_FlagControl,WTD_Ctrl_PanLFO + WTD_Ctrl_PanEmb
 	jz	I_Play_Pan_Output	;ソフトウェア処理がなかったら飛ばす。

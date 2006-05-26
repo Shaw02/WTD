@@ -347,7 +347,7 @@ typedef struct {
 #define	WTD_Sys_Pcm				0x0004	/* PCMボイス発生中 */
 #define	WTD_Sys_PcmEnd			0x0008	/* PCMボイス発生終了 */
 #define	WTD_Sys_Midi			0x0010	/* MIDIモード(システムでは未使用) */
-#define	WTD_Sys_PanMode			0x0020	/* NULL */
+#define	WTD_Sys_5				0x0020	/* NULL */
 #define	WTD_Sys_6				0x0040	/* NULL */
 #define	WTD_Sys_7				0x0080	/* NULL */
 #define	WTD_Sys_ChannelMode1	0x0100	/* チャンネルモード ch1 */
@@ -364,7 +364,7 @@ typedef struct {
 #define	WTD_Sys_PcmR			0xFFFB	/* PCMボイス発生中 */
 #define	WTD_Sys_PcmEndR			0xFFF7	/* PCMボイス発生終了 */
 #define	WTD_Sys_MidiR			0xFFEF	/* MIDIモード(システムでは未使用) */
-#define	WTD_Sys_PanModeR		0xFFDF	/* NULL */
+#define	WTD_Sys_5R				0xFFDF	/* NULL */
 #define	WTD_Sys_6R				0xFFBF	/* NULL */
 #define	WTD_Sys_7R				0xFF7F	/* NULL */
 #define	WTD_Sys_ChannelMode1R	0xFEFF	/* チャンネルモード ch1 */

@@ -261,7 +261,7 @@ I_SP_Volume:				;
 	push	dx			;
 	push	bx			;
 	push	cx			;
-	push	si				;
+	push	si			;
 
 ;音量の次元を[dB]に変換
 ;	shl	al,1			;(Range:0～255)
@@ -273,23 +273,57 @@ I_SP_Volume:				;
 
 ;パンポット読み込み
 	mov	al,ds:[di].WTD_PanSet		;
-	shl	al,1				;
-	mov	ah,0ffh				;al←左のレベル
-	sub	ah,al				;ah←右のレベル
+
+	mov	ah,ds:[di].WTD_Pan		;
+	rol	ah,1				;
+	shr	ah,1				;Bit 7 Reset & Bit 7 -> Cy Flag
+	jc	I_SP_Volume_Logarithmic		;jc
+
+I_SP_Volume_Linear:				;
+;パンポットは、リニアに変化。
+	push	cx				;
+
+	mov	cx,007fh			;
+	and	ax,cx				;
+	sub	cx,ax				;
+	shl	ax,2				;ax←右の音量
+	shl	cx,2				;cx←左の音量
+
+	cmp	ah,0				;
+	jz	I_SP_Volume_Linear_L1		;
+	mov	ax,00ffh			;
+I_SP_Volume_Linear_L1:				;右の処理
+
+	cmp	ch,0				;
+	jz	I_SP_Volume_Linear_L2		;
+	mov	cx,00ffh			;
+I_SP_Volume_Linear_L2:				;左の処理
+
+	mov	ah,cl				;al←右のレベル
+	pop	cx				;ah←左のレベル
+	jmp	I_SP_Volume_Make		;
+
+I_SP_Volume_Logarithmic:
 ;パンポットの次元を[dB]に変換
+	shl	al,1				;
+	mov	ah,0ffh				;al←右のレベル
+	sub	ah,al				;ah←左のレベル
+
 	mov	bx,offset I_Volume_Table	;
-	mov	si,ax				;
+	xchg	al,ah				;
+	mov	si,ax				;si←左
 	and	si,00ffh			;
 	mov	al,cs:[bx + si]			;
-	xchg	al,ah				;ch←左のレベル
-	mov	bx,offset I_Volume_Table	;
-	mov	si,ax				;
+;	mov	bx,offset I_Volume_Table	;
+	xchg	al,ah				;ah←左のレベル
+	mov	si,ax				;si←右
 	and	si,00ffh			;
-	mov	al,cs:[bx + si]			;cl←右のレベル
-	xchg	ax,cx				;al←音量
+	mov	al,cs:[bx + si]			;al←右のレベル
 
+I_SP_Volume_Make:
 ;パンポットの合成
 ;左演算
+	xchg	ax,cx
 	push	ax			;
 	xor	ah,ah			;
 	inc	ax			;ax←音量+1

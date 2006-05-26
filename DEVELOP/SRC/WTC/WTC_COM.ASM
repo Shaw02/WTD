@@ -62,7 +62,9 @@ cMCD_14	db	'l',0,		0,1,	'l',0,	20h,1,0	;l	Lengs
 cMCD_15	db	'n',0,		0,1,	'n',0,	11h,0	;n	Noise mode
 cMCD_16	db	'm',0,		0,4,	'm',0,	11h,11h,11h,12h,11h,0	;m
 cMCD_17	db	'o',0,		0,1,	'o',0,	11h,0	;o	Octave
-cMCD_18	db	'p',0,		0,2,	'p',0,	11h,0	;p	Pan
+cMCD_18	db	'p',0,		1,7,	'p',0,	0f0h	;p	Pan
+	dw		offset cMCD_sp
+	db		0
 cMCD_19	db	'q',0,		0,1,	'q',0,	12h,0	;q	Gate Step
 cMCD_20	db	'r',0,		0,1,	0,	80h,0	;r	休符
 cMCD_21	db	's',0,		0,5,	's',0,	11h,11h,0   ;s	Sweep
@@ -70,7 +72,9 @@ cMCD_22	db	't',0,		0,2,	't',0,	0f0h	;t	Tempo
 	dw		offset cMCD_st
 	db		0
 cMCD_23	db	'u',0,		0,1,	'u',0,	12h,0	;u	Gate Step
-cMCD_24	db	'v',0,		0,1,	'v',0,	11h,0	;v	Volume
+cMCD_24	db	'v',0,		0,1,	'v',0,	0f0h	;v	Volume
+	dw		offset cMCD_sv
+	db		0
 cMCD_25	db	'w',0,		0,0,	0,	0	;w
 cMCD_26	db	'x',0,		0,5,	'x',0,	11h,0	;x	Volume UpDown
 cMCD_27	db	'y',0,		0,5,	'y',0,	11h,11h,0   ;y	Conroll Change
@@ -386,10 +390,104 @@ cMCD_MacroEndChk_End:			;
 	popa				;レジスタ復帰
 	ret				;
 ;---------------------------------------------------------------
+cMCD_sp:				;
+	pusha				;
+
+	push	cs:[pMML_File]		;
+	call	CREAD			;%があったら、
+	pop	cs:[pMML_File]		;
+	cmp	ah,'%'			;
+	jz	cMCD_sp_2		;
+
+cMCD_sp_1:				;------------------
+	call	A2H8R			;%が無かった場合
+	call	CSET			;
+	jmp	cMCD_sp_3		;
+
+cMCD_sp_2:				;------------------
+	call	A2H8R			;%があった場合
+	cmp	ah,32			;
+	jc	cMCD_sp_21		;
+	mov	ah,127			;もし32以上だったら127
+	jmp	cMCD_sp_22		;
+cMCD_sp_21:				;
+	mov	al,ah			;
+	mov	ah,4			;
+	mul	ah			;それ以外は４倍にする。
+	mov	ah,al			;
+cMCD_sp_22:				;
+	call	CSET			;
+;	jmp	cMCD_sp_3		;
+
+cMCD_sp_3:				;------------------
+	push	cs:[pMML_File]		;
+	call	CREAD			;カンマがあったら、
+	pop	cs:[pMML_File]		;
+	cmp	ah,','			;
+	jnz	cMCD_sp_end		;
+
+	call	A2H8R			;引数を読む
+	cmp	ah,1			;
+	jc	cMCD_sp_end		;
+
+	push	bx			;ビットセット
+	mov	bx,CS:[pWTD_File]	;
+	dec	bx			;
+	or	byte ptr ds:[bx],80h	;
+	pop	bx			;
+
+cMCD_sp_end:				;------------------
+	popa				;終了
+	ret				;
+;---------------------------------------------------------------
+cMCD_sv:				;
+	pusha				;
+
+	push	cs:[pMML_File]		;
+	call	CREAD			;%があったら、
+	pop	cs:[pMML_File]		;
+	cmp	ah,'%'			;
+	jz	cMCD_sv_2		;
+
+cMCD_sv_1:				;------------------
+	call	A2H8R			;%が無かった場合
+	call	CSET			;
+	jmp	cMCD_sv_3		;
+
+cMCD_sv_2:				;------------------
+	call	A2H8R			;%があった場合
+	cmp	ah,16			;
+	jc	cMCD_sv_21		;
+	mov	ah,127			;もし16以上だったら127
+	jmp	cMCD_sv_22		;
+cMCD_sv_21:				;
+	mov	al,ah			;
+	mov	ah,8			;
+	mul	ah			;それ以外は8倍にする。
+	mov	ah,al			;
+cMCD_sv_22:				;
+	call	CSET			;
+;	jmp	cMCD_sv_3		;
+
+cMCD_sv_3:				;------------------
+	popa				;
+	ret				;
+;---------------------------------------------------------------
 cMCD_st:
 	pusha				;
 
-;数値読み込み
+	push	cs:[pMML_File]		;
+	call	CREAD			;%があったら、
+	pop	cs:[pMML_File]		;
+	cmp	ah,'%'			;
+	jnz	cMCD_st_2		;
+
+cMCD_st_1:				;------------------
+	call	A2H16R			;cx←Tempo
+	jmp	cMCD_st_3		;
+
+cMCD_st_2:				;------------------
+;数値読み込み				;■従来
 	call	A2H16R			;cx←Tempo
 	mov	cx,ax			;
 	xor	bx,bx			;bx←TimeBase
@@ -401,7 +499,9 @@ cMCD_st:
 	div	bx			;
 	xor	dx,dx			;
 	div	cx			;ax←12000 * 60 / (Tempo * TimeBase)
+;	jmp	cMCD_st_3		;
 
+cMCD_st_3:				;------------------
 ;書き込み
 	call	CSET16			;
 
@@ -415,7 +515,9 @@ cMCD_lB:				;'B'コマンド
 	call	A2H16R			;
 	call	CSET16			;
 
+	push	cs:[pMML_File]		;
 	call	CREAD			;カンマがあったら、
+	pop	cs:[pMML_File]		;
 	cmp	ah,','			;ベンドレンジ
 	jnz	cMCD_lB_End		;
 
@@ -423,7 +525,7 @@ cMCD_lB:				;'B'コマンド
 	mov	bx,CS:[pWTD_File]	;
 	dec	bx			;
 	dec	bx			;
-	or	ds:[bx],8000h		;
+	or	word ptr ds:[bx],8000h	;
 	pop	bx			;
 
 	call	A2H8R			;
