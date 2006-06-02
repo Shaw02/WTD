@@ -74,7 +74,25 @@ I_Frection_Table:
 	dw	24880			;b	
 ;****************************************************************
 ;*								*
-;*			割り込みメインルーチン			*
+;*			割り込みルーチン			*
+;*				演奏・効果音・ＰＣＭ制御	*
+;*								*
+;****************************************************************
+;*								*
+;*	　演奏処理						*
+;*								*
+;*	●引数・返値（この値は保つ必要がある。）		*
+;*		ds:bx	共有構造体アドレス			*
+;*		ds:bp	ワークベースアドレス			*
+;*								*
+;*	●レジスタ割り振り					*
+;*		ax	汎用(主に計算)				*
+;*		ds:bx	共有構造体アドレス			*
+;*		cx	汎用(主にカウンタ)			*
+;*		dx	汎用(主に計算)				*
+;*		ds:di	個別構造体				*
+;*		es:si	演奏アドレス				*
+;*		ds:bp	ワークベースアドレス			*
 ;*								*
 ;****************************************************************
 ;===============================================================|
@@ -101,18 +119,18 @@ I_Start:
 	push	bp				;
 	push	ds				;レジスタ保存
 
-	in	al,Int_Enable			;
-	and	al,INT_HblankReset		;シリアル送信エンプティー
-	out	Int_Enable,al			;割り込み禁止
-
 ;---------------------------------------------------------------
 ;EOIの発行
+
+	cli					;割り込み不可
 
 ;End Of Interrupt
 	mov	al,Int_HblankSet		;
 	out	Int_Eoi,al			;出力
 
-	sti					;割り込み許可
+;	in	al,Int_Enable			;
+;	and	al,INT_HblankReset		;シリアル送信エンプティー
+;	out	Int_Enable,al			;割り込み禁止
 ;---------------------------------------------------------------
 ;バンクの設定
 	in	al,BankSram			;現在のSRAM Bankを得る
@@ -123,7 +141,6 @@ I_Start:
 	jmp	I_Start_End			;処理をしない。
 
 I_Start_Step1:
-;	push	ax				;
 
 ;---------------------------------------------------------------
 ;ワークエリアアドレスの取得
@@ -138,18 +155,70 @@ I_Start_Step1:
 ;---------------------------------------------------------------
 ;演奏・効果音・PcmVoiceルーチンの呼び出し
 
-;PCM Voice
-	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_Pcm	;
-	jz	I_PcmStep				;
-	call	I_Pcm					;PCM Voice
-I_PcmStep:						;
+	;タイマーをエミュレートするか？
+	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_TimerEmulate
+	jz	I_Start_Step2				;
 
-;Music & Effect
-	cmp	ds:[bx].WTD_Sys_TempoCounter,0		;if(TempoCounter == 0){
-	jnz	I_MusicEffectStep			;    I_MusicEffect();
-	call	I_MusicEffect				;};
+	;------------------------------------------------
+	;タイマーをエミュレートする時に追加される処理。	;
+	;CALL命令と、ret命令の6clockが勿体ない		;
+	;------------------------------------------------
+	;PCM Voice					;
+	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_Pcm	;PCM Voice鳴らす？
+	jz	I_PcmStep				;
+
+	;レジスタ設定
+	mov	di,bp					;
+	add	di,WTD_WorkAdd_PCM			;di←パート個別構造体
+	push	es					;レジスタ保存
+
+	;アドレス取得
+	les	si,dword ptr ds:[di].WTD_PcmAddress	;es:si←Play Address
+	mov	dx,es					;dx:si←Play Address
+	;データ取得
+	mov	al,es:[si]				;(注意：PipeLine)
+	inc	si					;
+	;データ出力
+	out	PCM_Com_VolumeCh2,al			;出力
+
+	;ポインタチェック（セグメント境界？）
+	jnz	I_PcmVoice_Step1			;
+	add	dx,1000h				;セグメント増やす
+I_PcmVoice_Step1:					;
+	;アドレス保存
+	mov	word ptr ds:[di].WTD_PcmAddress+0,si	;アドレス保存
+	mov	word ptr ds:[di].WTD_PcmAddress+2,dx	;(注意：PipeLine)
+
+	;終了？
+	sub	word ptr ds:[di].WTD_PcmSize+0,1	;PcmSize ディクリメント
+	sbb	word ptr ds:[di].WTD_PcmSize+2,0	;
+	mov	ax,word ptr ds:[di].WTD_PcmSize+0	;
+	or	ax,word ptr ds:[di].WTD_PcmSize+2	;
+	jnz	I_PcmVoice_End				;
+
+	;終了処理
+	and	ds:[bx].WTD_Sys_Flag,WTD_Sys_PcmR	;処理終了
+
+I_PcmVoice_End:						;
+	pop	es					;レジスタ復帰
+I_PcmStep:						;
+	;PCM Voice終わり				;
+	;---------------				;
+	;テンポ用カウンター　ディクリメント		;
+	dec	ds:[bx].WTD_Sys_TempoCounter		;
+	jnz	I_MusicEffectStep			;演奏を飛ばす。
+	;------------------------------------------------
+	;タイマーエミュレート時の処理ここまで。		;
+	;------------------------------------------------
+
+I_Start_Step2:						;Music & Effect	
+	call	I_MusicEffect				;
 I_MusicEffectStep:					;
 
+;	in	ax,TIMER_CounterH		;
+;	test	ax,ax				;たいまーカウンターが０
+;	jz	I_Start_Step1			;だったら、もう一回。
+;
 ;---------------------------------------------------------------
 ;バンクの復帰
 ;
@@ -158,13 +227,13 @@ I_MusicEffectStep:					;
 ;
 ;---------------------------------------------------------------
 ;割り込みの終了
-
+;
 I_Start_End:
-	cli				;割り込み禁止
-
-	in	al,Int_Enable		;
-	or	al,INT_HblankSet	;タイマー
-	out	Int_Enable,al		;割り込み許可
+;	cli				;割り込み禁止
+;
+;	in	al,Int_Enable		;
+;	or	al,INT_HblankSet	;タイマー
+;	out	Int_Enable,al		;割り込み許可
 
 	pop	ds				;レジスタ復帰
 	pop	bp				;
@@ -178,58 +247,20 @@ I_Start_End:
 ;****************************************************************
 ;*								*
 ;*			割り込みルーチン			*
-;*				演奏・効果音・ＰＣＭ制御	*
+;*				演奏・効果音制御部		*
 ;*								*
 ;****************************************************************
-;*								*
-;*	　演奏処理						*
-;*								*
-;*	●引数・返値（この値は保つ必要がある。）		*
-;*		ds:bx	共有構造体アドレス			*
-;*		ds:bp	ワークベースアドレス			*
-;*								*
-;*	●レジスタ割り振り					*
-;*		ax	汎用(主に計算)				*
-;*		ds:bx	共有構造体アドレス	引数		*
-;*		cx	汎用(主にカウンタ)			*
-;*		dx	汎用(主に計算)				*
-;*		ds:di	個別構造体				*
-;*		es:si	演奏アドレス				*
-;*		ds:bp	ワークベースアドレス	引数		*
-;*								*
-;****************************************************************
-;===============================================================|
-;		PCM Main					|
-;===============================================================|
-	even					;偶数アドレス配置
-I_Pcm:						;
-;---------------------------------------------------------------
-;PcmVioceルーチン
-
-;Pcm発生終了？
-	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_PcmEnd	;
-	jnz	I_Pcm_PcmStep1				;
-
-;レジスタ設定
-	mov	di,bp				;
-	add	di,WTD_WorkAdd_PCM		;di←パート個別構造体
-
-;PcmVioce発生					;
-	call	I_PcmVoice			;発生ルーチン呼び出し
-
-;---------------------------------------------------------------
-;カウント
-
-;テンポ用カウンター　ディクリメント
-I_Pcm_PcmStep1:					;
-	dec	ds:[bx].WTD_Sys_TempoCounter	;
-
-;---------------------------------------------------------------
-;終わり
-
-	ret					;
 ;===============================================================|
 ;		Music Main					|
+;===============================================================|
+;	●レジスタ使用						|
+;		ax	汎用(主に計算)				|
+;		ds:bx	共有構造体アドレス	引数		|
+;		cx	汎用(主にカウンタ)			|
+;		dx	汎用(主に計算)				|
+;		ds:di	個別構造体				|
+;		ds:bp	ワークベースアドレス	引数		|
+;		es:si	演奏アドレス				|
 ;===============================================================|
 	even					;偶数アドレス配置
 I_MusicEffect:					;
@@ -293,20 +324,21 @@ I_MusicEffect_EffectStep:			;
 ;PCM Vioce効果音が発生しており、尚かつ終了であるならば、
 ;タイマーを戻す。
 
-;PCM Vioce 発生中であるか？
-	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_Pcm	;
+;タイマーエミュレート中であるか？
+	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_TimerEmulate
 	jz	I_MusicEffect_PcmCheck_End		;
 
 ;PcmVioce処理終了？
-	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_PcmEnd	;
-	jz	I_MusicEffect_PcmCheck_Step1		;
+	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_Pcm	;
+	jnz	I_MusicEffect_PcmCheck_Step1		;
 
 ;●PcmVioce処理終了の場合。
 ;フラグ初期化
 	mov	ax,ds:[bx].WTD_Sys_Flag		;
-	and	ax,WTD_Sys_PcmR			;演奏ディセーブル
-	and	ax,WTD_Sys_PcmEndR		;終了リセット
+;	and	ax,WTD_Sys_PcmR			;PCM効果音ディセーブル
+;	and	ax,WTD_Sys_PcmEndR		;このフラグは廃止
 	and	ax,WTD_Sys_EffectMask2R		;ch2 効果音マスクRes
+	and	ax,WTD_Sys_TimerEmulateR	;タイマーエミュレートRes
 	mov	ds:[bx].WTD_Sys_Flag,ax		;
 ;タイマー設定
 	mov	ax,ds:[bx].WTD_Sys_Tempo	;タイマーの設定
@@ -338,76 +370,6 @@ I_MusicEffect_PcmCheck_End:			;
 ;終わり
 	pop	es				;レジスタ復帰
 	ret					;
-;****************************************************************
-;*								*
-;*			割り込みルーチン			*
-;*				ＰＣＭ制御部			*
-;*								*
-;****************************************************************
-;===============================================================|
-;		PCM Control Main				|
-;===============================================================|
-;	●レジスタ使用						|
-;		ax	汎用(主に計算)				|
-;		ds:bx	共有構造体アドレス	引数		|
-;		cx	汎用(主にカウンタ)			|
-;		dx	汎用(主に計算)				|
-;		ds:di	個別構造体		引数		|
-;		ds:bp	ワークベースアドレス	引数		|
-;		es	演奏セグメントアドレス	引数		|
-;		si	演奏オフセットアドレス			|
-;===============================================================|
-	even					;偶数アドレス配置
-I_PcmVoice:
-	push	es				;レジスタ保存
-;---------------------------------------------------------------
-;発生処理
-
-;アドレス取得
-	les	si,dword ptr ds:[di].WTD_PcmAddress	;es:si←Play Address
-
-;データ入力
-	mov	ch,1				;ch = 2
-	mov	al,es:[si]			;
-	inc	si				;
-;データ出力
-	call	SP_Set_Volume			;Volume Set
-
-;アドレス取得
-	mov	dx,es				;dx:si←Play Address
-;ポインタチェック（セグメント境界？）
-	cmp	si,0				;
-	jnz	I_PcmVoice_Step1		;
-	add	dx,1000h			;セグメント増やす
-I_PcmVoice_Step1:				;
-
-;アドレス保存
-	mov	word ptr ds:[di].WTD_PcmAddress+0,si	;アドレス保存
-	mov	word ptr ds:[di].WTD_PcmAddress+2,dx	;
-
-;終了？
-	sub	word ptr ds:[di].WTD_PcmSize+0,1
-	jnc	I_PcmVoice_Step2		;PcmSize ディクリメント
-	dec	word ptr ds:[di].WTD_PcmSize+2	;
-I_PcmVoice_Step2:				;
-	mov	ax,word ptr ds:[di].WTD_PcmSize+0
-	or	ax,word ptr ds:[di].WTD_PcmSize+2
-	jnz	I_PcmVoice_End			;
-
-;終了処理
-	or	ds:[bx].WTD_Sys_Flag,WTD_Sys_PcmEnd	;終了フラグ='h'
-
-;---------------------------------------------------------------
-I_PcmVoice_End:
-;終わり
-	pop	es				;レジスタ復帰
-	ret					;
-;****************************************************************
-;*								*
-;*			割り込みルーチン			*
-;*				演奏・効果音制御部		*
-;*								*
-;****************************************************************
 ;===============================================================|
 ;		Music Control Main				|
 ;===============================================================|
@@ -418,8 +380,7 @@ I_PcmVoice_End:
 ;		dx	汎用(主に計算)				|
 ;		ds:di	個別構造体		引数		|
 ;		ds:bp	ワークベースアドレス	引数		|
-;		es	演奏セグメントアドレス	引数		|
-;		si	演奏オフセットアドレス			|
+;		es:si	演奏アドレス		引数		|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Play:					;
