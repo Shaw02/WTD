@@ -1552,8 +1552,6 @@ I_Com74:				;
 	jnz	I_Com74_E		;効果音の場合、処理無し。
 
 	mov	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Tempo,ax
-	test	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Flag,WTD_Sys_TimerEmulate
-	jnz	I_Com74_E		;
 	call	T_Set_Frection		;タイマーセット
 
 I_Com74_E:				;

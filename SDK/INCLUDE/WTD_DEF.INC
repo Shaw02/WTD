@@ -332,7 +332,7 @@ WTD_Sys			ends
 WTD_Sys_Music		equ	00001h		;演奏中
 WTD_Sys_Effect		equ	00002h		;効果音発声中
 WTD_Sys_Pcm		equ	00004h		;PCMボイス発生中
-WTD_Sys_3		equ	00008h		;
+WTD_Sys_PcmEnd		equ	00008h		;PCMボイス発生終了
 WTD_Sys_Midi		equ	00010h		;MIDIモード(システムでは未使用)
 WTD_Sys_5		equ	00020h		;パンポットのモード(対数演算)
 WTD_Sys_6		equ	00040h		;
@@ -350,7 +350,7 @@ WTD_Sys_EffectMask4	equ	08000h		;効果音パートマスク ch4
 WTD_Sys_MusicR		equ	0fffeh		;演奏中
 WTD_Sys_EffectR		equ	0fffdh		;効果音発声中
 WTD_Sys_PcmR		equ	0fffbh		;PCMボイス発生中
-WTD_Sys_3R		equ	0fff7h		;
+WTD_Sys_PcmEndR		equ	0fff7h		;PCMボイス発生終了
 WTD_Sys_MidiR		equ	0ffefh		;MIDIモード(システムでは未使用)
 WTD_Sys_5R		equ	0ffdfh		;パンポットのモード(直線演算)
 WTD_Sys_6R		equ	0ffbfh		;

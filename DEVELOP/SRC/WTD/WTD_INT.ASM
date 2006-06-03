@@ -119,18 +119,18 @@ I_Start:
 	push	bp				;
 	push	ds				;レジスタ保存
 
+	in	al,Int_Enable			;
+	and	al,INT_HblankReset		;シリアル送信エンプティー
+	out	Int_Enable,al			;割り込み禁止
+
 ;---------------------------------------------------------------
 ;EOIの発行
-
-	cli					;割り込み不可
 
 ;End Of Interrupt
 	mov	al,Int_HblankSet		;
 	out	Int_Eoi,al			;出力
 
-;	in	al,Int_Enable			;
-;	and	al,INT_HblankReset		;シリアル送信エンプティー
-;	out	Int_Enable,al			;割り込み禁止
+	sti					;割り込み許可
 ;---------------------------------------------------------------
 ;バンクの設定
 	in	al,BankSram			;現在のSRAM Bankを得る
@@ -141,6 +141,7 @@ I_Start:
 	jmp	I_Start_End			;処理をしない。
 
 I_Start_Step1:
+;	push	ax				;
 
 ;---------------------------------------------------------------
 ;ワークエリアアドレスの取得
@@ -161,64 +162,24 @@ I_Start_Step1:
 
 	;------------------------------------------------
 	;タイマーをエミュレートする時に追加される処理。	;
-	;CALL命令と、ret命令の6clockが勿体ない		;
-	;------------------------------------------------
+	;---------------
 	;PCM Voice					;
 	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_Pcm	;PCM Voice鳴らす？
 	jz	I_PcmStep				;
-
-	;レジスタ設定
-	mov	di,bp					;
-	add	di,WTD_WorkAdd_PCM			;di←パート個別構造体
-	push	es					;レジスタ保存
-
-	;アドレス取得
-	les	si,dword ptr ds:[di].WTD_PcmAddress	;es:si←Play Address
-	mov	dx,es					;dx:si←Play Address
-	;データ取得
-	mov	al,es:[si]				;(注意：PipeLine)
-	inc	si					;
-	;データ出力
-	out	PCM_Com_VolumeCh2,al			;出力
-
-	;ポインタチェック（セグメント境界？）
-	jnz	I_PcmVoice_Step1			;
-	add	dx,1000h				;セグメント増やす
-I_PcmVoice_Step1:					;
-	;アドレス保存
-	mov	word ptr ds:[di].WTD_PcmAddress+0,si	;アドレス保存
-	mov	word ptr ds:[di].WTD_PcmAddress+2,dx	;(注意：PipeLine)
-
-	;終了？
-	sub	word ptr ds:[di].WTD_PcmSize+0,1	;PcmSize ディクリメント
-	sbb	word ptr ds:[di].WTD_PcmSize+2,0	;
-	mov	ax,word ptr ds:[di].WTD_PcmSize+0	;
-	or	ax,word ptr ds:[di].WTD_PcmSize+2	;
-	jnz	I_PcmVoice_End				;
-
-	;終了処理
-	and	ds:[bx].WTD_Sys_Flag,WTD_Sys_PcmR	;処理終了
-
-I_PcmVoice_End:						;
-	pop	es					;レジスタ復帰
+	call	I_Pcm					;PCM Voice
 I_PcmStep:						;
-	;PCM Voice終わり				;
-	;---------------				;
+	;---------------
 	;テンポ用カウンター　ディクリメント		;
 	dec	ds:[bx].WTD_Sys_TempoCounter		;
 	jnz	I_MusicEffectStep			;演奏を飛ばす。
 	;------------------------------------------------
-	;タイマーエミュレート時の処理ここまで。		;
-	;------------------------------------------------
 
-I_Start_Step2:						;Music & Effect	
+I_Start_Step2:						;
+
+	;Music & Effect
 	call	I_MusicEffect				;
 I_MusicEffectStep:					;
 
-;	in	ax,TIMER_CounterH		;
-;	test	ax,ax				;たいまーカウンターが０
-;	jz	I_Start_Step1			;だったら、もう一回。
-;
 ;---------------------------------------------------------------
 ;バンクの復帰
 ;
@@ -227,13 +188,13 @@ I_MusicEffectStep:					;
 ;
 ;---------------------------------------------------------------
 ;割り込みの終了
-;
+
 I_Start_End:
-;	cli				;割り込み禁止
-;
-;	in	al,Int_Enable		;
-;	or	al,INT_HblankSet	;タイマー
-;	out	Int_Enable,al		;割り込み許可
+	cli				;割り込み禁止
+
+	in	al,Int_Enable		;
+	or	al,INT_HblankSet	;タイマー
+	out	Int_Enable,al		;割り込み許可
 
 	pop	ds				;レジスタ復帰
 	pop	bp				;
@@ -244,6 +205,94 @@ I_Start_End:
 	pop	bx				;
 	pop	ax				;
 	iret					;
+;****************************************************************
+;*								*
+;*			割り込みルーチン			*
+;*				ＰＣＭ制御部			*
+;*								*
+;****************************************************************
+;===============================================================|
+;		PCM Main					|
+;===============================================================|
+;	●レジスタ使用						|
+;		ax	汎用(主に計算)				|
+;		ds:bx	共有構造体アドレス	引数		|
+;		cx	汎用(主にカウンタ)			|
+;		dx	汎用(主に計算)				|
+;		ds:di	個別構造体				|
+;		ds:bp	ワークベースアドレス	引数		|
+;		es:si	演奏アドレス				|
+;	●注意							|
+;		V30MZのパイプラインを考慮した命令の並びに	|
+;		なっています。命令の実行順番を変える際は注意。	|
+;===============================================================|
+	even					;偶数アドレス配置
+I_Pcm:						;
+
+	;Pcm発生終了？
+	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_PcmEnd	;
+	jnz	I_Pcm_End				;
+
+	;----------------------------------------
+	;PcmVioce発生処理			;
+
+	;レジスタ設定
+	mov	di,bp				;
+	add	di,WTD_WorkAdd_PCM		;di←パート個別構造体
+	push	es				;レジスタ保存(注意：PipeLine)
+
+	;アドレス取得
+	les	si,dword ptr ds:[di].WTD_PcmAddress	;es:si←Play Address
+	mov	dx,es				;dx:si←Play Address
+	;データ取得
+	mov	al,es:[si]			;(注意：PipeLine)
+	inc	si				;
+	;データ出力
+	out	PCM_Com_VolumeCh2,al		;出力
+
+	;ポインタチェック（セグメント境界？）
+	jnz	I_PcmVoice_Step1		;
+	add	dx,1000h			;セグメント増やす
+I_PcmVoice_Step1:				;
+	;アドレス保存
+	mov	word ptr ds:[di].WTD_PcmAddress+0,si	;アドレス保存
+	mov	word ptr ds:[di].WTD_PcmAddress+2,dx	;(注意：PipeLine)
+
+	;終了？
+	sub	word ptr ds:[di].WTD_PcmSize+0,1
+	jnc	I_PcmVoice_Step2		;PcmSize ディクリメント
+	dec	word ptr ds:[di].WTD_PcmSize+2	;
+I_PcmVoice_Step2:				;
+	mov	ax,word ptr ds:[di].WTD_PcmSize+0
+	or	ax,word ptr ds:[di].WTD_PcmSize+2
+	jnz	I_PcmVoice_End			;
+
+	;終了処理
+	or	ds:[bx].WTD_Sys_Flag,WTD_Sys_PcmEnd	;終了フラグ='h'
+
+I_PcmVoice_End:					;
+	pop	es				;レジスタ復帰
+	;終わり					;
+	;---------------------------------------
+
+;---------------------------------------------------------------
+I_Pcm_End:					;終わり
+	ret					;
+;===============================================================|
+;		PCM Control Main				|
+;===============================================================|
+;	●レジスタ使用						|
+;		ax	汎用(主に計算)				|
+;		ds:bx	共有構造体アドレス	引数		|
+;		cx	汎用(主にカウンタ)			|
+;		dx	汎用(主に計算)				|
+;		ds:di	個別構造体		引数		|
+;		ds:bp	ワークベースアドレス	引数		|
+;		es:si	演奏アドレス				|
+;===============================================================|
+	even					;偶数アドレス配置
+I_PcmVoice:
+	ret					;
 ;****************************************************************
 ;*								*
 ;*			割り込みルーチン			*
@@ -324,19 +373,19 @@ I_MusicEffect_EffectStep:			;
 ;PCM Vioce効果音が発生しており、尚かつ終了であるならば、
 ;タイマーを戻す。
 
-;タイマーエミュレート中であるか？
-	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_TimerEmulate
+;PCM Vioce 発生中であるか？
+	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_Pcm	;
 	jz	I_MusicEffect_PcmCheck_End		;
 
 ;PcmVioce処理終了？
-	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_Pcm	;
-	jnz	I_MusicEffect_PcmCheck_Step1		;
+	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_PcmEnd	;
+	jz	I_MusicEffect_PcmCheck_Step1		;
 
 ;●PcmVioce処理終了の場合。
 ;フラグ初期化
 	mov	ax,ds:[bx].WTD_Sys_Flag		;
-;	and	ax,WTD_Sys_PcmR			;PCM効果音ディセーブル
-;	and	ax,WTD_Sys_PcmEndR		;このフラグは廃止
+	and	ax,WTD_Sys_PcmR			;PCM効果音ディセーブル
+	and	ax,WTD_Sys_PcmEndR		;PCM終了リセット
 	and	ax,WTD_Sys_EffectMask2R		;ch2 効果音マスクRes
 	and	ax,WTD_Sys_TimerEmulateR	;タイマーエミュレートRes
 	mov	ds:[bx].WTD_Sys_Flag,ax		;

@@ -1344,7 +1344,7 @@ _PcmPlay_FileChkEnd2:					;
 	mov	ax,ds:[si].WTD_Sys_Flag			;
 	;PCMVoice効果音On, Musicch2Mask, Timer Emulate on
 	or	ax,WTD_Sys_Pcm + WTD_Sys_EffectMask2 + WTD_Sys_TimerEmulate
-;	and	ax,WTD_Sys_PcmEndR			;このフラグは廃止
+	and	ax,WTD_Sys_PcmEndR			;ch2 効果音マスク
 	mov	ds:[si].WTD_Sys_Flag,ax			;終了リセット
 
 ;
@@ -1418,11 +1418,8 @@ _PcmStop	proc far		;
 
 ;演奏フラグのセット
 	mov	ax,ds:[si].WTD_Sys_Flag			;
-	and	ax,WTD_Sys_PcmR				;終了
+	or	ax,WTD_Sys_PcmEnd			;ch2 効果音マスク
 	mov	ds:[si].WTD_Sys_Flag,ax			;終了リセット
-
-;	タイマーは、割り込みルーチンでいじる。
-
 
 ;
 ;	その他の設定
