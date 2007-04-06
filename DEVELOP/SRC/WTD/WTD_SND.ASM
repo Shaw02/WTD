@@ -38,8 +38,8 @@ PCM_Com_VolumePCM	equ	094h			;PCM Voice Volume
 ;===============================================================|
 ;			Work Address				|
 ;===============================================================|
-PCM_Wrok_Segment	equ	0000h	;FreyaBIOS Work Area
-PCM_Wrok_VoiceTable	equ	0180h	;FreyaBIOS Work Area
+;PCM_Wrok_Segment	equ	0000h	;FreyaBIOS Work Area
+;PCM_Wrok_VoiceTable	equ	0180h	;FreyaBIOS Work Area
 ;===============================================================|
 ;			定数					|
 ;===============================================================|
@@ -63,10 +63,11 @@ SP_init	proc near			;
 	push	di			;
 	push	es			;レジスタ保存
 
-	mov	ax,PCM_Wrok_VoiceTable	;
+;	mov	ax,PCM_Wrok_VoiceTable	;
+	mov	ax,ds:[bp].WTD_WorkAdd_System+WTD_Sys_VoiceTableOffset
 	call	SP_Set_VoiceAdd		;音色テーブルの設定
 
-	push	PCM_Wrok_Segment	;
+	push	IRAM_Segment		;
 	pop	es			;
 	mov	di,ax			;es:di←0000h:0180h
 
@@ -461,9 +462,10 @@ SP_Set_Voice_Step:			;
 
 	cld				;インクリメントモード
 
-	push	PCM_Wrok_Segment	;es←0000h
+	push	IRAM_Segment		;es←0000h
 	pop	es			;
-	mov	di,PCM_Wrok_VoiceTable	;0180h(音色テーブルアドレス)
+;	mov	di,PCM_Wrok_VoiceTable	;0180h(音色テーブルアドレス)
+	mov	di,ds:[bp].WTD_WorkAdd_System+WTD_Sys_VoiceTableOffset
 	and	cx,PCM_Channel_mask	;
 	shr	cx,4			;
 	add	di,cx			;es:di←0000h:0180h + ch × 16

@@ -96,6 +96,66 @@ ILinfoD_Depends		dw	0		;未使用（ポインタ）
 			dw	0		;
 ;****************************************************************
 ;*								*
+;*		IL構造体の設定					*
+;*								*
+;****************************************************************
+;===============================================================|
+;		void	WTD_FucntionLoad()			|
+;===============================================================|
+;	引き数							|
+;		WtdIL	&Wtd_Function	/*構造体のポインタを*/	|
+;	返り値							|
+;		無し						|
+;	処理							|
+;		・WtdIL構造体の設定				|
+;		　WtdIL構造体は、ライブラリを呼ぶ側が用意する。	|
+;===============================================================|
+ifdef	library				;※　ライブラリ版のみ必要
+
+	public	_WTD_FucntionLoad	;外部宣言
+
+_WTD_FucntionLoad	proc	near	;
+	push	bp			;
+	mov	bp,sp			;
+
+	push	cx			;
+	push	si			;
+	push	di			;
+	push	ds			;
+	push	es			;
+
+	push	ds			;
+	pop	es			;es←DGROUP
+	mov	di,ss:[bp + 04h]	;di←Wtd_Functionのポインタ
+
+	push	cs			;
+	pop	ds			;ds←CGROUP
+	mov	si,offset IL		;di←IL構造体用のデータ
+
+	cld				;インクリメントモード
+	mov	cx,3			;
+	rep	movsw			;IL_Link_Pos, IL_Link_Methodの転送
+
+	mov	cx,CS:[IL_N_Methods]	;構造体のサイズ計算
+_WTD_FucntionLoad_Loop1:
+	movsw				;
+	mov	es:[di],cs		;関数群の転送
+	add	di,2			;
+	add	si,2			;
+	dec	cx			;
+	jz	_WTD_FucntionLoad_Loop1	;
+
+	pop	es			;
+	pop	ds			;
+	pop	di			;
+	pop	si			;
+	pop	cx			;
+	pop	bp			;
+	ret				;
+_WTD_FucntionLoad	endp		;
+endif
+;****************************************************************
+;*								*
 ;*		ＩＬのファンクション				*
 ;*								*
 ;****************************************************************
@@ -105,7 +165,7 @@ ILinfoD_Depends		dw	0		;未使用（ポインタ）
 ;	引き数							|
 ;		無し						|
 ;	返り値							|
-;		bx,ax←ILinfo構造体のポインタ			|
+;		dx,ax←ILinfo構造体のポインタ			|
 ;	処理							|
 ;		ILinfoポインタの取得				|
 ;===============================================================|
@@ -179,29 +239,42 @@ _Stay_00:
 	pop	es			;es←本体RAMセグメント
 
 ;IntVectorの設定
-	mov	ax,es:[Hblank_intvector].0		;タイマー
+	push	bx					;
+
+	mov	ax,0					;
+	call	IntVector_Get				;al←割り込みベクタ
+	mov	ds:[si].WTD_Sys_InterruptBase,al	;保存
+	shl	ax,2			;読み込んだ値を4倍
+	mov	bx,ax			;割り込みベクタのアドレス
+
+	mov	ax,es:[bx+SYS_INT_HBLANK_COUNTUP*4+0]	;タイマー
 	mov	ds:[si].WTD_Sys_OldIntvector+0,ax	;割り込み
-	mov	ax,es:[Hblank_intvector].2		;
+	mov	ax,es:[bx+SYS_INT_HBLANK_COUNTUP*4+2]	;
 	mov	ds:[si].WTD_Sys_OldIntvector+2,ax	;復帰用に保存
 
-	mov	es:[Hblank_intvector].0,offset I_Start	;割り込みアドレスの
-	mov	es:[Hblank_intvector].2,cs		;設定
+	mov	es:[bx+SYS_INT_HBLANK_COUNTUP*4+0],offset I_Start
+	mov	es:[bx+SYS_INT_HBLANK_COUNTUP*4+2],cs	;アドレスの設定
 
 ifndef	hyoka	;------------------------廉価版は無し
-	mov	ax,es:[CommEnpty_intvector].0		;シリアルエンプティー
+	mov	ax,es:[bx+SYS_INT_SENDREADY*4+0]	;シリアルエンプティー
 	mov	ds:[si].WTD_Sys_OldIntvectorCom+0,ax	;割り込み
-	mov	ax,es:[CommEnpty_intvector].2		;
+	mov	ax,es:[bx+SYS_INT_SENDREADY*4+2]	;
 	mov	ds:[si].WTD_Sys_OldIntvectorCom+2,ax	;復帰用に保存
 
-	mov	es:[CommEnpty_intvector].0,offset IC_Start
-	mov	es:[CommEnpty_intvector].2,cs		;割り込みアドレスの設定
+	mov	es:[bx+SYS_INT_SENDREADY*4+0],offset IC_Start
+	mov	es:[bx+SYS_INT_SENDREADY*4+2],cs	;アドレスの設定
 endif	;--------------------------------
+	pop	bx					;
 
 ;タイマー
 	mov	ax,Timer_Tempo120			;
 	mov	ds:[si].WTD_Sys_Tempo,ax		;
 	xor	ax,ax					;
 	mov	ds:[si].WTD_Sys_TempoCounter,ax		;
+
+;音色テーブル
+	mov	ax,IRAM_SoundVoiceTable			;
+	mov	ds:[si].WTD_Sys_VoiceTableOffset,ax	;
 
 ;ソフト音量
 	mov	ax,0ffffh				;音量設定
@@ -304,17 +377,25 @@ endif	;--------------------------------
 	pop	es			;es←本体RAMセグメント
 
 ;IntVectorの復帰
+	push	bx					;
+
+	mov	ax,0					;
+	mov	al,ds:[si].WTD_Sys_InterruptBase,al	;al←割り込みベクタ
+	shl	ax,2			;読み込んだ値を4倍
+	mov	bx,ax			;割り込みベクタのアドレス
+
 	mov	ax,ds:[si].WTD_Sys_OldIntvector+0	;
-	mov	es:[Hblank_intvector].0,ax		;
+	mov	es:[bx+SYS_INT_HBLANK_COUNTUP*4+0],ax	;
 	mov	ax,ds:[si].WTD_Sys_OldIntvector+2	;
-	mov	es:[Hblank_intvector].2,ax		;
+	mov	es:[bx+SYS_INT_HBLANK_COUNTUP*4+2],ax	;
 
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	ax,ds:[si].WTD_Sys_OldIntvectorCom+0	;
-	mov	es:[CommEnpty_intvector].0,ax		;
+	mov	es:[bx+SYS_INT_SENDREADY*4+0],ax	;
 	mov	ax,ds:[si].WTD_Sys_OldIntvectorCom+2	;
-	mov	es:[CommEnpty_intvector].2,ax		;
+	mov	es:[bx+SYS_INT_SENDREADY*4+2],ax	;
 endif	;--------------------------------
+	pop	bx					;
 
 ;
 ;	その他、設定の復帰を行う。
@@ -1463,7 +1544,9 @@ _PcmVoiceSet	proc far		;
 ;	push	SRAM_Segment			;
 ;	pop	es				;ds←SRAMセグメント
 ;	mov	bx,es:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
-	WTD_WorkGet	es,bx			;ワークエリアアドレスの取得
+	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
+	push	ds
+	pop	es
 
 ;構造体アドレスの設定
 	mov	di,bx				;
@@ -1537,7 +1620,9 @@ _SoftEmbSet	proc far		;
 ;	push	SRAM_Segment			;
 ;	pop	es				;ds←SRAMセグメント
 ;	mov	bx,es:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
-	WTD_WorkGet	es,bx			;ワークエリアアドレスの取得
+	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
+	push	ds
+	pop	es
 
 ;構造体アドレスの設定
 	mov	di,bx				;

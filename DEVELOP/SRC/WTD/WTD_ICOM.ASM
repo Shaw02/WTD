@@ -48,12 +48,14 @@ IC_Start:
 
 ;---------------------------------------------------------------
 ;バンクの設定
+ifndef	IRAM		;DGROUP=IRAMの場合、不要
 	in	al,BankSram			;現在のSRAM Bankを得る
 	cmp	al,BANK_USERDS0			;ユーザ領域を示していたら、
 	jz	IC_Start_Step1			;この処理は行わない。
 	cmp	al,BANK_USERDS1			;
 	jz	IC_Start_Step1			;'/ram0'アクセス中は、
 	jmp	IC_Start_End			;処理をしない。
+endif
 
 IC_Start_Step1:
 ;	push	ax				;
@@ -72,10 +74,12 @@ IC_Start_Step2:					;
 	call	IC_Send				;送信
 ;---------------------------------------------------------------
 ;バンクの復帰
+ifndef	IRAM		;DGROUP=IRAMの場合、不要
 ;
 ;	pop	ax				;復帰
 ;	out	BankSram,al			;設定する。
 ;
+endif
 ;---------------------------------------------------------------
 ;割り込みの終了
 

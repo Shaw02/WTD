@@ -60,6 +60,12 @@ typedef struct {
 /*											*/
 /********************************************/
 /*==========================================*/
+/* ハードウェア割り込み						*/
+/*==========================================*/
+/*	#define	InterruptVectorBase_WW	INT_HARDHAEW_VECTOR_BASE	*/	/* WonderWitch		*/
+/*	#define	InterruptVectorBase		InterruptVectorBase_WW		*/	/* 割り込みベクタ	*/
+
+/*==========================================*/
 /* Wander Swan far address					*/
 /*==========================================*/
 #define	IRAM_Segment		0x00000000L			/* 本体RAM */
@@ -67,10 +73,14 @@ typedef struct {
 #define	FROM_Segment		(BANK_ROM0_ADDRESS)
 
 /*==========================================*/
-/* HBLANK Interrupt vector address			*/
+/* 本体RAM Work Address						*/
 /*==========================================*/
-#define	CommEnpty_intvector	0x00a0	/*  0x28 * 4  */
-#define	Hblank_interrupt	0x00bc	/*  0x2F * 4  */
+/*	#define	CommEnpty_intvector	0x00a0	*/	/*  0x28 * 4  */
+/*	#define	Hblank_interrupt	0x00bc	*/	/*  0x2F * 4  */
+
+#define	IRAM_SoundVoiceTable_WW	0x0180						/* WonderWitch設定	*/
+#define	IRAM_SoundVoiceTable	(IRAM_SoundVoiceTable_WW)	/* 音色テーブル		*/
+
 
 /*==========================================*/
 /* ワーク領域アドレス						*/
@@ -338,6 +348,8 @@ typedef struct {
 	int		ComFIFO_Adr;		/* 2C	FIFO Address */
 	int		ComFIFO_Size;		/* 2E	FIFO Size */
 	char	RunningStatus;		/* 30	MIDI Running Status */
+	char	InterruptBase;		/* 31	割り込みベースベクタ */
+	int		VoiceTableOffset;	/* 32	音色テーブル(IRAM)アドレス */
 } Wtd_Sys;
 
 /* Flag bit */
@@ -345,11 +357,11 @@ typedef struct {
 #define	WTD_Sys_Music			0x0001	/* 演奏中 */
 #define	WTD_Sys_Effect			0x0002	/* 効果音発声中 */
 #define	WTD_Sys_Pcm				0x0004	/* PCMボイス発生中 */
-#define	WTD_Sys_PcmEnd			0x0008	/* PCMボイス発生終了 */
+#define	WTD_Sys_3				0x0008	/* NULL	(元：PCM Voice終了) */
 #define	WTD_Sys_Midi			0x0010	/* MIDIモード(システムでは未使用) */
 #define	WTD_Sys_5				0x0020	/* NULL */
 #define	WTD_Sys_6				0x0040	/* NULL */
-#define	WTD_Sys_TimerEmulate	0x0080	/* NULL */
+#define	WTD_Sys_TimerEmulate	0x0080	/* タイマーをエミュレート中 */
 #define	WTD_Sys_ChannelMode1	0x0100	/* チャンネルモード ch1 */
 #define	WTD_Sys_ChannelMode2	0x0200	/* チャンネルモード ch2 */
 #define	WTD_Sys_ChannelMode3	0x0400	/* チャンネルモード ch3 */
@@ -362,11 +374,11 @@ typedef struct {
 #define	WTD_Sys_MusicR			0xFFFE	/* 演奏中 */
 #define	WTD_Sys_EffectR			0xFFFD	/* 効果音発声中 */
 #define	WTD_Sys_PcmR			0xFFFB	/* PCMボイス発生中 */
-#define	WTD_Sys_PcmEndR			0xFFF7	/* PCMボイス発生終了 */
+#define	WTD_Sys_3R				0xFFF7	/* NULL	(元：PCM Voice終了) */
 #define	WTD_Sys_MidiR			0xFFEF	/* MIDIモード(システムでは未使用) */
 #define	WTD_Sys_5R				0xFFDF	/* NULL */
 #define	WTD_Sys_6R				0xFFBF	/* NULL */
-#define	WTD_Sys_TimerEmulateR	0xFF7F	/* NULL */
+#define	WTD_Sys_TimerEmulateR	0xFF7F	/* タイマーをエミュレート中 */
 #define	WTD_Sys_ChannelMode1R	0xFEFF	/* チャンネルモード ch1 */
 #define	WTD_Sys_ChannelMode2R	0xFDFF	/* チャンネルモード ch2 */
 #define	WTD_Sys_ChannelMode3R	0xFBFF	/* チャンネルモード ch3 */

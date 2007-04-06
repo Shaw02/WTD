@@ -5,32 +5,57 @@
 #==============================================================================
 include ..\..\..\SDK\include\wtdsdk.mak
 
-PROJ = WTD
-PROJ1 = WTD_H
+PROJ = WTD		#Wonder Witch In-Direct Librally
+PROJ1 = WTD_H		#	DGROUP = 0x1000 (S-RAM)	(specificity of the Wonder Witch)
+			#This versions are Wonder Witch only.
+
+PROJ2 = WTD_SRAM	#Librally for the Wonder Swan
+PROJ3 = WTDHSRAM	#	DGROUP = 0x1000 (S-RAM)	(specificity of the Wonder Witch)
+			#Wonder Witch can use S-RAM Version.
+			#Work area(S-RAM) of WTD are Bank=0x01 or 0x02 only.
+
+PROJ4 = WTD_IRAM	#Librally for the Wonder Swan
+PROJ5 = WTDHIRAM	#	DGROUP = 0x0000 (I-RAM)
+			#Wonder Witch does not use I-RAM version.
 
 INC_FILES =  ..\..\..\SDK\include\wtd.h ..\..\..\SDK\include\bank.inc ..\..\..\SDK\include\comm.inc ..\..\..\SDK\include\process.inc ..\..\..\SDK\include\service.inc ..\..\..\SDK\include\sound.inc ..\..\..\SDK\include\timer.inc ..\..\..\SDK\include\wtd_def.inc ..\..\..\SDK\include\wtd_ver.inc ..\..\..\SDK\include\wtc_def.inc 
 
-FILES = wtd.asm wtd_com.asm wtd_icmd.asm wtd_idev.asm wtd_ilf.asm wtd_int.asm wtd_snd.asm wtd_tim.asm
+FILES = wtd.asm wtd_com.asm wtd_icmd.asm wtd_idev.asm wtd_ilf.asm wtd_int.asm wtd_snd.asm wtd_tim.asm wtd_lib.asm
 
-AFLAG1 = /Dhyoka=1
+AFLAG1 = /D"hyoka=1"
+AFLAG2 = /D"library=1"
+AFLAG3 = /D"library=1 hyoka=1"
+AFLAG4 = /D"library=1 IRAM=1"
+AFLAG5 = /D"library=1 hyoka=1 IRAM=1"
 
-
-
-all: $(PROJ).fx $(PROJ1).fx
+all: $(PROJ).fx $(PROJ1).fx $(PROJ2).lib $(PROJ3).lib $(PROJ4).lib $(PROJ5).lib
 	@del *.bak
 	@del *.obj
 	@del *.com
 	@del *.exe
 	@del *.bin
+	@del.*.lib
 
 $(PROJ).fx : $(FILES) $(INC_FILES)
-	@$(ASM) $(AFLAG) $(PROJ);>wtderror.txt
+	@$(ASM) $(AFLAG) $(PROJ);>wtd_err0.txt
 	@$(LINKER) $(LFLAG) $(PROJ),,,$(LIBS);
 	@ren $(PROJ).com $(PROJ).bin
 	@mkfent $(PROJ).cf
 
 $(PROJ1).fx : $(FILES) $(INC_FILES)
-	@$(ASM) $(AFLAG) $(AFLAG1) $(PROJ),$(PROJ1).obj;
+	@$(ASM) $(AFLAG) $(AFLAG1) $(PROJ),$(PROJ1).obj;>wtd_err1.txt
 	@$(LINKER) $(LFLAG) $(PROJ1),,,$(LIBS);
 	@ren $(PROJ1).com $(PROJ1).bin
 	@mkfent $(PROJ1).cf
+
+$(PROJ2).lib : $(FILES) $(INC_FILES)
+	@$(ASM) $(AFLAG) $(AFLAG2) $(PROJ),$(PROJ2).obj;>wtd_err2.txt
+
+$(PROJ3).lib : $(FILES) $(INC_FILES)
+	@$(ASM) $(AFLAG) $(AFLAG3) $(PROJ),$(PROJ3).obj;>wtd_err3.txt
+
+$(PROJ4).lib : $(FILES) $(INC_FILES)
+	@$(ASM) $(AFLAG) $(AFLAG4) $(PROJ),$(PROJ4).obj;>wtd_err4.txt
+
+$(PROJ5).lib : $(FILES) $(INC_FILES)
+	@$(ASM) $(AFLAG) $(AFLAG5) $(PROJ),$(PROJ5).obj;>wtd_err5.txt

@@ -18,21 +18,44 @@
 ;===============================================================|
 ;	●マクロ書式						|
 ;		WTD_WorkGet	reg1,reg2			|
+;	●引数							|
+;		DS	DGROUP					|
 ;	●返値							|
 ;		reg1	Segment Address				|
 ;		reg2	Offset  Address				|
 ;===============================================================|
-WTD_WorkGet	macro	segment,offset			;
-		push	SRAM_Segment			;
-		pop	segment				;segment
-		mov	offset,ds:[ProcContext_heap]	;offset
-		endm					;
+WTD_WorkGet	macro	segment,offset		;
+ifdef	library	;------------------------	;※　ライブラリ版のみ必要
+
+ifdef	IRAM	;---------------		;D-GROUP ＝ I-RAMの場合
+		push	IRAM_Segment		;
+		pop	segment			;
+		mov	offset,offset DGROUP:_WTD_Work
+
+else	;-----------------------		;D-GROUP ≠ S-RAMの場合
+		push	SRAM_Segment		;（WonderWitch等）
+		pop	segment			;
+		mov	offset,offset DGROUP:_WTD_Work
+endif	;-----------------------
+
+else	;--------------------------------	;WonderWitch版
+		push	SRAM_Segment		;
+		pop	segment			;
+		mov	offset,ds:[ProcContext_heap]
+endif	;--------------------------------
+		endm				;
 
 ;****************************************************************
 ;*								*
 ;*			定数					*
 ;*								*
 ;****************************************************************
+;===============================================================|
+;		ハードウェア割り込み				|
+;===============================================================|
+InterruptVectorBase_WW	equ	INT_HARDHAEW_VECTOR_BASE	;WonderWitch
+InterruptVectorBase	equ	InterruptVectorBase_WW		;割り込みベクタ
+
 ;===============================================================|
 ;		Wander Swan Segment Address			|
 ;===============================================================|
@@ -44,8 +67,11 @@ FROM_Segment		equ	BANK_ROM0_ADDRESS	;ROM
 ;===============================================================|
 ;		本体RAM Work Address				|
 ;===============================================================|
-CommEnpty_intvector	equ	000a0h		;割り込みベクタ(028h×4)
-Hblank_intvector	equ	000bch		;割り込みベクタ(02fh×4)
+;CommEnpty_intvector	equ	000a0h		;割り込みベクタ(028h×4)
+;Hblank_intvector	equ	000bch		;割り込みベクタ(02fh×4)
+
+IRAM_SoundVoiceTable_WW	equ	00180h			;WonderWitch設定
+IRAM_SoundVoiceTable	equ	IRAM_SoundVoiceTable_WW	;音色テーブル
 
 ;===============================================================|
 ;		ワーク領域アドレス				|
@@ -326,17 +352,19 @@ WTD_Sys_ComFIFO_Cnt	dw	?		;2A-2B	FIFO ポインタ 書き込み
 WTD_Sys_ComFIFO_Adr	dw	?		;2C-2D	FIFO ポインタ 送信
 WTD_Sys_ComFIFO_Size	dw	?		;2E-2F	FIFO サイズ
 WTD_Sys_RunningStatus	db	?		;30	MIDI Running Status
+WTD_Sys_InterruptBase	db	?		;31	割り込みベースベクタ
+WTD_Sys_VoiceTableOffset dw	?		;32	音色Table(IRAM)Address
 WTD_Sys			ends			
 ;---------------------------------------------------------------
 ;フラグビット・セット
 WTD_Sys_Music		equ	00001h		;演奏中
 WTD_Sys_Effect		equ	00002h		;効果音発声中
 WTD_Sys_Pcm		equ	00004h		;PCMボイス発生中
-WTD_Sys_3		equ	00008h		;
+WTD_Sys_3		equ	00008h		;	(元：PCM Voice終了)
 WTD_Sys_Midi		equ	00010h		;MIDIモード(システムでは未使用)
-WTD_Sys_5		equ	00020h		;パンポットのモード(対数演算)
+WTD_Sys_5		equ	00020h		;
 WTD_Sys_6		equ	00040h		;
-WTD_Sys_TimerEmulate	equ	00080h		;
+WTD_Sys_TimerEmulate	equ	00080h		;タイマーをエミュレート中
 WTD_Sys_ChannelMode1	equ	00100h		;チャンネルモード ch1
 WTD_Sys_ChannelMode2	equ	00200h		;チャンネルモード ch2
 WTD_Sys_ChannelMode3	equ	00400h		;チャンネルモード ch3
@@ -350,11 +378,11 @@ WTD_Sys_EffectMask4	equ	08000h		;効果音パートマスク ch4
 WTD_Sys_MusicR		equ	0fffeh		;演奏中
 WTD_Sys_EffectR		equ	0fffdh		;効果音発声中
 WTD_Sys_PcmR		equ	0fffbh		;PCMボイス発生中
-WTD_Sys_3R		equ	0fff7h		;
+WTD_Sys_3R		equ	0fff7h		;	(元：PCM Voice終了)
 WTD_Sys_MidiR		equ	0ffefh		;MIDIモード(システムでは未使用)
-WTD_Sys_5R		equ	0ffdfh		;パンポットのモード(直線演算)
+WTD_Sys_5R		equ	0ffdfh		;
 WTD_Sys_6R		equ	0ffbfh		;
-WTD_Sys_TimerEmulateR	equ	0ff7fh		;
+WTD_Sys_TimerEmulateR	equ	0ff7fh		;タイマーをエミュレート中
 WTD_Sys_ChannelMode1R	equ	0feffh		;チャンネルモード ch1
 WTD_Sys_ChannelMode2R	equ	0fdffh		;チャンネルモード ch2
 WTD_Sys_ChannelMode3R	equ	0fbffh		;チャンネルモード ch3
