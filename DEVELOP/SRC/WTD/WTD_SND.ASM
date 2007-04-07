@@ -614,7 +614,7 @@ SM_init	proc near			;
 	pop	es			;ds←cs
 	xor	cx,cx			;cx←MIDI_Ex_GmReset
 	mov	cl,byte ptr es:[MIDI_Ex_GmReset]
-	mov	si,offset MIDI_Ex_GmReset + 1
+	mov	si,offset CGROUP:MIDI_Ex_GmReset + 1
 	call	C_Send_Block		;ブロック送信
 
 	;ランニングステータスの初期化

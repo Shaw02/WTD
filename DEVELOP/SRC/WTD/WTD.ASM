@@ -37,34 +37,40 @@ EffectMaxPart		equ	3	;効果音は3 パート
 ;=======================================================================|
 ;				Segment define				|
 ;=======================================================================|
-TEXT	segment byte public 'CODE'
-TEXT	ends
+ifdef	library	;---------------------	※　ライブラリ版
 
-DATA	segment para public 'DATA'
+_TEXT	segment	word public 'CODE'
+_TEXT	ends
+
+DATA	segment	word public 'DATA'
 DATA	ends
 
-CGROUP	group	TEXT
-DGROUP	group	DATA
+_BSS	segment	word public 'BSS'
+_BSS	ends
+
+CGROUP	group	_TEXT
+DGROUP	group	DATA,_BSS
 
 	assume	cs:CGROUP, ds:DGROUP, es:DGROUP
 
-;=======================================================================|
-;				グローバル変数				|
-;=======================================================================|
-ifdef	library				;※　ライブラリ版のみ必要
-DATA	segment para public 'DATA'
+else		;---------------------	※　IL版
 
-include wtd_lib.asm			;ライブラリ版　データ領域
+_TEXT	segment word public 'CODE'
+_TEXT	ends
 
-DATA	ends
-endif
+CGROUP	group	_TEXT
+	assume	cs:CGROUP
+
+endif		;---------------------
+
 ;=======================================================================|
 ;				プログラム・コード			|
 ;=======================================================================|
-TEXT	segment byte public 'CODE'
+_TEXT	segment word public 'CODE'
 
 ;	org	0000h			;明示の必要性？
 
+	public	WanderSwanTotalSoundDriver_
 WanderSwanTotalSoundDriver_:
 
 include	wtd_ilf.asm			;IL構造体,ILinfo構造体,ILファンクション
@@ -76,6 +82,18 @@ include	wtd_tim.asm			;タイマー制御用サブルーチン
 include	wtd_snd.asm			;サウンド制御用サブルーチン
 include	wtd_com.asm			;シリアル制御用サブルーチン
 
-TEXT	ends
+_TEXT	ends
 
-	END	WanderSwanTotalSoundDriver_
+;=======================================================================|
+;				グローバル変数				|
+;=======================================================================|
+ifdef	library				;※　ライブラリ版のみ必要
+_BSS	segment word public 'BSS'
+
+include wtd_lib.asm			;ライブラリ版　データ領域
+
+_BSS	ends
+endif
+;=======================================================================|
+
+	end

@@ -6,9 +6,10 @@
 #==============================================================================
 
 ASM = masm
-AFLAG = /IC:\WWitch\WTD\SDK\include
+AFLAG = /IC:\WWitch\WTD\SDK\include /ML /MX
 
 LINKER = link
 LFLAG = /tiny
 LIBS = C:\WWitch\LIB\libww.lib
 
+LIB = lib

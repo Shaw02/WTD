@@ -108,6 +108,7 @@ I_Frection_Table:
 ;		ds:bx	パート共通構造体			|
 ;								|
 ;===============================================================|
+	Public	I_Start
 	even					;偶数アドレス配置
 I_Start:
 	push	ax				;
@@ -418,7 +419,7 @@ I_Play_Step2:					;
 	push	ax				;
 	mov	al,ds:[di].WTD_Program2nd	;
 	and	al,07fh				;上位bitのマスク
-	mov	dx,offset I_Table_Voice		;
+	mov	dx,offset CGROUP:I_Table_Voice		;
 	call	I_Table_Jump			;
 	pop	ax				;
 I_Play_Step8:					;
@@ -560,7 +561,7 @@ I_Play_KeyOn_Start:			;
 	jnz	I_Play_KeyOn_Step8		;無かったら、処理は無し。
 	mov	al,ds:[di].WTD_Program1st	;
 	and	al,07fh				;上位bitのマスク
-	mov	dx,offset I_Table_Voice		;
+	mov	dx,offset CGROUP:I_Table_Voice		;
 	call	I_Table_Jump			;
 I_Play_KeyOn_Step8:				;
 
@@ -623,7 +624,7 @@ ifndef	hyoka	;--------------------------------廉価版は無し
 	jz	I_Play_KeyOn_StepEnd		;前回とおなじ？
 	mov	ds:[di].WTD_ModLevelSet,al	;
 	mov	cl,MIDI_Ctrl_Mod		;
-	mov	dx,offset I_Table_CtrlChgB	;モジュレーションを
+	mov	dx,offset CGROUP:I_Table_CtrlChgB	;モジュレーションを
 	call	I_Table_Jump			;０する。
 endif	;----------------------------------------
 
@@ -644,7 +645,7 @@ I_Play_KeyOff_Start:			;
 	pusha				;レジスタ保存
 
 ;ハードウェアをKeyOff
-	mov	dx,offset I_Table_KeyOff	;
+	mov	dx,offset CGROUP:I_Table_KeyOff	;
 	call	I_Table_Jump			;KeyOff
 
 ;音色制御
@@ -652,7 +653,7 @@ I_Play_KeyOff_Start:			;
 	jnz	I_Play_KeyOff_Step5		;必要性の確認
 	mov	al,ds:[di].WTD_Program3rd	;
 	and	al,07fh				;上位bitのマスク
-	mov	dx,offset I_Table_Voice		;
+	mov	dx,offset CGROUP:I_Table_Voice		;
 	call	I_Table_Jump			;
 I_Play_KeyOff_Step5:				;
 
@@ -723,7 +724,7 @@ ifndef	hyoka	;--------------------------------廉価版は無し
 ;	jz	I_Play_Frection_Step4		;同じではないでしょう。
 	mov	ds:[di].WTD_ModLevelSet,al	;
 	mov	cl,MIDI_Ctrl_Mod		;
-	mov	dx,offset I_Table_CtrlChgB	;モジュレーションを
+	mov	dx,offset CGROUP:I_Table_CtrlChgB	;モジュレーションを
 	call	I_Table_Jump			;かける。
 endif	;----------------------------------------
 I_Play_Frection_Step4:				;
@@ -758,7 +759,7 @@ I_Play_Frection_Step3:			;
 I_Play_Frection_Step2:			;
 
 ;音程の出力
-	mov	dx,offset I_Table_Frection	;音程セット
+	mov	dx,offset CGROUP:I_Table_Frection	;音程セット
 	call	I_Table_Jump			;
 
 	popa				;
@@ -836,7 +837,7 @@ I_Play_Volume_Step5:			;}
 I_Volume_SoftEffect:				;
 	mov	al,ds:[bx].WTD_Sys_VolumeEffect	;ax←効果音音量
 I_Volume_SoftEnd:				;
-	mov	bx,offset I_Volume_Table	;log演算
+	mov	bx,offset CGROUP:I_Volume_Table	;log演算
 	mov	si,ax			;
 	and	si,00ffh		;
 	mov	al,cs:[bx + si]		;
@@ -846,7 +847,7 @@ I_Volume_SoftEnd:				;
 	mov	al,ah			;(Range:0～255)
 
 ;音量の出力
-	mov	dx,offset I_Table_Volume	;音量セット
+	mov	dx,offset CGROUP:I_Table_Volume	;音量セット
 	call	I_Table_Jump			;
 
 	popa				;
@@ -914,7 +915,7 @@ I_Play_Pan_Output:
 	mov	ds:[di].WTD_PanSet,al	;書き込み
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Pan	;
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;パンポットセット
 endif	;--------------------------------
 

@@ -6,6 +6,10 @@ rem mkfent wtd_h.cf
 nmake
 copy wtd.fx ..\..\..\bin\
 copy wtd_h.fx ..\..\..\bin\
+copy WTD_SRAM.LIB ..\..\..\bin\s\
+copy WTDHSRAM.LIB ..\..\..\bin\s\
+copy WTD_IRAM.LIB ..\..\..\bin\s\
+copy WTDHIRAM.LIB ..\..\..\bin\s\
 cd..
 
 rem ÅúÉRÉìÉpÉCÉâ

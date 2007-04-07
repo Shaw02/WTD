@@ -23,5 +23,5 @@
 ;êßå‰ópÉèÅ[ÉN
 ;-------------------------------
 ;static	cahr		WTD_Work[0x1000]
-_WTD_Work:		db	1000h	dup	(0)
+_WTD_Work:		db	0800h	dup	(0)
 

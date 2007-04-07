@@ -113,7 +113,7 @@ I_PlayKey:				;
 	mov	ds:[di].WTD_Key,al		;音程保存
 	jmp	I_PlayKey_Step2R		;
 I_PlayKey_Step1:				;
-	mov	bx,offset I_PlayKey_Code	;
+	mov	bx,offset CGROUP:I_PlayKey_Code	;
 	push	si				;
 	mov	si,ax				;
 	mov	al,cs:[bx + si]			;
@@ -155,7 +155,7 @@ I_PlayKey_Step2:				;
 	mov	ds:[di].WTD_Key,al		;音程保存
 ;ハードウェアをKeyOn
 	add	al,ds:[di].WTD_KeyShift		;
-	mov	dx,offset I_Table_KeyOn		;
+	mov	dx,offset CGROUP:I_Table_KeyOn		;
 	call	I_Table_Jump			;KeyOn
 
 I_PlayKey_Step2R:				;
@@ -205,134 +205,134 @@ I_PlayKey_StepE:			;
 ;コマンド処理のあるアドレス
 	even				;偶数アドレス配置
 I_PlayCommand_JumpTable:
-	dw	offset I_Com00		;00 	
-	dw	offset I_Com01		;01 	
-	dw	offset I_Com02		;02 	
-	dw	offset I_Com03		;03 	
-	dw	offset I_Com04		;04 	
-	dw	offset I_Com05		;05 	
-	dw	offset I_Com06		;06 	
-	dw	offset I_Com07		;07 	
-	dw	offset I_Com08		;08 	
-	dw	offset I_Com09		;09 	
-	dw	offset I_Com0a		;0a 	
-	dw	offset I_Com0b		;0b 	
-	dw	offset I_Com0c		;0c 	
-	dw	offset I_Com0d		;0d 	
-	dw	offset I_Com0e		;0e 	
-	dw	offset I_Com0f		;0f 	
-	dw	offset I_Com10		;10 	
-	dw	offset I_Com11		;11 	
-	dw	offset I_Com12		;12 	
-	dw	offset I_Com13		;13 	
-	dw	offset I_Com14		;14 	
-	dw	offset I_Com15		;15 	
-	dw	offset I_Com16		;16 	
-	dw	offset I_Com17		;17 	
-	dw	offset I_Com18		;18 	
-	dw	offset I_Com19		;19 	
-	dw	offset I_Com1a		;1a 	
-	dw	offset I_Com1b		;1b 	
-	dw	offset I_Com1c		;1c 	
-	dw	offset I_Com1d		;1d 	
-	dw	offset I_Com1e		;1e 	
-	dw	offset I_Com1f		;1f 	
-	dw	offset I_Com20		;20  	
-	dw	offset I_Com21		;21 !	Work Switch
-	dw	offset I_Com22		;22 "	Work Base Address
-	dw	offset I_Com23		;23 #		(MML:Sharp)
-	dw	offset I_Com24		;24 $		(MML:Macro)
-	dw	offset I_Com25		;25 %		(MML:Step)
-	dw	offset I_Com26		;26 &		(MML:Tai)
-	dw	offset I_Com27		;27 '	Acsent
-	dw	offset I_Com28		;28 (	Volume down
-	dw	offset I_Com29		;29 )	Volume up
-	dw	offset I_Com2a		;2a *	LFO Switch
-	dw	offset I_Com2b		;2b +		(MML:Sharp)
-	dw	offset I_Com2c		;2c ,		(MML:Channel)
-	dw	offset I_Com2d		;2d -		(MML:Flat)
-	dw	offset I_Com2e		;2e .		(MML:Leng*1.5)
-	dw	offset I_Com2f		;2f /	Emb. Switch
-	dw	offset I_Com30		;30 0	Work mov
-	dw	offset I_Com31		;31 1	Work add
-	dw	offset I_Com32		;32 2	Work sub
-	dw	offset I_Com33		;33 3	Work and
-	dw	offset I_Com34		;34 4	Work or
-	dw	offset I_Com35		;35 5	Work xor
-	dw	offset I_Com36		;36 6	Work set
-	dw	offset I_Com37		;37 7	Work res
-	dw	offset I_Com38		;38 8	Work cmp
-	dw	offset I_Com39		;39 9	Work test
-	dw	offset I_Com3a		;3a :	Loop Jump
-	dw	offset I_Com3b		;3b ;	Loop Jump Flag
-	dw	offset I_Com3c		;3c <	Octave down
-	dw	offset I_Com3d		;3d =		(MML:Natural)
-	dw	offset I_Com3e		;3e >	Octave up
-	dw	offset I_Com3f		;3f ?	
-	dw	offset I_Com40		;40 @	Voice
-	dw	offset I_Com41		;41 A	
-	dw	offset I_Com42		;42 B	Bend , Bend Range(MIDI PRN)
-	dw	offset I_Com43		;43 C	Track / Channel , Sound Type
-	dw	offset I_Com44		;44 D	Drection Detune
-	dw	offset I_Com45		;45 E	Emb.
-	dw	offset I_Com46		;46 F	Volume(MIDI ctrl:00x7)
-	dw	offset I_Com47		;47 G	Channel Pressior(MIDI:0xD0)
-	dw	offset I_Com48		;48 H	Bank(MIDI ctrl:0x00)
-	dw	offset I_Com49		;49 I	
-	dw	offset I_Com4a		;4a J	
-	dw	offset I_Com4b		;4b K	Key On Delay
-	dw	offset I_Com4c		;4c L	Loop
-	dw	offset I_Com4d		;4d M	Mod(MIDI Ctrl:0x01)
-	dw	offset I_Com4e		;4e N	NPRN(MIDI Ctrl:0x62)
-	dw	offset I_Com4f		;4f O	
-	dw	offset I_Com50		;50 P	Mode Sw(WS) / Damper(MIDI)
-	dw	offset I_Com51		;51 Q	Gate time
-	dw	offset I_Com52		;52 R	
-	dw	offset I_Com53		;53 S	
-	dw	offset I_Com54		;54 T	Filter(MIDI ctrl:)
-	dw	offset I_Com55		;55 U	Gate time
-	dw	offset I_Com56		;56 V	Expression Detune
-	dw	offset I_Com57		;57 W	
-	dw	offset I_Com58		;58 X	Excluesiv Send(MIDI:0xF0)
-	dw	offset I_Com59		;59 Y	
-	dw	offset I_Com5a		;5a Z	Send Data(MIDI)
-	dw	offset I_Com5b		;5b [	Loop
-	dw	offset I_Com5c		;5c \	
-	dw	offset I_Com5d		;5d ]	Loop End
-	dw	offset I_Com5e		;5e ^	Lengs add
-	dw	offset I_Com5f		;5f _	Key Trance
-	dw	offset I_Com60		;60 `	
-	dw	offset I_Com61		;61 a	(MML:La)
-	dw	offset I_Com62		;62 b	(MML:Si)
-	dw	offset I_Com63		;63 c	(MML:Do)
-	dw	offset I_Com64		;64 d	(MML:Re)
-	dw	offset I_Com65		;65 e	(MML:Mi)
-	dw	offset I_Com66		;66 f	(MML:Fa)
-	dw	offset I_Com67		;67 g	(MML:So)
-	dw	offset I_Com68		;68 h	
-	dw	offset I_Com69		;69 i	
-	dw	offset I_Com6a		;6a j	
-	dw	offset I_Com6b		;6b k	velocity(MIDI)
-	dw	offset I_Com6c		;6c l	lengs
-	dw	offset I_Com6d		;6d m	LFO
-	dw	offset I_Com6e		;6e n	Noise mode
-	dw	offset I_Com6f		;6f o	Octave
-	dw	offset I_Com70		;70 p	Pan.
-	dw	offset I_Com71		;71 q	Gate time
-	dw	offset I_Com72		;72 r	hol.
-	dw	offset I_Com73		;73 s	Sweep
-	dw	offset I_Com74		;74 t	tempo(HBLANK)
-	dw	offset I_Com75		;75 u	Gate time
-	dw	offset I_Com76		;76 v	Volume (WS/MIDI)
-	dw	offset I_Com77		;77 w	
-	dw	offset I_Com78		;78 x		(MML:Hex)
-	dw	offset I_Com79		;79 y	
-	dw	offset I_Com7a		;7a z	
-	dw	offset I_Com7b		;7b {	Auto trance
-	dw	offset I_Com7c		;7c |	
-	dw	offset I_Com7d		;7d }	
-	dw	offset I_Com7e		;7e ~	
-	dw	offset I_Com7f		;7f 	
+	dw	offset CGROUP:I_Com00	;00 	
+	dw	offset CGROUP:I_Com01	;01 	
+	dw	offset CGROUP:I_Com02	;02 	
+	dw	offset CGROUP:I_Com03	;03 	
+	dw	offset CGROUP:I_Com04	;04 	
+	dw	offset CGROUP:I_Com05	;05 	
+	dw	offset CGROUP:I_Com06	;06 	
+	dw	offset CGROUP:I_Com07	;07 	
+	dw	offset CGROUP:I_Com08	;08 	
+	dw	offset CGROUP:I_Com09	;09 	
+	dw	offset CGROUP:I_Com0a	;0a 	
+	dw	offset CGROUP:I_Com0b	;0b 	
+	dw	offset CGROUP:I_Com0c	;0c 	
+	dw	offset CGROUP:I_Com0d	;0d 	
+	dw	offset CGROUP:I_Com0e	;0e 	
+	dw	offset CGROUP:I_Com0f	;0f 	
+	dw	offset CGROUP:I_Com10	;10 	
+	dw	offset CGROUP:I_Com11	;11 	
+	dw	offset CGROUP:I_Com12	;12 	
+	dw	offset CGROUP:I_Com13	;13 	
+	dw	offset CGROUP:I_Com14	;14 	
+	dw	offset CGROUP:I_Com15	;15 	
+	dw	offset CGROUP:I_Com16	;16 	
+	dw	offset CGROUP:I_Com17	;17 	
+	dw	offset CGROUP:I_Com18	;18 	
+	dw	offset CGROUP:I_Com19	;19 	
+	dw	offset CGROUP:I_Com1a	;1a 	
+	dw	offset CGROUP:I_Com1b	;1b 	
+	dw	offset CGROUP:I_Com1c	;1c 	
+	dw	offset CGROUP:I_Com1d	;1d 	
+	dw	offset CGROUP:I_Com1e	;1e 	
+	dw	offset CGROUP:I_Com1f	;1f 	
+	dw	offset CGROUP:I_Com20	;20  	
+	dw	offset CGROUP:I_Com21	;21 !	Work Switch
+	dw	offset CGROUP:I_Com22	;22 "	Work Base Address
+	dw	offset CGROUP:I_Com23	;23 #		(MML:Sharp)
+	dw	offset CGROUP:I_Com24	;24 $		(MML:Macro)
+	dw	offset CGROUP:I_Com25	;25 %		(MML:Step)
+	dw	offset CGROUP:I_Com26	;26 &		(MML:Tai)
+	dw	offset CGROUP:I_Com27	;27 '	Acsent
+	dw	offset CGROUP:I_Com28	;28 (	Volume down
+	dw	offset CGROUP:I_Com29	;29 )	Volume up
+	dw	offset CGROUP:I_Com2a	;2a *	LFO Switch
+	dw	offset CGROUP:I_Com2b	;2b +		(MML:Sharp)
+	dw	offset CGROUP:I_Com2c	;2c ,		(MML:Channel)
+	dw	offset CGROUP:I_Com2d	;2d -		(MML:Flat)
+	dw	offset CGROUP:I_Com2e	;2e .		(MML:Leng*1.5)
+	dw	offset CGROUP:I_Com2f	;2f /	Emb. Switch
+	dw	offset CGROUP:I_Com30	;30 0	Work mov
+	dw	offset CGROUP:I_Com31	;31 1	Work add
+	dw	offset CGROUP:I_Com32	;32 2	Work sub
+	dw	offset CGROUP:I_Com33	;33 3	Work and
+	dw	offset CGROUP:I_Com34	;34 4	Work or
+	dw	offset CGROUP:I_Com35	;35 5	Work xor
+	dw	offset CGROUP:I_Com36	;36 6	Work set
+	dw	offset CGROUP:I_Com37	;37 7	Work res
+	dw	offset CGROUP:I_Com38	;38 8	Work cmp
+	dw	offset CGROUP:I_Com39	;39 9	Work test
+	dw	offset CGROUP:I_Com3a	;3a :	Loop Jump
+	dw	offset CGROUP:I_Com3b	;3b ;	Loop Jump Flag
+	dw	offset CGROUP:I_Com3c	;3c <	Octave down
+	dw	offset CGROUP:I_Com3d	;3d =		(MML:Natural)
+	dw	offset CGROUP:I_Com3e	;3e >	Octave up
+	dw	offset CGROUP:I_Com3f	;3f ?	
+	dw	offset CGROUP:I_Com40	;40 @	Voice
+	dw	offset CGROUP:I_Com41	;41 A	
+	dw	offset CGROUP:I_Com42	;42 B	Bend , Bend Range(MIDI PRN)
+	dw	offset CGROUP:I_Com43	;43 C	Track / Channel , Sound Type
+	dw	offset CGROUP:I_Com44	;44 D	Drection Detune
+	dw	offset CGROUP:I_Com45	;45 E	Emb.
+	dw	offset CGROUP:I_Com46	;46 F	Volume(MIDI ctrl:00x7)
+	dw	offset CGROUP:I_Com47	;47 G	Channel Pressior(MIDI:0xD0)
+	dw	offset CGROUP:I_Com48	;48 H	Bank(MIDI ctrl:0x00)
+	dw	offset CGROUP:I_Com49	;49 I	
+	dw	offset CGROUP:I_Com4a	;4a J	
+	dw	offset CGROUP:I_Com4b	;4b K	Key On Delay
+	dw	offset CGROUP:I_Com4c	;4c L	Loop
+	dw	offset CGROUP:I_Com4d	;4d M	Mod(MIDI Ctrl:0x01)
+	dw	offset CGROUP:I_Com4e	;4e N	NPRN(MIDI Ctrl:0x62)
+	dw	offset CGROUP:I_Com4f	;4f O	
+	dw	offset CGROUP:I_Com50	;50 P	Mode Sw(WS) / Damper(MIDI)
+	dw	offset CGROUP:I_Com51	;51 Q	Gate time
+	dw	offset CGROUP:I_Com52	;52 R	
+	dw	offset CGROUP:I_Com53	;53 S	
+	dw	offset CGROUP:I_Com54	;54 T	Filter(MIDI ctrl:)
+	dw	offset CGROUP:I_Com55	;55 U	Gate time
+	dw	offset CGROUP:I_Com56	;56 V	Expression Detune
+	dw	offset CGROUP:I_Com57	;57 W	
+	dw	offset CGROUP:I_Com58	;58 X	Excluesiv Send(MIDI:0xF0)
+	dw	offset CGROUP:I_Com59	;59 Y	
+	dw	offset CGROUP:I_Com5a	;5a Z	Send Data(MIDI)
+	dw	offset CGROUP:I_Com5b	;5b [	Loop
+	dw	offset CGROUP:I_Com5c	;5c \	
+	dw	offset CGROUP:I_Com5d	;5d ]	Loop End
+	dw	offset CGROUP:I_Com5e	;5e ^	Lengs add
+	dw	offset CGROUP:I_Com5f	;5f _	Key Trance
+	dw	offset CGROUP:I_Com60	;60 `	
+	dw	offset CGROUP:I_Com61	;61 a	(MML:La)
+	dw	offset CGROUP:I_Com62	;62 b	(MML:Si)
+	dw	offset CGROUP:I_Com63	;63 c	(MML:Do)
+	dw	offset CGROUP:I_Com64	;64 d	(MML:Re)
+	dw	offset CGROUP:I_Com65	;65 e	(MML:Mi)
+	dw	offset CGROUP:I_Com66	;66 f	(MML:Fa)
+	dw	offset CGROUP:I_Com67	;67 g	(MML:So)
+	dw	offset CGROUP:I_Com68	;68 h	
+	dw	offset CGROUP:I_Com69	;69 i	
+	dw	offset CGROUP:I_Com6a	;6a j	
+	dw	offset CGROUP:I_Com6b	;6b k	velocity(MIDI)
+	dw	offset CGROUP:I_Com6c	;6c l	lengs
+	dw	offset CGROUP:I_Com6d	;6d m	LFO
+	dw	offset CGROUP:I_Com6e	;6e n	Noise mode
+	dw	offset CGROUP:I_Com6f	;6f o	Octave
+	dw	offset CGROUP:I_Com70	;70 p	Pan.
+	dw	offset CGROUP:I_Com71	;71 q	Gate time
+	dw	offset CGROUP:I_Com72	;72 r	hol.
+	dw	offset CGROUP:I_Com73	;73 s	Sweep
+	dw	offset CGROUP:I_Com74	;74 t	tempo(HBLANK)
+	dw	offset CGROUP:I_Com75	;75 u	Gate time
+	dw	offset CGROUP:I_Com76	;76 v	Volume (WS/MIDI)
+	dw	offset CGROUP:I_Com77	;77 w	
+	dw	offset CGROUP:I_Com78	;78 x		(MML:Hex)
+	dw	offset CGROUP:I_Com79	;79 y	
+	dw	offset CGROUP:I_Com7a	;7a z	
+	dw	offset CGROUP:I_Com7b	;7b {	Auto trance
+	dw	offset CGROUP:I_Com7c	;7c |	
+	dw	offset CGROUP:I_Com7d	;7d }	
+	dw	offset CGROUP:I_Com7e	;7e ~	
+	dw	offset CGROUP:I_Com7f	;7f 	
 ;===============================================================|
 ;		コマンドによる分岐				|
 ;			いわゆる、Ｃ言語でいう'switch'文と同等	|
@@ -859,7 +859,7 @@ I_Com40:				;
 
 I_Com40_1st:				;
 	mov	ds:[di].WTD_Program1st,al
-	mov	dx,offset I_Table_Voice	;
+	mov	dx,offset CGROUP:I_Table_Voice	;
 	jmp	I_Table_Jump		;call with return
 I_Com40_2nd:				;
 	mov	ds:[di].WTD_Program2nd,al
@@ -890,12 +890,12 @@ I_Com42:				;
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	al,00h			;
 	mov	cl,MIDI_Ctrl_RegLSB	;
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 
 	mov	al,00h			;
 	mov	cl,MIDI_Ctrl_RegMSB	;
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 endif	;--------------------------------
 
@@ -903,7 +903,7 @@ endif	;--------------------------------
 
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_DataEntly	;
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 endif	;--------------------------------
 
@@ -999,7 +999,7 @@ I_Com46:				;
 
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Volume	;
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 endif	;--------------------------------
 
@@ -1010,7 +1010,7 @@ endif	;--------------------------------
 	even				;偶数アドレス配置
 I_Com47:				;
 	call	I_Read8			;
-	mov	dx,offset I_Table_PolyChPress
+	mov	dx,offset CGROUP:I_Table_PolyChPress
 	call	I_Table_Jump		;
 	ret				;
 ;===============================================================|
@@ -1022,7 +1022,7 @@ I_Com48:				;
 
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Bank	;
-	mov	dx,offset I_Table_CtrlChgW
+	mov	dx,offset CGROUP:I_Table_CtrlChgW
 	call	I_Table_Jump		;
 endif	;--------------------------------
 
@@ -1082,7 +1082,7 @@ I_Com4d:				;
 
 ;ifndef	hyoka	;------------------------廉価版は無し
 ;	mov	cl,MIDI_Ctrl_Mod	;
-;	mov	dx,offset I_Table_CtrlChgB
+;	mov	dx,offset CGROUP:I_Table_CtrlChgB
 ;	call	I_Table_Jump		;
 ;endif	;--------------------------------
 
@@ -1096,7 +1096,7 @@ I_Com4e:				;
 
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_NonRegLSB	;
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 endif	;--------------------------------
 
@@ -1104,7 +1104,7 @@ endif	;--------------------------------
 
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_NonRegMSB	;
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 endif	;--------------------------------
 
@@ -1112,7 +1112,7 @@ endif	;--------------------------------
 
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_DataEntly	;
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 endif	;--------------------------------
 
@@ -1127,7 +1127,7 @@ I_Com4f:				;
 
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_S		;
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 endif	;--------------------------------
 
@@ -1138,7 +1138,7 @@ endif	;--------------------------------
 	even				;偶数アドレス配置
 I_Com50:				;
 	call	I_Read8			;
-	mov	dx,offset I_Table_Mode	;
+	mov	dx,offset CGROUP:I_Table_Mode	;
 	call	I_Table_Jump		;設定
 	ret				;終了
 ;===============================================================|
@@ -1158,7 +1158,7 @@ I_Com52:				;
 
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Bress	;
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 endif	;--------------------------------
 
@@ -1173,7 +1173,7 @@ I_Com53:				;
 
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Soft	;
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 endif	;--------------------------------
 
@@ -1187,7 +1187,7 @@ I_Com54:				;
 
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Foot	;
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 endif	;--------------------------------
 
@@ -1218,7 +1218,7 @@ I_Com57:				;
 
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Blance	;
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 endif	;--------------------------------
 
@@ -1599,7 +1599,7 @@ I_Com79:				;
 	mov	cl,al			;
 	call	I_Read8			;
 
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 
 	pop	cx			;

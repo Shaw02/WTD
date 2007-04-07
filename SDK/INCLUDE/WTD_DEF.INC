@@ -24,24 +24,24 @@
 ;		reg1	Segment Address				|
 ;		reg2	Offset  Address				|
 ;===============================================================|
-WTD_WorkGet	macro	segment,offset		;
+WTD_WorkGet	macro	seg,off		;
 ifdef	library	;------------------------	;※　ライブラリ版のみ必要
 
 ifdef	IRAM	;---------------		;D-GROUP ＝ I-RAMの場合
 		push	IRAM_Segment		;
-		pop	segment			;
-		mov	offset,offset DGROUP:_WTD_Work
+		pop	seg			;
+		mov	off,offset DGROUP:_WTD_Work
 
 else	;-----------------------		;D-GROUP ≠ S-RAMの場合
 		push	SRAM_Segment		;（WonderWitch等）
-		pop	segment			;
-		mov	offset,offset DGROUP:_WTD_Work
+		pop	seg			;
+		mov	off,offset DGROUP:_WTD_Work
 endif	;-----------------------
 
 else	;--------------------------------	;WonderWitch版
 		push	SRAM_Segment		;
-		pop	segment			;
-		mov	offset,ds:[ProcContext_heap]
+		pop	seg			;
+		mov	off,ds:[ProcContext_heap]
 endif	;--------------------------------
 		endm				;
 

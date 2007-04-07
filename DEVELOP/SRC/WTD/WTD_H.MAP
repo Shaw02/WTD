@@ -1,5 +1,6 @@
 
  Start  Stop   Length Name                   Class
- 00000H 018DEH 018DFH CODE                   
+ 00000H 0190CH 0190DH _TEXT                  CODE
 
-Program entry point at 0000:0000
+ Origin   Group
+ 0000:0   CGROUP

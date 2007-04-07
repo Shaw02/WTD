@@ -16,73 +16,73 @@
 ;===============================================================|
 ;		IL構造体定義					|
 ;===============================================================|
-IL:						;IL構造体先頭
-IL_Link_Pos	dw	0			;未使用
-		dw	0			;
-IL_N_Methods	dw	25			;ファンクション数
-IL_GetInfo	dw	offset _GetInfo		;ILinfo構造体を得る
-		dw	0			;far *TEST_GetInfo();
-IL_F00		dw	offset _Stay		;
-		dw	0			;
-IL_F01		dw	offset _StayOut		;
-		dw	0			;
-IL_F02		dw	offset _Init		;
-		dw	0			;
-IL_F03		dw	offset _MusicPlay	;
-		dw	0			;
-IL_F04		dw	offset _MusicStop	;
-		dw	0			;
-IL_F05		dw	offset _EffectPlay	;
-		dw	0			;
-IL_F06		dw	offset _EffectStop	;
-		dw	0			;
-IL_F07		dw	offset _PcmPlay		;
-		dw	0			;
-IL_F08		dw	offset _PcmStop		;
-		dw	0			;
-IL_F09		dw	offset _PcmVoiceSet	;
-		dw	0			;
-IL_F10		dw	offset _SoftEmbSet	;
-		dw	0			;
-IL_F11		dw	offset _ChangeFar	;
-		dw	0			;
-IL_F12		dw	offset _SoundSetChannel	;
-		dw	0			;
-IL_F13		dw	offset _SoundGetChannel	;
-		dw	0			;
-IL_F14		dw	offset _SoundSetOutput	;
-		dw	0			;
-IL_F15		dw	offset _SoundGetOutput	;
-		dw	0			;
-IL_F16		dw	offset _SoundGetRandom	;
-		dw	0			;
-IL_F17		dw	offset _SetMusicVolume	;
-		dw	0			;
-IL_F18		dw	offset _GetMusicVolume	;
-		dw	0			;
-IL_F19		dw	offset _SetEffectVolume	;
-		dw	0			;
-IL_F20		dw	offset _GetEffectVolume	;
-		dw	0			;
-IL_F21		dw	offset _SetPcmVolume	;
-		dw	0			;
-IL_F22		dw	offset _GetPcmVolume	;
-		dw	0			;
-IL_F23		dw	offset _SetFIFO		;
-		dw	0			;
+IL:							;IL構造体先頭
+IL_Link_Pos	dw	0				;未使用
+		dw	0				;
+IL_N_Methods	dw	25				;ファンクション数
+IL_GetInfo	dw	offset CGROUP:_GetInfo		;ILinfo構造体を得る
+		dw	0				;far *TEST_GetInfo();
+IL_F00		dw	offset CGROUP:_Stay		;
+		dw	0				;
+IL_F01		dw	offset CGROUP:_StayOut		;
+		dw	0				;
+IL_F02		dw	offset CGROUP:_Init		;
+		dw	0				;
+IL_F03		dw	offset CGROUP:_MusicPlay	;
+		dw	0				;
+IL_F04		dw	offset CGROUP:_MusicStop	;
+		dw	0				;
+IL_F05		dw	offset CGROUP:_EffectPlay	;
+		dw	0				;
+IL_F06		dw	offset CGROUP:_EffectStop	;
+		dw	0				;
+IL_F07		dw	offset CGROUP:_PcmPlay		;
+		dw	0				;
+IL_F08		dw	offset CGROUP:_PcmStop		;
+		dw	0				;
+IL_F09		dw	offset CGROUP:_PcmVoiceSet	;
+		dw	0				;
+IL_F10		dw	offset CGROUP:_SoftEmbSet	;
+		dw	0				;
+IL_F11		dw	offset CGROUP:_ChangeFar	;
+		dw	0				;
+IL_F12		dw	offset CGROUP:_SoundSetChannel	;
+		dw	0				;
+IL_F13		dw	offset CGROUP:_SoundGetChannel	;
+		dw	0				;
+IL_F14		dw	offset CGROUP:_SoundSetOutput	;
+		dw	0				;
+IL_F15		dw	offset CGROUP:_SoundGetOutput	;
+		dw	0				;
+IL_F16		dw	offset CGROUP:_SoundGetRandom	;
+		dw	0				;
+IL_F17		dw	offset CGROUP:_SetMusicVolume	;
+		dw	0				;
+IL_F18		dw	offset CGROUP:_GetMusicVolume	;
+		dw	0				;
+IL_F19		dw	offset CGROUP:_SetEffectVolume	;
+		dw	0				;
+IL_F20		dw	offset CGROUP:_GetEffectVolume	;
+		dw	0				;
+IL_F21		dw	offset CGROUP:_SetPcmVolume	;
+		dw	0				;
+IL_F22		dw	offset CGROUP:_GetPcmVolume	;
+		dw	0				;
+IL_F23		dw	offset CGROUP:_SetFIFO		;
+		dw	0				;
 ;===============================================================|
 ;		ILinfo構造体定義（全てポインタ）		|
 ;===============================================================|
 ILinfo:							;ILinfo構造体先頭
-ILinfo_ClassName	dw	offset ILinfoD_ClassName	;未使用
+ILinfo_ClassName	dw	offset CGROUP:ILinfoD_ClassName	;未使用
 			dw	0				;
-ILinfo_Name		dw	offset ILinfoD_Name		;名前
+ILinfo_Name		dw	offset CGROUP:ILinfoD_Name	;名前
 			dw	0				;
-ILinfo_Version		dw	offset ILinfoD_Version		;バージョン
+ILinfo_Version		dw	offset CGROUP:ILinfoD_Version	;バージョン
 			dw	0				;
-ILinfo_Description	dw	offset ILinfoD_Description	;未使用
+ILinfo_Description	dw	offset CGROUP:ILinfoD_Description
 			dw	0				;
-ILinfo_Depends		dw	offset ILinfoD_Depends		;未使用
+ILinfo_Depends		dw	offset CGROUP:ILinfoD_Depends	;未使用
 			dw	0				;
 ;===============================================================|
 ;		ILinfo構造体の内容				|
@@ -103,7 +103,7 @@ ILinfoD_Depends		dw	0		;未使用（ポインタ）
 ;		void	WTD_FucntionLoad()			|
 ;===============================================================|
 ;	引き数							|
-;		WtdIL	&Wtd_Function	/*構造体のポインタを*/	|
+;		WtdIL	Wtd_Function	/*構造体のポインタを*/	|
 ;	返り値							|
 ;		無し						|
 ;	処理							|
@@ -112,9 +112,9 @@ ILinfoD_Depends		dw	0		;未使用（ポインタ）
 ;===============================================================|
 ifdef	library				;※　ライブラリ版のみ必要
 
-	public	_WTD_FucntionLoad	;外部宣言
+	public	_WTD_FunctionLoad	;外部宣言
 
-_WTD_FucntionLoad	proc	near	;
+_WTD_FunctionLoad	proc	near	;
 	push	bp			;
 	mov	bp,sp			;
 
@@ -126,24 +126,24 @@ _WTD_FucntionLoad	proc	near	;
 
 	push	ds			;
 	pop	es			;es←DGROUP
-	mov	di,ss:[bp + 04h]	;di←Wtd_Functionのポインタ
+	mov	di,word ptr [bp + 04h]	;di←Wtd_Functionのポインタ
 
 	push	cs			;
 	pop	ds			;ds←CGROUP
-	mov	si,offset IL		;di←IL構造体用のデータ
+	mov	si,offset CGROUP:IL	;di←IL構造体用のデータ
 
 	cld				;インクリメントモード
 	mov	cx,3			;
 	rep	movsw			;IL_Link_Pos, IL_Link_Methodの転送
 
-	mov	cx,CS:[IL_N_Methods]	;構造体のサイズ計算
+	mov	cx,word ptr CS:[IL_N_Methods]	;構造体のサイズ計算
 _WTD_FucntionLoad_Loop1:
 	movsw				;
 	mov	es:[di],cs		;関数群の転送
 	add	di,2			;
 	add	si,2			;
 	dec	cx			;
-	jz	_WTD_FucntionLoad_Loop1	;
+	jnz	_WTD_FucntionLoad_Loop1	;
 
 	pop	es			;
 	pop	ds			;
@@ -152,7 +152,7 @@ _WTD_FucntionLoad_Loop1:
 	pop	cx			;
 	pop	bp			;
 	ret				;
-_WTD_FucntionLoad	endp		;
+_WTD_FunctionLoad	endp		;
 endif
 ;****************************************************************
 ;*								*
@@ -172,7 +172,7 @@ endif
 _GetInfo	proc far		;
 	push	cs			;
 	pop	dx			;LSI-C86
-	mov	ax,offset ILinfo	;dx:ax←far pointer
+	mov	ax,offset CGROUP:ILinfo	;dx:ax←far pointer
 	retf				;
 _GetInfo	endp			;
 ;===============================================================|
@@ -252,7 +252,7 @@ _Stay_00:
 	mov	ax,es:[bx+SYS_INT_HBLANK_COUNTUP*4+2]	;
 	mov	ds:[si].WTD_Sys_OldIntvector+2,ax	;復帰用に保存
 
-	mov	es:[bx+SYS_INT_HBLANK_COUNTUP*4+0],offset I_Start
+	mov	es:[bx+SYS_INT_HBLANK_COUNTUP*4+0],offset CGROUP:I_Start
 	mov	es:[bx+SYS_INT_HBLANK_COUNTUP*4+2],cs	;アドレスの設定
 
 ifndef	hyoka	;------------------------廉価版は無し
@@ -261,7 +261,7 @@ ifndef	hyoka	;------------------------廉価版は無し
 	mov	ax,es:[bx+SYS_INT_SENDREADY*4+2]	;
 	mov	ds:[si].WTD_Sys_OldIntvectorCom+2,ax	;復帰用に保存
 
-	mov	es:[bx+SYS_INT_SENDREADY*4+0],offset IC_Start
+	mov	es:[bx+SYS_INT_SENDREADY*4+0],offset CGROUP:IC_Start
 	mov	es:[bx+SYS_INT_SENDREADY*4+2],cs	;アドレスの設定
 endif	;--------------------------------
 	pop	bx					;
@@ -380,7 +380,7 @@ endif	;--------------------------------
 	push	bx					;
 
 	mov	ax,0					;
-	mov	al,ds:[si].WTD_Sys_InterruptBase,al	;al←割り込みベクタ
+	mov	al,ds:[si].WTD_Sys_InterruptBase	;al←割り込みベクタ
 	shl	ax,2			;読み込んだ値を4倍
 	mov	bx,ax			;割り込みベクタのアドレス
 
@@ -812,37 +812,37 @@ _MusicStop_Loop1:					;
 	mov	ax,003Fh			;
 	or	ds:[di].WTD_FlagControl,ax	;演奏終了
 
-	mov	dx,offset I_Table_KeyOff
+	mov	dx,offset CGROUP:I_Table_KeyOff
 	call	I_Table_Jump		;キーオフ
 
 	mov	ax,0			;エクスプレッション = 0
-	mov	dx,offset I_Table_Volume
+	mov	dx,offset CGROUP:I_Table_Volume
 	call	I_Table_Jump		;(エンベロープ音量。)
 
 	mov	ax,8192			;ベンド = 8192
-	mov	dx,offset I_Table_Frection
+	mov	dx,offset CGROUP:I_Table_Frection
 	call	I_Table_Jump		;
 
 	mov	ax,0			;音色 = 0
-	mov	dx,offset I_Table_Voice	;
+	mov	dx,offset CGROUP:I_Table_Voice	;
 	call	I_Table_Jump		;
 
 	mov	ax,64			;パンポット = 64
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Pan	;
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 endif	;--------------------------------
 
 	mov	ax,100			;音量 = 100
 ifndef	hyoka	;------------------------廉価版は無し
 	mov	cl,MIDI_Ctrl_Volume	;
-	mov	dx,offset I_Table_CtrlChgB
+	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 endif	;--------------------------------
 
 	mov	ax,0			;モード　初期化
-	mov	dx,offset I_Table_Mode	;
+	mov	dx,offset CGROUP:I_Table_Mode	;
 	call	I_Table_Jump		;
 
 
@@ -1217,7 +1217,7 @@ _EffectStop_Loop1:					;
 	mov	ax,003Fh			;
 	or	ds:[di].WTD_FlagControl,ax	;演奏終了
 
-	mov	dx,offset I_Table_KeyOff	;
+	mov	dx,offset CGROUP:I_Table_KeyOff	;
 	call	I_Table_Jump			;キーオフ
 
 	push	cx				;

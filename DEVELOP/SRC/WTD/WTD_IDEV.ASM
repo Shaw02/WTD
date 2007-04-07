@@ -123,7 +123,7 @@ I_SP_KeyOn:				;
 	mov	al,ah				;
 	mov	ah,0				;ax←Key
 	shl	ax,1				;
-	mov	bx,offset I_Frection_Table	;
+	mov	bx,offset CGROUP:I_Frection_Table	;
 	add	bx,ax				;
 	mov	ax,cs:[bx]			;ax←Pitch Bend
 ;ベンドの書き込み
@@ -266,7 +266,7 @@ I_SP_Volume:				;
 ;音量の次元を[dB]に変換
 ;	shl	al,1			;(Range:0～255)
 ;	and	ax,00ffh			;
-;	mov	bx,offset I_Volume_Table	;
+;	mov	bx,offset CGROUP:I_Volume_Table	;
 ;	mov	si,ax				;
 ;	mov	al,cs:[bx + si]		;cl←int(256*(log(al+1)/log(257)))
 	mov	cl,al			;
@@ -309,12 +309,12 @@ I_SP_Volume_Logarithmic:
 	mov	ah,0ffh				;al←右のレベル
 	sub	ah,al				;ah←左のレベル
 
-	mov	bx,offset I_Volume_Table	;
+	mov	bx,offset CGROUP:I_Volume_Table	;
 	xchg	al,ah				;
 	mov	si,ax				;si←左
 	and	si,00ffh			;
 	mov	al,cs:[bx + si]			;
-;	mov	bx,offset I_Volume_Table	;
+;	mov	bx,offset CGROUP:I_Volume_Table	;
 	xchg	al,ah				;ah←左のレベル
 	mov	si,ax				;si←右
 	and	si,00ffh			;

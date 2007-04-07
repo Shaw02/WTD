@@ -22,11 +22,11 @@ INC_FILES =  ..\..\..\SDK\include\wtd.h ..\..\..\SDK\include\bank.inc ..\..\..\S
 
 FILES = wtd.asm wtd_com.asm wtd_icmd.asm wtd_idev.asm wtd_ilf.asm wtd_int.asm wtd_snd.asm wtd_tim.asm wtd_lib.asm
 
-AFLAG1 = /D"hyoka=1"
-AFLAG2 = /D"library=1"
-AFLAG3 = /D"library=1 hyoka=1"
-AFLAG4 = /D"library=1 IRAM=1"
-AFLAG5 = /D"library=1 hyoka=1 IRAM=1"
+AFLAG1 = /Dhyoka=1
+AFLAG2 = /Dlibrary=1
+AFLAG3 = /Dlibrary=1 /Dhyoka=1
+AFLAG4 = /Dlibrary=1 /DIRAM=1
+AFLAG5 = /Dlibrary=1 /Dhyoka=1 /DIRAM=1
 
 all: $(PROJ).fx $(PROJ1).fx $(PROJ2).lib $(PROJ3).lib $(PROJ4).lib $(PROJ5).lib
 	@del *.bak
@@ -34,7 +34,6 @@ all: $(PROJ).fx $(PROJ1).fx $(PROJ2).lib $(PROJ3).lib $(PROJ4).lib $(PROJ5).lib
 	@del *.com
 	@del *.exe
 	@del *.bin
-	@del.*.lib
 
 $(PROJ).fx : $(FILES) $(INC_FILES)
 	@$(ASM) $(AFLAG) $(PROJ);>wtd_err0.txt
@@ -50,12 +49,20 @@ $(PROJ1).fx : $(FILES) $(INC_FILES)
 
 $(PROJ2).lib : $(FILES) $(INC_FILES)
 	@$(ASM) $(AFLAG) $(AFLAG2) $(PROJ),$(PROJ2).obj;>wtd_err2.txt
+	@del $(PROJ2).lib
+	@$(LIB) $(PROJ2) +$(PROJ2).obj;
 
 $(PROJ3).lib : $(FILES) $(INC_FILES)
 	@$(ASM) $(AFLAG) $(AFLAG3) $(PROJ),$(PROJ3).obj;>wtd_err3.txt
+	@del $(PROJ3).lib
+	@$(LIB) $(PROJ3) +$(PROJ3).obj;
 
 $(PROJ4).lib : $(FILES) $(INC_FILES)
 	@$(ASM) $(AFLAG) $(AFLAG4) $(PROJ),$(PROJ4).obj;>wtd_err4.txt
+	@del $(PROJ4).lib
+	@$(LIB) $(PROJ4) +$(PROJ4).obj;
 
 $(PROJ5).lib : $(FILES) $(INC_FILES)
 	@$(ASM) $(AFLAG) $(AFLAG5) $(PROJ),$(PROJ5).obj;>wtd_err5.txt
+	@del $(PROJ5).lib
+	@$(LIB) $(PROJ5) +$(PROJ5).obj;
