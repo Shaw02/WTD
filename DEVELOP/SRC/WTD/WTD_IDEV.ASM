@@ -253,9 +253,6 @@ I_Table_Volume:
 ;-------------[	WS内蔵PCM ]-------------
 	even				;偶数アドレス配置
 I_SP_Volume:				;
-;音量保存。
-	mov	ds:[di].WTD_ExprSet,al	;
-;パンポットと合成するので、合成した値をチェックする。
 
 ;レジスタ保存
 	push	dx			;
@@ -263,8 +260,11 @@ I_SP_Volume:				;
 	push	cx			;
 	push	si			;
 
+;音量保存。
+	mov	ds:[di].WTD_ExprSet,al	;
+	shl	al,1			;(Range:0～255)
+
 ;音量の次元を[dB]に変換
-;	shl	al,1			;(Range:0～255)
 ;	and	ax,00ffh		;
 ;	mov	bx,offset CGROUP:I_Volume_Table
 ;	mov	si,ax			;
@@ -370,7 +370,6 @@ I_SP_Volume_End:
 	even				;偶数アドレス配置
 I_SM_Volume:				;
 ifndef	hyoka	;------------------------廉価版は無し
-	shr	al,1			;al÷2 (Range:0～127)
 	cmp	ds:[di].WTD_ExprSet,al	;
 	jz	I_SM_Volume_End		;前回と同じだったらいらない。
 

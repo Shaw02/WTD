@@ -9,5 +9,6 @@
 -LC:\WWitch\WTD\BIN\S
 -T$TEMP
 -k "-Fc -T F0000 -TDATA 00000"
+-B
 -aROM_BIOS.obj $LCC86 &
--lWTDHIRAM.lib
+-llibww -llibwwc -lruntime -lWTDHIRAM.lib

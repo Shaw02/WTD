@@ -8,15 +8,16 @@ include ..\..\..\SDK\include\wtdsdk.mak
 
 PROJ = ROM_IMG
 
-INC_FILES =  ..\..\..\SDK\include\wtd.h ..\..\..\SDK\include\ws.h ..\..\..\SDK\include\bank.inc ..\..\..\SDK\include\comm.inc ..\..\..\SDK\include\process.inc ..\..\..\SDK\include\service.inc ..\..\..\SDK\include\sound.inc ..\..\..\SDK\include\timer.inc ..\..\..\SDK\include\wtd_def.inc ..\..\..\SDK\include\wtd_ver.inc ..\..\..\SDK\include\wtc_def.inc
+INC_FILES =  ..\..\..\SDK\include\wtd.h ..\..\..\SDK\include\ws.h ..\..\..\SDK\include\ws.inc ..\..\..\SDK\include\bank.inc ..\..\..\SDK\include\comm.inc ..\..\..\SDK\include\process.inc ..\..\..\SDK\include\service.inc ..\..\..\SDK\include\sound.inc ..\..\..\SDK\include\timer.inc ..\..\..\SDK\include\wtd_def.inc ..\..\..\SDK\include\wtd_ver.inc
 
-FILES = ROM_BIOS.ASM ROM_MAIN.C
+FILES = ROM_BIOS.ASM ROM_MAIN.C ROM_DISP.C ROM_KEY.C ROM_TIME.C debug.c grp.h ASCII_C.ASM ASCII_C.bmp ASCII_M.bmp
 
 all: $(PROJ).bin
 	@del *.bak
-	@del *.obj
 	@del *.exe
 
 $(PROJ).bin : $(FILES) $(INC_FILES)
+	@bmpcnv -c ASCII_M.bmp
+	@bmpcnv -c -m1 ASCII_C.bmp
 	@$(ASM) ROM_BIOS.ASM $(AFLAG); >ERR_IMGA.txt
 	@$(CC) -o $(PROJ).bin ROM_MAIN.C $(CFLAG) >ERR_IMGC.txt

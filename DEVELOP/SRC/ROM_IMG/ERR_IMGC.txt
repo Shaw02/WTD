@@ -1,7 +1,17 @@
-ROM_MAIN.c 24: Warning: illegal pointer combination (initializer)
-ROM_MAIN.c 25: Warning: illegal pointer combination (initializer)
-ROM_MAIN.c 26: Warning: illegal pointer combination (initializer)
-ROM_MAIN.c 27: Warning: illegal pointer combination (initializer)
-ROM_MAIN.c 28: Warning: illegal pointer combination (initializer)
-ROM_MAIN.c 192: Warning: illegal pointer combination (param)
-ROM_MAIN.c 201: Warning: 'i' not used
+rom_disp.c 35: Warning: illegal pointer combination (initializer)
+rom_disp.c 36: Warning: illegal pointer combination (initializer)
+rom_disp.c 37: Warning: illegal pointer combination (initializer)
+rom_disp.c 38: Warning: illegal pointer combination (initializer)
+rom_disp.c 39: Warning: illegal pointer combination (initializer)
+rom_disp.c 143: Warning: illegal pointer combination (param)
+rom_disp.c 148: Warning: illegal pointer combination (param)
+rom_disp.c 206: Warning: illegal pointer combination (param)
+rom_disp.c 208: Warning: illegal pointer combination (param)
+rom_disp.c 210: Warning: illegal pointer combination (param)
+rom_disp.c 212: Warning: illegal pointer combination (param)
+rom_disp.c 214: Warning: illegal pointer combination (param)
+rom_disp.c 217: Warning: illegal pointer combination (param)
+debug.c 63: Warning: 'iKey' not used
+ROM_MAIN.c 111: Warning: illegal pointer combination (param)
+ROM_MAIN.c 144: Warning: useless expression
+ROM_MAIN.c 155: Warning: useless expression

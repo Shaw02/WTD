@@ -845,6 +845,7 @@ I_Volume_SoftEnd:				;
 	mul	cx			;
 	dec	ax			;al©((2*Vol.+1)~(SoftVol.+1)^256)-1
 	mov	al,ah			;(Range:0`255)
+	shr	al,1			;al€2 (Range:0`127)
 
 ;‰¹—Ê‚Ìo—Í
 	mov	dx,offset CGROUP:I_Table_Volume

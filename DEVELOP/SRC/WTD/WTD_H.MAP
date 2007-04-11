@@ -1,6 +1,6 @@
 
  Start  Stop   Length Name                   Class
- 00000H 0190CH 0190DH _TEXT                  CODE
+ 00000H 01910H 01911H _TEXT                  CODE
 
  Origin   Group
  0000:0   CGROUP
