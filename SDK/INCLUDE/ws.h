@@ -32,6 +32,17 @@
 #define	inpw(p)		_asm_ii( "\n\tIN\tAX,DX"     ,_asm_ci,_asm_ci,_asm_ci,(p))
 #define	outpw(p, c)	_asm_ici("\n\tOUT\tDX,AX",(c),_asm_ci,_asm_ci        ,(p))
 
+	int		_asm_iv();
+	void	_asm_vv();
+
+#define	get_cs()	_asm_iv("\n\tMOV\tAX,CS")
+#define	get_iram()	_asm_vv("\n\tMOV\tAX,00000H\n\tMOV\tDS,AX")
+#define	cli()		_asm_vv("\n\tCLI")
+#define	sti()		_asm_vv("\n\tSTI")
+#define	pusha()		_asm_vv("\n\tPUSH\tAX\n\tPUSH\tBX\n\tPUSH\tCX\n\tPUSH\tDX\n\tPUSH\tDI\n\tPUSH\tSI\n\tPUSH\tDS\n\tPUSH\tES")
+#define	popa()		_asm_vv("\n\tPOP\tES\n\tPOP\tDS\n\tPOP\tSI\n\tPOP\tDI\n\tPOP\tDX\n\tPOP\tCX\n\tPOP\tBX\n\tPOP\tAX")
+#define	iret()		_asm_vv("\n\tMOV\tSP,BP\n\tPOP\tBP\n\tIRET")
+
 /*========================================================================
 	システム
 =========================================================================*/
@@ -333,6 +344,28 @@ typedef struct {						/* 音色テーブル */
 /*--------------------------------------*/
 /*	定数定義							*/
 /*--------------------------------------*/
+/* ●割り込みベクトル	*/
+#define	INT_HARDWARE_VECTOR_BASE	0x28
+
+/* ●割り込み番号定義 */
+#define	SYS_INT_SENDREADY		0		/*	シリアル送信データエンプティー	*/
+#define	SYS_INT_KEY				1		/*	キー割り込み					*/
+#define	SYS_INT_CASETTE			2		/*	カセット割り込み				*/
+#define	SYS_INT_RECEIVEREADY	3		/*	シリアル受信データレディー		*/
+#define	SYS_INT_DISPLINE		4		/*	描画ライン番号検知割り込み		*/
+#define	SYS_INT_VBLANK_COUNTUP	5		/*	垂直同期タイマー割り込み		*/
+#define	SYS_INT_VBLANK			6		/*	垂直同期期間開始				*/
+#define	SYS_INT_HBLANK_COUNTUP	7		/*	水平同期タイマー割り込み		*/
+
+#define	INT_SENDREADY			INT_HARDWARE_VECTOR_BASE + SYS_INT_SENDREADY
+#define	INT_KEY_PUSH			INT_HARDWARE_VECTOR_BASE + SYS_INT_KEY
+#define	INT_CASETTE				INT_HARDWARE_VECTOR_BASE + SYS_INT_CASETTE
+#define	INT_RECEIVEREADY		INT_HARDWARE_VECTOR_BASE + SYS_INT_RECEIVEREADY
+#define	INT_DISPLINE			INT_HARDWARE_VECTOR_BASE + SYS_INT_DISPLINE
+#define	INT_VBLANK_COUNTUP		INT_HARDWARE_VECTOR_BASE + SYS_INT_VBLANK_COUNTUP
+#define	INT_VBLANK				INT_HARDWARE_VECTOR_BASE + SYS_INT_VBLANK
+#define	INT_HBLANK_COUNTUP		INT_HARDWARE_VECTOR_BASE + SYS_INT_HBLANK_COUNTUP
+
 /*●割り込みbit*/
 /* Set */
 #define	INT_CommSendSet			0x01	/* 送信データ空			(or) */
@@ -352,6 +385,14 @@ typedef struct {						/* 音色テーブル */
 #define	INT_VblankRes			0xDF	/* Vblank 				(and) */
 #define	INT_VblankStartRes		0xBF	/* Vblank期間開始		(and) */
 #define	INT_HblankRes			0x7F	/* Hblank				(and) */
+
+/*--------------------------------------*/
+/*	構造体定義							*/
+/*--------------------------------------*/
+typedef struct {
+	void	(near *callback)(void);
+	int		cs;
+} IntVector;
 
 /*========================================================================
 	シリアル通信

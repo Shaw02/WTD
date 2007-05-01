@@ -1,4 +1,4 @@
-path c:\masm611\bin;c:\masm611\binr;c:\WWitch\bin\;c:\WWitch\bin16\;c:\WWitch\lsic86ww\bin\
+path c:\masm611\bin;c:\masm611\binr;c:\WWitch\bin\;c:\WWitch\bin16\;c:\WWitch\lsic86ww\bin\;c:\WWitch\wtd\bin
 
 rem ●廉価版
 cd wtd
@@ -10,6 +10,12 @@ copy WTD_SRAM.LIB ..\..\..\bin\s\
 copy WTDHSRAM.LIB ..\..\..\bin\s\
 copy WTD_IRAM.LIB ..\..\..\bin\s\
 copy WTDHIRAM.LIB ..\..\..\bin\s\
+cd..
+
+rem ●DAT2ASM
+cd dat2asm
+nmake
+copy dat2asm.com ..\..\..\bin\
 cd..
 
 rem ●BIOS for WS Emulator ROM-Image
@@ -33,7 +39,7 @@ cd..
 rem ●逆コンパイラ
 cd wtuc
 nmake
-copy wtuc.com ..\..\tool\
+rem copy wtuc.com ..\..\tool\
 cd..
 
 ●ファイル削除

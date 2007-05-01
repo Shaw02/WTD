@@ -134,34 +134,59 @@ void BGDraw(int nScreen,int x,int y,int w,int h,int *Data,int nFontNo,int nPalNo
 /*●処理	鍵盤を表示する										*/
 /*●開発	Fun-X												*/
 /*--------------------------------------------------------------*/
-void DrawKeyboard(void)
+void DrawInit(void)
 {
 	int i,j,k;
-	char szBuf[8];
+	
 
-    // ロゴ
+	// ロゴ
 	BGDraw(0,0,0,LOGO_X,LOGO_Y,mapLogo,FONT_LOGO,KEYBOARD_PAL_NO);
-
 	// 鍵盤
 	for(j=0;j<4;j++){
 		for(i=0;i<2;i++){
 			BGDraw(0,i*7,j*4+3,KEYBOARD_X,KEYBOARD_Y,mapKeyboard,FONT_KEYBOARD,KEYBOARD_PAL_NO);
 		}
 	}
-	
 
 	// パン
-	k=2;
+	j=2;
 	for(i=0;i<4;i++)
-		BGDraw(0,5,i*4+2,1,1,&k,FONT_PANPOT,KEYBOARD_PAL_NO);
-
+		BGDraw(0,5,i*4+2,1,1,&j,FONT_PANPOT,KEYBOARD_PAL_NO);
+	// CH
 	for(i=0;i<4;i++){
-		sprintf(szBuf,"CH%02d",i+1);
-		print(0,i*4+2,szBuf);
+		BGDraw(0,0,i*4+2,2,1,&mapCH[i],FONT_CH,KEYBOARD_PAL_NO);
+	}
+    // フレーム
+	for(i=0;i<4;i++){
+		BGDraw(0,15,i*4+2,13,4,&mapFrame,0,1);
 	}
 
-	print(19,0,"TEMPO 000");
-	print(18,1,"TIME 00:00");
+    // 
+	for(i=0;i<3;i++){
+		BGDraw(0,i*4+6,0,3,2,&mapButton,FONT_BUTTON,KEYBOARD_PAL_NO);
+	}
+
+	print(24,0,"TIME");
+	
+	VramSprite->Atr[8].x=56;
+	VramSprite->Atr[8].y=3;
+	VramSprite->Atr[9].x=56+32;
+	VramSprite->Atr[9].y=3;
+	VramSprite->Atr[10].x=56+64;
+	VramSprite->Atr[10].y=3;
+	
+	if(nStatus){
+		VramSprite->Atr[8].Atr=FONT_PATTERN|PAL(4);
+		VramSprite->Atr[9].Atr=FONT_PATTERN+4|PAL(4);
+		VramSprite->Atr[10].Atr=FONT_PATTERN+5|PAL(4);
+	}
+	else{
+		VramSprite->Atr[8].Atr=FONT_PATTERN+3|PAL(4);
+		VramSprite->Atr[9].Atr=FONT_PATTERN+4|PAL(4);
+		VramSprite->Atr[10].Atr=FONT_PATTERN+2|PAL(4);
+	}
+	
+
 
 }
 /*--------------------------------------------------------------*/
@@ -212,21 +237,32 @@ void LCDinit()
 	SetFontData(FONT_LENGTH,FONT_USE_LENGTH,grpLength);
 	// ボリュームゲージ
 	SetFontData(FONT_VOL,FONT_USE_VOL,grpVol);
+	// CH
+	SetFontData(FONT_CH,FONT_USE_CH,grpCH);
+	// フレーム
+	SetFontData(3,9,grpFrame);
 
 	// スプライト
 	SetFontData(FONT_SPR,FONT_USE_SPR,grpSpr);
-/*
-	// スプライト0～3を表示
+
+	// ボタン
+	SetFontData(FONT_BUTTON,FONT_USE_BUTTON,grpButton);
+	// 演奏状態
+	SetFontData(FONT_PATTERN,FONT_USE_PATTERN,grpPattern);
+
+	// スプライト0～10を表示
 	outb(LCD_SpriteStart,0);
-	outb(LCD_SpriteCount,4);
-	VramSprite->Atr[0].Atr=FONT_SPR|PAL(4);
-	VramSprite->Atr[0].x=8*20;
-	VramSprite->Atr[0].y=64;
-*/
+	outb(LCD_SpriteCount,11);
+	for(i=0;i<11;i++){
+		VramSprite->Atr[i].x=8*30;
+		VramSprite->Atr[i].y=8*30;
+	}
+
 	// 画面のクリア
 	LCDcls(LCDclsChr);
 
 
 
 };
+
 

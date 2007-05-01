@@ -1,13 +1,13 @@
 
  Start  Stop   Length Name                   Class
- F0000H F1993H 01994H TEXT                   CODE
- F19A0H F3490H 01AF1H _TEXT                  CODE
- F34A0H F3F9FH 00B00H _GHOST_DATA            CODE
- 00000H 00AFFH 00B00H DATA                   DATA
- 00B00H 00B00H 00000H _DATA                  DATA
- 00B00H 00B7DH 0007EH BSS                    DATA
- 00B80H 01B7FH 01000H _BSS                   BSS
- 01B80H 01B80H 00000H _HEAP                  BSS
+ F0000H F3F52H 03F53H TEXT                   CODE
+ F3F60H F5A50H 01AF1H _TEXT                  CODE
+ F5A60H F68AFH 00E50H _GHOST_DATA            CODE
+ 00000H 00E4FH 00E50H DATA                   DATA
+ 00E50H 00E50H 00000H _DATA                  DATA
+ 00E50H 00ED7H 00088H BSS                    DATA
+ 00EE0H 01EDFH 01000H _BSS                   BSS
+ 01EE0H 01EE0H 00000H _HEAP                  BSS
 
  Origin   Group
  F000:0   CGROUP
@@ -17,44 +17,57 @@
 
  0000:0000       _InteruptVector
  0000:0000       dseg_start
- 0000:0400       _sPal4
- 0000:0420       _grpKeyboard
- 0000:06C0       _grpLogo
- 0000:0800       _grpPan
- 0000:08A0       _grpLength
- 0000:0940       _grpVol
- 0000:09E0       _grpSpr
- 0000:0A00       _mapKeyboard
- 0000:0A2A       _mapLogo
- 0000:0A3E       _VramSprite
- 0000:0A42       _VramScreen1
- 0000:0A46       _VramScreen2
- 0000:0A4A       _VramFont
- 0000:0A4E       _VramPalette
- 0000:0B00       bss_start
- 0000:0B80       _WTD_Work
- 0000:1B80       heap_start
+ 0000:0200       _sPal4
+ 0000:0220       _grpKeyboard
+ 0000:04C0       _grpLogo
+ 0000:0600       _grpPan
+ 0000:06A0       _grpLength
+ 0000:0740       _grpVol
+ 0000:07E0       _grpCH
+ 0000:0920       _grpSpr
+ 0000:09C0       _grpFrame
+ 0000:0AE0       _grpButton
+ 0000:0BA0       _grpPattern
+ 0000:0C60       _mapKeyOn
+ 0000:0C90       _mapKeyboard
+ 0000:0CBA       _mapLogo
+ 0000:0CCE       _mapCH
+ 0000:0CEE       _mapFrame
+ 0000:0D56       _mapButton
+ 0000:0D64       _VramSprite
+ 0000:0D68       _VramScreen1
+ 0000:0D6C       _VramScreen2
+ 0000:0D70       _VramFont
+ 0000:0D74       _VramPalette
+ 0000:0E50       bss_start
+ 0000:0ED0       _TimeCount
+ 0000:0ED4       _old_vector_vblabk
+ 0000:0EE0       _WTD_Work
+ 0000:1EE0       heap_start
  F000:0000       _Start
- F000:00C3       _Exit
- F000:00C5       _InterruptVector_Default
- F000:00C6       _InterruptVector_DivZero
- F000:10E9       _print
- F000:1134       _LCDcls
- F000:117A       _SetFontData
- F000:11CF       _BGDraw
- F000:123A       _DrawKeyboard
- F000:1359       _LCDinit
- F000:141F       _Inkey0
- F000:145E       _KeyWait
- F000:147E       _IRAM_Dump
- F000:159D       _debug_main
- F000:15BA       _main
- F000:19A0       _sprintf
- F000:19C2       _vsprintf
- F000:19E4       sprintf0
- F000:1B63       scandeci
- F000:1B80       WanderSwanTotalSoundDriver_
- F000:1C15       _WTD_FunctionLoad
- F000:24D4       I_Start
+ F000:00E0       _Exit
+ F000:00E4       _InterruptVector_Default
+ F000:00E5       _InterruptVector_DivZero
+ F000:3128       _print
+ F000:3173       _LCDcls
+ F000:31B9       _SetFontData
+ F000:320E       _BGDraw
+ F000:3279       _DrawInit
+ F000:348E       _LCDinit
+ F000:35D8       _Inkey0
+ F000:3617       _KeyWait
+ F000:3637       _KeyHit
+ F000:365B       _time_int_main
+ F000:36CD       _Time_Init
+ F000:3730       _IRAM_Dump
+ F000:3851       _debug_main
+ F000:3871       _main
+ F000:3F60       _sprintf
+ F000:3F82       _vsprintf
+ F000:3FA4       sprintf0
+ F000:4123       scandeci
+ F000:4140       WanderSwanTotalSoundDriver_
+ F000:41D5       _WTD_FunctionLoad
+ F000:4A94       I_Start
 
 Program entry point at F000:0000

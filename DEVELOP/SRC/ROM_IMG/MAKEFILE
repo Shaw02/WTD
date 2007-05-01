@@ -17,7 +17,9 @@ all: $(PROJ).bin
 	@del *.exe
 
 $(PROJ).bin : $(FILES) $(INC_FILES)
-	@bmpcnv -c ASCII_M.bmp
-	@bmpcnv -c -m1 ASCII_C.bmp
+	@bmpcnv -p0037 ASCII_M.bmp ASCII_M.fr
+	@bmpcnv -m1    ASCII_C.bmp ASCII_C.fr
+	@dat2asm /w ASCII_M.fr > ASCII_M.asm
+	@dat2asm /d ASCII_C.fr > ASCII_C.asm
 	@$(ASM) ROM_BIOS.ASM $(AFLAG); >ERR_IMGA.txt
 	@$(CC) -o $(PROJ).bin ROM_MAIN.C $(CFLAG) >ERR_IMGC.txt
