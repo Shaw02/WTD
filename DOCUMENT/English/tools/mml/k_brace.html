@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'
+            'http://www.w3.org/TR/html4/loose.dtd'>
+
+<html lang='ja'>
+
+<head>
+	<meta http-equiv='Content-Type' content='text/html;charset=Shift_JIS'>
+	<meta http-equiv='Content-Style-Type' content='text/css'>
+	<link rel='stylesheet' type='text/css' href='../../wtd.css'>
+	<title>WTD -MML Reference</title>
+</head>
+
+<BODY>
+<!-----------------------------------------------------------------------------
+	ツールバー（レイヤー２）
+------------------------------------------------------------------------------>
+<div id='header'>
+
+<table>
+<tr><td width='640pt'><i>WonderSwan Total Sound Driver</i></td></tr>
+<tr><td width='640pt'>
+	<a href='../../index.html'>Top</a>＼
+	<a href='../wtc.html'>MML Compiler</a>＼
+	<a href='../wtc.html#reference'>MML Reference</a>
+</td></tr>
+</table>
+<!--（↑このコンテンツの位置。）-->
+
+</div>
+<!-----------------------------------------------------------------------------
+	コンテンツ本体（レイヤー１）
+------------------------------------------------------------------------------>
+<div id='contents'>
+
+<h2>MML Reference - Accidental define.</h2>				<!--（コマンドの名前。）-->
+<!------------------------------------------------------------->
+Set the accidental.<br>
+
+<h3>Format</h3>
+<ul>
+	{<var>accidental</var>,<var>note</var>}<br>
+</ul>
+<br>
+
+<br>
+<h3>Input</h3>
+<table>
+<tr><th>Input					</th><th>	Range			</th><th>Default	</th><th></th></tr>
+<tr><td><var>accidental</var>	</td><td>	#, +, -, =		</td><td>	=		</td><td>#,+ : Sharp <br>- : Flat<br>= : Natural</td></tr>
+<tr><td><var>note</var>			</td><td>	c,d,e,f,g,a,b	</td><td>	cdefgab	</td><td>Musical scale							</td></tr>
+</table>
+<br><br>
+
+<br>
+<h3>Explanation</h3>
+This command can set the accidental.<br>
+<table>
+<tr><th>Command	</th><th>Note	</th></tr>
+<tr><td>	c	</td><td>C Doh	</td></tr>
+<tr><td>	d	</td><td>D Re	</td></tr>
+<tr><td>	e	</td><td>E Mi	</td></tr>
+<tr><td>	f	</td><td>F Fa	</td></tr>
+<tr><td>	g	</td><td>G Sol	</td></tr>
+<tr><td>	a	</td><td>A La	</td></tr>
+<tr><td>	b	</td><td>B, H Si</td></tr>
+</table>
+<br><br>
+
+<br>
+<h3>Example.</h3>
+<table>
+<tr><th>Command					</th><th>Scale						</th></tr>
+<tr><td>{-be}					</td><td>B flat major,	G minor		</td></tr>
+<tr><td>{-b}					</td><td>F major,		D minor		</td></tr>
+<tr><td>{=cdefgab} (Default)	</td><td>C major,		A minor		</td></tr>
+<tr><td>{#f}					</td><td>G major,		E minor		</td></tr>
+<tr><td>{#fc}					</td><td>D major,		B minor		</td></tr>
+</table>
+<br><br>
+
+<br>
+</div>
+<!-----------------------------------------------------------------------------
+	フッター
+------------------------------------------------------------------------------>
+<div id='footer'>
+
+<table>
+<tr><td width='640pt' colspan='4'><i>WonderSwan Total Sound Driver</i><br></td></tr>
+</table>
+
+</div>
+<!---------------------------------------------------------------------------->
+</BODY>
+</html>

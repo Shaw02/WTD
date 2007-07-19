@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'
+            'http://www.w3.org/TR/html4/loose.dtd'>
+
+<html lang='ja'>
+
+<head>
+	<meta http-equiv='Content-Type' content='text/html;charset=Shift_JIS'>
+	<meta http-equiv='Content-Style-Type' content='text/css'>
+	<link rel='stylesheet' type='text/css' href='../../wtd.css'>
+	<title>WTD -MML Reference</title>
+</head>
+
+<BODY>
+<!-----------------------------------------------------------------------------
+	ツールバー（レイヤー２）
+------------------------------------------------------------------------------>
+<div id='header'>
+
+<table>
+<tr><td width='640pt'><i>WonderSwan Total Sound Driver</i></td></tr>
+<tr><td width='640pt'>
+	<a href='../../index.html'>Top</a>＼
+	<a href='../wtc.html'>MML Compiler</a>＼
+	<a href='../wtc.html#reference'>MML Reference</a>
+</td></tr>
+</table>
+<!--（↑このコンテンツの位置。）-->
+
+</div>
+<!-----------------------------------------------------------------------------
+	コンテンツ本体（レイヤー１）
+------------------------------------------------------------------------------>
+<div id='contents'>
+
+<h2>MML Reference - Repeat mark</h2>				<!--（コマンドの名前。）-->
+<!------------------------------------------------------------->
+This is a repeat mark.<br>
+
+<h3>Format</h3>
+<ul>
+	[ <var>MML1</var> ( : <var>MML2</var> ) ]<var>count</var><br>
+	[ <var>MML1</var> ( ;<var>flag</var> <var>MML2</var> ) ]<var>count</var><br>
+</ul>
+<br>
+
+<br>
+<h3>Input</h3>
+<table>
+<tr><th>Input				</th><th>Range		</th><th>Default</th><th></th></tr>
+<tr><td><var>count</var>	</td><td>1 to 255	</td><td>	-	</td><td>Repert times.</td></tr>
+<tr><td><var>flag</var>		</td><td>0 to 3		</td><td>	-	</td><td>bit0:Carry / bit1:Zero</td></tr>
+<tr><td><var>MML1 to 2</var></td><td>0 to 2		</td><td>	-	</td><td>Strings of the Music Macro Language</td></tr>
+</table>
+<br>
+<br>
+
+<h3>Explanation</h3>
+This command is repert mark.<br>
+<table>
+<tr><td>ex,1</td><td>[ c ]8</td><td>= cccccccc</td></tr>
+<tr><td>ex,2</td><td>[ cde:d ]3 f</td><td>= cded cded cdef</td></tr>
+</table>
+<br><br>
+
+<br>
+</div>
+<!-----------------------------------------------------------------------------
+	フッター
+------------------------------------------------------------------------------>
+<div id='footer'>
+
+<table>
+<tr><td width='640pt' colspan='4'><i>WonderSwan Total Sound Driver</i><br></td></tr>
+</table>
+
+</div>
+<!---------------------------------------------------------------------------->
+</BODY>
+</html>

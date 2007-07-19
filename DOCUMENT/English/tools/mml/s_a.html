@@ -1,0 +1,97 @@
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'
+            'http://www.w3.org/TR/html4/loose.dtd'>
+
+<html lang='ja'>
+
+<head>
+	<meta http-equiv='Content-Type' content='text/html;charset=Shift_JIS'>
+	<meta http-equiv='Content-Style-Type' content='text/css'>
+	<link rel='stylesheet' type='text/css' href='../../wtd.css'>
+	<title>WTD -MML Reference</title>
+</head>
+
+<BODY>
+<!-----------------------------------------------------------------------------
+	ツールバー（レイヤー２）
+------------------------------------------------------------------------------>
+<div id='header'>
+
+<table>
+<tr><td width='640pt'><i>WonderSwan Total Sound Driver</i></td></tr>
+<tr><td width='640pt'>
+	<a href='../../index.html'>Top</a>＼
+	<a href='../wtc.html'>MML Compiler</a>＼
+	<a href='../wtc.html#reference'>MML Reference</a>
+</td></tr>
+</table>
+<!--（↑このコンテンツの位置。）-->
+
+</div>
+<!-----------------------------------------------------------------------------
+	コンテンツ本体（レイヤー１）
+------------------------------------------------------------------------------>
+<div id='contents'>
+
+<h2>MML Reference - Note and Pause</h2>				<!--（コマンドの名前。）-->
+<!------------------------------------------------------------->
+Set the note and pause<br>
+
+<h3>Format</h3>
+<ul>
+	c(<var>accidental</var>)(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)<br>
+	d(<var>accidental</var>)(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)<br>
+	e(<var>accidental</var>)(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)<br>
+	f(<var>accidental</var>)(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)<br>
+	g(<var>accidental</var>)(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)<br>
+	a(<var>accidental</var>)(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)<br>
+	b(<var>accidental</var>)(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)<br>
+	r(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)<br>
+</ul>
+<br>
+
+<br>
+<h3>Input</h3>
+<table>
+<tr><th>Input						</th>	<th>	Range		</th><th>Default							</th>	<th></th></tr>
+<tr><td><var>accidental</var>		</td>	<td>	#, +, - ,=	</td><td>Define the {} command				</td>	<td>#,+ : Sharp <br>- : Flat<br>= : Natural</td></tr>
+<tr><td rowspan='2'><var>length</var></td>	<td>	0 to 65535	</td><td rowspan='2'>Define the l command	</td>	<td>Set the length of the note/pause.				<br>
+																														length = INT(timebase * 4 / <var>length</var>) [step]<br>
+																														If you set 0, you can set chord next note.(MIDI only)	</td></tr>
+<tr>										<td>	%0 to %65535</td>												<td>Set the length of the note/pause by the step.	<br>
+																														If you set 0, you can set chord next note.(MIDI only)	</td></tr>
+<tr><td><var>period</var>			</td>	<td>	.			</td><td>	-								</td>	<td>Add half of length to length.	<br>You can plural period.</td></tr>
+<tr><td><var>tie/slur</var>			</td>	<td>	&			</td><td>	-								</td>	<td>Set the tie/slur				</td></tr>
+</table>
+<br><br>
+
+<br>
+<h3>Explanation</h3>
+This command can set the note and pause.<br>
+<table>
+<tr><th>Command	</th><th>Note and Puase	</th></tr>
+<tr><td>	c	</td><td>C Doh			</td></tr>
+<tr><td>	d	</td><td>D Re			</td></tr>
+<tr><td>	e	</td><td>E Mi			</td></tr>
+<tr><td>	f	</td><td>F Fa			</td></tr>
+<tr><td>	g	</td><td>G Sol			</td></tr>
+<tr><td>	a	</td><td>A La			</td></tr>
+<tr><td>	b	</td><td>B, H Si		</td></tr>
+<tr><td>	r	</td><td>Puase			</td></tr>
+</table>
+<br><br>
+
+<br>
+</div>
+<!-----------------------------------------------------------------------------
+	フッター
+------------------------------------------------------------------------------>
+<div id='footer'>
+
+<table>
+<tr><td width='640pt' colspan='4'><i>WonderSwan Total Sound Driver</i><br></td></tr>
+</table>
+
+</div>
+<!---------------------------------------------------------------------------->
+</BODY>
+</html>

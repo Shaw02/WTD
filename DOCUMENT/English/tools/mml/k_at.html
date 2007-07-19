@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'
+            'http://www.w3.org/TR/html4/loose.dtd'>
+
+<html lang='ja'>
+
+<head>
+	<meta http-equiv='Content-Type' content='text/html;charset=Shift_JIS'>
+	<meta http-equiv='Content-Style-Type' content='text/css'>
+	<link rel='stylesheet' type='text/css' href='../../wtd.css'>
+	<title>WTD -MML Reference</title>
+</head>
+
+<BODY>
+<!-----------------------------------------------------------------------------
+	ツールバー（レイヤー２）
+------------------------------------------------------------------------------>
+<div id='header'>
+
+<table>
+<tr><td width='640pt'><i>WonderSwan Total Sound Driver</i></td></tr>
+<tr><td width='640pt'>
+	<a href='../../index.html'>Top</a>＼
+	<a href='../wtc.html'>MML Compiler</a>＼
+	<a href='../wtc.html#reference'>MML Reference</a>
+</td></tr>
+</table>
+<!--（↑このコンテンツの位置。）-->
+
+</div>
+<!-----------------------------------------------------------------------------
+	コンテンツ本体（レイヤー１）
+------------------------------------------------------------------------------>
+<div id='contents'>
+
+<h2>MML Reference - Voice / Program change</h2>				<!--（コマンドの名前。）-->
+<!------------------------------------------------------------->
+Set the vocie / program change.<br>
+
+<h3>Format</h3>
+<ul>
+	@<var>no</var><br>
+	@F<var>no</var><br>
+	@S<var>no</var>, <var>decay</var><br>
+	@R<var>no</var><br>
+</ul>
+<br>
+
+<br>
+<h3>Input</h3>
+<table>
+<tr><th>Input				</th><th>Range					</th><th>Default</th><th></th></tr>
+<tr><td><var>no</var>		</td><td>0 to 15(PCM)/127(MIDI)	</td><td>	255	</td><td>Voice/Program number.(value 255 is disable.)</td></tr>
+<tr><td><var>decay</var>	</td><td>0 to 65535				</td><td>	-	</td><td>Decay of 2nd voice.</td></tr>
+</table>
+<br><br>
+
+<br>
+<h3>Explanation</h3>
+This command can set the voice.<br>
+
+<table>
+<tr><th>Command	</th><th></th></tr>
+<tr><td>@		</td><td rowspan='2'>1st voice/program number when key-on.</td></tr>
+<tr><td>@F		</td></tr>
+<tr><td>@S		</td><td>2nd voice/program number after decay.</td></tr>
+<tr><td>@R		</td><td>3rd vocie/program number after key-off.</td></tr>
+</table>
+<br><br>
+
+<br>
+</div>
+<!-----------------------------------------------------------------------------
+	フッター
+------------------------------------------------------------------------------>
+<div id='footer'>
+
+<table>
+<tr><td width='640pt' colspan='4'><i>WonderSwan Total Sound Driver</i><br></td></tr>
+</table>
+
+</div>
+<!---------------------------------------------------------------------------->
+</BODY>
+</html>

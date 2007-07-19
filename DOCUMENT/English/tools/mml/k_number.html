@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'
+            'http://www.w3.org/TR/html4/loose.dtd'>
+
+<html lang='ja'>
+
+<head>
+	<meta http-equiv='Content-Type' content='text/html;charset=Shift_JIS'>
+	<meta http-equiv='Content-Style-Type' content='text/css'>
+	<link rel='stylesheet' type='text/css' href='../../wtd.css'>
+	<title>WTD -MML Reference</title>
+</head>
+
+<BODY>
+<!-----------------------------------------------------------------------------
+	ツールバー（レイヤー２）
+------------------------------------------------------------------------------>
+<div id='header'>
+
+<table>
+<tr><td width='640pt'><i>WonderSwan Total Sound Driver</i></td></tr>
+<tr><td width='640pt'>
+	<a href='../../index.html'>Top</a>＼
+	<a href='../wtc.html'>MML Compiler</a>＼
+	<a href='../wtc.html#reference'>MML Reference</a>
+</td></tr>
+</table>
+<!--（↑このコンテンツの位置。）-->
+
+</div>
+<!-----------------------------------------------------------------------------
+	コンテンツ本体（レイヤー１）
+------------------------------------------------------------------------------>
+<div id='contents'>
+
+<h2>MML Reference - Calculate the work memory of WTD</h2>				<!--（コマンドの名前。）-->
+<!------------------------------------------------------------->
+Calculate the work memory of WTD.<br>
+This command can use to set/reset flag of the game, etc..<br>
+
+<h3>Format</h3>
+<ul>
+	0,<var>address</var>,<var>var</var><br>
+	1,<var>address</var>,<var>var</var><br>
+	2,<var>address</var>,<var>var</var><br>
+	3,<var>address</var>,<var>var</var><br>
+	4,<var>address</var>,<var>var</var><br>
+	5,<var>address</var>,<var>var</var><br>
+	6,<var>address</var>,<var>var</var><br>
+	7,<var>address</var>,<var>var</var><br>
+	8,<var>address</var>,<var>var</var><br>
+	9,<var>address</var>,<var>var</var><br>
+</ul>
+<br>
+
+<br>
+<h3>Input</h3>
+<table>
+<tr><th>Input				</th><th>Range			</th><th>Default</th><th></th></tr>
+<tr><td><var>address</var>	</td><td>0 to 255		</td><td>	-	</td><td>Work address lower 8bit.</td></tr>
+<tr><td><var>var</var>		</td><td>0 to 255		</td><td>	-	</td><td>Operand for calculate.</td></tr>
+</table>
+<br>
+<br>
+
+<h3>Explanation</h3>
+This command can calculate the work momory.<br>
+As to the work address upper 8bit, " command can set it. (Default it 0x00)<br>
+<ul>Offset address = ((" command parameter) x 256 + (<var>address</var>))<br>
+	Segment address = work area of WTD.<br>
+</ul>
+
+<table>
+<tr><th>Command	</th><th>C language										</th><th>Assembly language (i8086 instruction)</th></tr>
+<tr><td>0		</td><td>*<var>address</var> = <var>var</var>			</td><td>MOV [<var>address</var>],<var>var</var></td></tr>
+<tr><td>1		</td><td>*<var>address</var> += <var>var</var>			</td><td>ADD [<var>address</var>],<var>var</var></td></tr>
+<tr><td>2		</td><td>*<var>address</var> -= <var>var</var>			</td><td>SUB [<var>address</var>],<var>var</var></td></tr>
+<tr><td>3		</td><td>*<var>address</var> &= <var>var</var>			</td><td>AND [<var>address</var>],<var>var</var></td></tr>
+<tr><td>4		</td><td>*<var>address</var> |= <var>var</var>			</td><td>OR  [<var>address</var>],<var>var</var></td></tr>
+<tr><td>5		</td><td>*<var>address</var> ^= <var>var</var>			</td><td>XOR [<var>address</var>],<var>var</var></td></tr>
+<tr><td>6		</td><td>*<var>address</var> |= (0x01 << <var>var</var>)</td><td>SET <var>var</var>,[<var>address</var>] (Z-80 instruction)</td></tr>
+<tr><td>7		</td><td>*<var>address</var> &= ~(0x01 << <var>var</var>)</td><td>RES <var>var</var>,[<var>address</var>] (Z-80 instruction)</td></tr>
+<tr><td>8		</td><td>*<var>address</var> - <var>var</var>			</td><td>CMP [<var>address</var>],<var>var</var></td></tr>
+<tr><td>9		</td><td>*<var>address</var> & <var>var</var>			</td><td>TEST [<var>address</var>],<var>var</var></td></tr>
+</table>
+WTD have the Carry flag and the Zero flag.<br>
+Result of the calculation, WTD will set/reset those flags.<br>
+<br><br>
+
+<br>
+</div>
+<!-----------------------------------------------------------------------------
+	フッター
+------------------------------------------------------------------------------>
+<div id='footer'>
+
+<table>
+<tr><td width='640pt' colspan='4'><i>WonderSwan Total Sound Driver</i><br></td></tr>
+</table>
+
+</div>
+<!---------------------------------------------------------------------------->
+</BODY>
+</html>

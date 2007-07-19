@@ -1,0 +1,83 @@
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'
+            'http://www.w3.org/TR/html4/loose.dtd'>
+
+<html lang='ja'>
+
+<head>
+	<meta http-equiv='Content-Type' content='text/html;charset=Shift_JIS'>
+	<meta http-equiv='Content-Style-Type' content='text/css'>
+	<link rel='stylesheet' type='text/css' href='../../wtd.css'>
+	<title>WTD -MML Reference</title>
+</head>
+
+<BODY>
+<!-----------------------------------------------------------------------------
+	ツールバー（レイヤー２）
+------------------------------------------------------------------------------>
+<div id='header'>
+
+<table>
+<tr><td width='640pt'><i>WonderSwan Total Sound Driver</i></td></tr>
+<tr><td width='640pt'>
+	<a href='../../index.html'>Top</a>＼
+	<a href='../wtc.html'>MML Compiler</a>＼
+	<a href='../wtc.html#reference'>MML Reference</a>
+</td></tr>
+</table>
+<!--（↑このコンテンツの位置。）-->
+
+</div>
+<!-----------------------------------------------------------------------------
+	コンテンツ本体（レイヤー１）
+------------------------------------------------------------------------------>
+<div id='contents'>
+
+<h2>MML Reference - header</h2>				<!--（コマンドの名前。）-->
+<!------------------------------------------------------------->
+This is the header of the music file.<br>
+
+<h3>Format</h3>
+When you write those command, you must write in the beginning of a line.<br>
+<br>
+TI <var>Title</var><br>
+FI <var>Filename</var><br>
+TB <var>Timebase</var><br>
+PA <var>Part.</var><br>
+FX <var>Switch</var><br>
+<br>
+<br>
+
+<br>
+<h3>Input</h3>
+<table>
+<tr><th>Input				</th><th>Range		</th><th>Default</th><th></th></tr>
+<tr><td><var>Title	</var>	</td><td>24 chr		</td><td>	-	</td><td>Title for the WonderWitch</td></tr>
+<tr><td><var>Filename</var>	</td><td>16 chr		</td><td>	-	</td><td>File name for the WonderWitch</td></tr>
+<tr><td><var>Timebase</var>	</td><td>1 to 256	</td><td>	48	</td><td>The number of the time base</td></tr>
+<tr><td><var>Part	</var>	</td><td>1 to 19	</td><td>	0	</td><td>The number of the part.</td></tr>
+<tr><td><var>Switch	</var>	</td><td>0 to 1		</td><td>	0	</td><td>If you want to make .FX file, you must set '1'.</td></tr>
+</table>
+<br>
+<br>
+
+<h3>Explanation</h3>
+TB, PA  commands can set header of the .WTD(music) file.<br>
+TI, FI, FX commands can set header of the .FX(WonderWitch format) file.<br>
+The time base is a number of tick for the quarter note.<br>
+<br>
+
+<br>
+</div>
+<!-----------------------------------------------------------------------------
+	フッター
+------------------------------------------------------------------------------>
+<div id='footer'>
+
+<table>
+<tr><td width='640pt' colspan='4'><i>WonderSwan Total Sound Driver</i><br></td></tr>
+</table>
+
+</div>
+<!---------------------------------------------------------------------------->
+</BODY>
+</html>

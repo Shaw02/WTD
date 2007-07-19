@@ -1,0 +1,82 @@
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'
+            'http://www.w3.org/TR/html4/loose.dtd'>
+
+<html lang='ja'>
+
+<head>
+	<meta http-equiv='Content-Type' content='text/html;charset=Shift_JIS'>
+	<meta http-equiv='Content-Style-Type' content='text/css'>
+	<link rel='stylesheet' type='text/css' href='../../wtd.css'>
+	<title>WTD -MML Reference</title>
+</head>
+
+<BODY>
+<!-----------------------------------------------------------------------------
+	ツールバー（レイヤー２）
+------------------------------------------------------------------------------>
+<div id='header'>
+
+<table>
+<tr><td width='640pt'><i>WonderSwan Total Sound Driver</i></td></tr>
+<tr><td width='640pt'>
+	<a href='../../index.html'>Top</a>＼
+	<a href='../wtc.html'>MML Compiler</a>＼
+	<a href='../wtc.html#reference'>MML Reference</a>
+</td></tr>
+</table>
+<!--（↑このコンテンツの位置。）-->
+
+</div>
+<!-----------------------------------------------------------------------------
+	コンテンツ本体（レイヤー１）
+------------------------------------------------------------------------------>
+<div id='contents'>
+
+<h2>MML Reference - Mode switch (PCM) / Dumper switch (MIDI)</h2>				<!--（コマンドの名前。）-->
+<!------------------------------------------------------------->
+PCM  : Mode switch of the WonderSwan PCM.<br>
+MIDI : Send the Hold(Dumper pedal, Sustain) (Control Change No.64)<br>
+
+<h3>Format</h3>
+<ul>
+	P<var>s</var>
+</ul>
+<br>
+
+<br>
+<h3>Input</h3>
+<table>
+<tr><th>Input			</th><th>Range	</th><th>Default</th><th></th></tr>
+<tr><td><var>s</var>	</td><td>0 to 1	</td><td>	-	</td><td>0:Disable / 1:Enable</td></tr>
+</table>
+<br><br>
+
+<br>
+<h3>Explanation</h3>
+If setting channel is MIDI, this command can send the Hold(Dumper pedal, Sustain) of the Control Change No.64.<br>
+If setting channel is PCM, this command can set the following mode of the WonderSwan PCM.<br>
+<table>
+<tr><th>Channel	</th><th>mode											</th></tr>
+<tr><td>0 to 15	</td><td>Hold(Dumper pedal, Sustain) switch of the MIDI	</td></tr>
+<tr><td>128		</td><td>This channel have not mode.					</td></tr>
+<tr><td>129		</td><td>This channel have not mode.					</td></tr>
+<tr><td>130		</td><td>Sweep mode of the WonderSwan PCM channel 3		</td></tr>
+<tr><td>131		</td><td>Noise mode of the WonderSwan PCM channel 4		</t></tr>
+</table>
+<br><br>
+
+<br>
+</div>
+<!-----------------------------------------------------------------------------
+	フッター
+------------------------------------------------------------------------------>
+<div id='footer'>
+
+<table>
+<tr><td width='640pt' colspan='4'><i>WonderSwan Total Sound Driver</i><br></td></tr>
+</table>
+
+</div>
+<!---------------------------------------------------------------------------->
+</BODY>
+</html>

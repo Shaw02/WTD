@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'
+            'http://www.w3.org/TR/html4/loose.dtd'>
+
+<html lang='ja'>
+
+<head>
+	<meta http-equiv='Content-Type' content='text/html;charset=Shift_JIS'>
+	<meta http-equiv='Content-Style-Type' content='text/css'>
+	<link rel='stylesheet' type='text/css' href='../../wtd.css'>
+	<title>WTD -MML Reference</title>
+</head>
+
+<BODY>
+<!-----------------------------------------------------------------------------
+	ツールバー（レイヤー２）
+------------------------------------------------------------------------------>
+<div id='header'>
+
+<table>
+<tr><td width='640pt'><i>WonderSwan Total Sound Driver</i></td></tr>
+<tr><td width='640pt'>
+	<a href='../../index.html'>Top</a>＼
+	<a href='../wtc.html'>MML Compiler</a>＼
+	<a href='../wtc.html#reference'>MML Reference</a>
+</td></tr>
+</table>
+<!--（↑このコンテンツの位置。）-->
+
+</div>
+<!-----------------------------------------------------------------------------
+	コンテンツ本体（レイヤー１）
+------------------------------------------------------------------------------>
+<div id='contents'>
+
+<h2>MML Reference - Envelope</h2>				<!--（コマンドの名前。）-->
+<!------------------------------------------------------------->
+This command can set the software envelope data.<br>
+
+<h3>Format</h3>
+When you write those command, you must write in the beginning of a line.<br>
+<br>
+E <var>No</var>, <var>fl</var>, <var>ar</var>, <var>dr</var>, <var>dl</var>, <var>sr</var>, <var>rr</var><br>
+Ex <var>No</var>, <var>fl</var>, <var>ar</var>, <var>as</var>, <var>al</var>, <var>dr</var>, <var>ds</var>, <var>dl</var>, <var>sr</var>, <var>ss</var>, <var>sl</var>, <var>rr</var>, <var>rs</var>, <var>rl</var><br>
+<br>
+<br>
+
+<br>
+<h3>Input</h3>
+<table>
+<tr><th>Input			</th><th>Range		</th><th>Default<br>(when Ex command)</th><th></th></tr>
+<tr><td><var>No	</var>	</td><td>0 to 23	</td><td>	-	</td><td>Setting envelope number for the music data.</td></tr>
+<tr><td><var>fl	</var>	</td><td>0 to 255	</td><td>	-	</td><td>First level</td></tr>
+<tr><td><var>ar	</var>	</td><td>0 to 255	</td><td>	-	</td><td>Attack rate</td></tr>
+<tr><td><var>as	</var>	</td><td>-128 to 127</td><td>	1	</td><td>Attack speed</td></tr>
+<tr><td><var>al	</var>	</td><td>0 to 255	</td><td>	255	</td><td>Attack level</td></tr>
+<tr><td><var>dr	</var>	</td><td>0 to 255	</td><td>	-	</td><td>Decay rate</td></tr>
+<tr><td><var>ds	</var>	</td><td>-128 to 127</td><td>	-1	</td><td>Decay speed</td></tr>
+<tr><td><var>dl	</var>	</td><td>0 to 255	</td><td>	-	</td><td>Decay level</td></tr>
+<tr><td><var>sr	</var>	</td><td>0 to 255	</td><td>	-	</td><td>Sustain rate</td></tr>
+<tr><td><var>ss	</var>	</td><td>-128 to 127</td><td>	-1	</td><td>Sustain speed</td></tr>
+<tr><td><var>sl	</var>	</td><td>0 to 255	</td><td>	0	</td><td>Sustain level</td></tr>
+<tr><td><var>rr	</var>	</td><td>0 to 255	</td><td>	-	</td><td>Release rate</td></tr>
+<tr><td><var>rs	</var>	</td><td>-128 to 127</td><td>	-1	</td><td>Release speed</td></tr>
+<tr><td><var>rl	</var>	</td><td>0 to 255	</td><td>	0	</td><td>Release level</td></tr>
+</table>
+<img src='h_envelope.jpg'>
+<br>
+<br>
+
+<h3>Explanation</h3>
+This command can set the envelope data.<br>
+This is common data for the music and effect.<br>
+<br>
+<br>
+
+<br>
+</div>
+<!-----------------------------------------------------------------------------
+	フッター
+------------------------------------------------------------------------------>
+<div id='footer'>
+
+<table>
+<tr><td width='640pt' colspan='4'><i>WonderSwan Total Sound Driver</i><br></td></tr>
+</table>
+
+</div>
+<!---------------------------------------------------------------------------->
+</BODY>
+</html>

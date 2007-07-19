@@ -1,0 +1,95 @@
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'
+            'http://www.w3.org/TR/html4/loose.dtd'>
+
+<html lang='ja'>
+
+<head>
+	<meta http-equiv='Content-Type' content='text/html;charset=Shift_JIS'>
+	<meta http-equiv='Content-Style-Type' content='text/css'>
+	<link rel='stylesheet' type='text/css' href='wtd.css'>
+	<title>WTD</title>
+</head>
+
+<BODY>
+<!-----------------------------------------------------------------------------
+	ツールバー（レイヤー２）
+------------------------------------------------------------------------------>
+<div id='header'>
+
+<table>
+<tr><td width='640pt'><i>WonderSwan Total Sound Driver</i></td></tr>
+<tr><td width='640pt'>
+	<a href='index.html'>Top</a>
+</td></tr>
+</table>
+<!--（↑このコンテンツの位置。）-->
+
+</div>
+<!-----------------------------------------------------------------------------
+	コンテンツ本体（レイヤー１）
+------------------------------------------------------------------------------>
+<div id='contents'>
+
+<h2>Specifications</h1>				<!--（コマンドの名前。）-->
+<!------------------------------------------------------------->
+<h3><a name='lib'>Device Driver(Liberally)</a></h3>
+<ul>
+About the WTD, there are the liberaly version and the IL (In direct liberaly) version.<br>
+User application can call the functions for controlling WTD.<br>
+<br>
+WTD made by microsoft macro assember version 6.11.<br>
+<br>
+User application do not use the following device because WTD use it.<br>
+<ul>
+<li>Sound device.<br>
+<li>Serial device.<br>
+<li>H-blank device.<br>
+</ul>
+As to the IL (In direct liberaly) version, WTD use heap area of 4096 bytes.<br>
+It's heap area are in Wonder Witch system.<br>
+Therefore, user can use only wonder witch system.<br>
+<br>
+As fot the liberaly version, other system can use it.<br>
+WTD allot the memory of 4096byte in the DGROUP segment area.<br>
+</ul>
+
+<br>
+<h3><a name='mus'>Music/Effect data</h3>
+<ul>
+WTD can play music and effect.<br>
+<ul>
+<li>4 channels PCM of the WonderSwan.<br>
+<li>16 channels MIDI of the RS-232C.(38.4kbps)<br>
+<li>MIDI channel can use 8 note(chord).<br>
+<li>In the PCM channel of the WonderSwan, user can set 7bit value with volume and panpot.<br>
+	This is the some range as MIDI channel.<br>
+<li>MML Compliler can calculate the check sum of the GS formats exclusive.<br>
+</ul>
+</ul>
+
+<br>
+<h3><a name='pcm'>PCM Voice data (effect)</h3>
+<ul>
+WTD can play wave data.<br>
+<ul>
+<li>Format = microsoft wave format.<br>
+<li>Sampling rate = 12kHz<br>
+<li>Quantum = 8bit (monaural)<br>
+</ul>
+</ul>
+
+<br><br>
+</div>
+<!-----------------------------------------------------------------------------
+	フッター
+------------------------------------------------------------------------------>
+<div id='footer'>
+
+<table>
+<tr><td width='640pt' colspan='4'><i>WonderSwan Total Sound Driver</i><br></td></tr>
+</table>
+
+</div>
+<!---------------------------------------------------------------------------->
+</BODY>
+</html>

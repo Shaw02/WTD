@@ -1,0 +1,157 @@
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'
+            'http://www.w3.org/TR/html4/loose.dtd'>
+
+<html lang='ja'>
+
+<head>
+	<meta http-equiv='Content-Type' content='text/html;charset=Shift_JIS'>
+	<meta http-equiv='Content-Style-Type' content='text/css'>
+	<link rel='stylesheet' type='text/css' href='../wtd.css'>
+	<title>WTD -WTD.fx</title>
+</head>
+
+<BODY>
+<!-----------------------------------------------------------------------------
+	ツールバー（レイヤー２）
+------------------------------------------------------------------------------>
+<div id='header'>
+
+<table>
+<tr><td width='640pt'><i>WonderSwan Total Sound Driver</i></td></tr>
+<tr><td width='640pt'>
+	<a href='../index.html'>Top</a>
+</td></tr>
+</table>
+<!--（↑このコンテンツの位置。）-->
+
+</div>
+<!-----------------------------------------------------------------------------
+	コンテンツ本体（レイヤー１）
+------------------------------------------------------------------------------>
+<div id='contents'>
+
+<h2>Software development kit</h2>				<!--（コマンドの名前。）-->
+<!------------------------------------------------------------->
+<h3><a name='device'>Using device of the WTD</a></h3>
+<li>User application can not use the following device because WTD is using the following device.<br>
+<ul>
+<li>Sound device.<br>
+<li>Serial device. (Omit the "WTD_H.FX") <br>
+<li>H-blank timer device.<br>
+</ul>
+<br><br>
+
+<br>
+<h3><a name='file'>Liberally file</a></h3>
+This liberally can play music and effect on the WonderSwan.<br>
+User can control the WTD by the function call of the WTD.<br>
+<br><br>
+
+<table>
+<caption>liberally version</caption>
+<tr><th>liberally file	</th><th>Specification</th></tr>
+<tr><td>WTD_SRAM.LIB</td><td>DGROUP = S-RAM( Address 0x10000 to 0x1FFFF),<br> WTD can use MIDI. And user application can not use serial port.</td></tr>
+<tr><td>WTDHSRAM.LIB</td><td>DGROUP = S-RAM( Address 0x10000 to 0x1FFFF),<br> WTD can not use MIDI.  And user application can use serial port.</td></tr>
+<tr><td>WTD_IRAM.LIB</td><td>DGROUP = I-RAM( Address 0x00000 to 0x0FFFF),<br> WTD can use MIDI.  And user application can not use serial port.</td></tr>
+<tr><td>WTDHIRAM.LIB</td><td>DGROUP = I-RAM( Address 0x00000 to 0x0FFFF),<br> WTD can not use MIDI.  And user application can use serial port.</td></tr>
+</table>
+Those liberally are microsoft's format.<br>
+Those liberally are made MASM (Microsoft macro assembler version 6.11a).<br>
+We confirm that the LSI-C86 for WonderWitch can use those liberally.<br>
+<br><br>
+
+<table>
+<caption>In-direct liberally of the Wonder Witch</caption>
+<tr><th>File name	</th><th>Specification</th></tr>
+<tr><td>WTD.FX		</td><td>This is In-directliberally for the Wonder Witch Application.<br> WTD can use MIDI. And user application can not use serial port.</td></tr>
+<tr><td>WTD_H.FX	</td><td>This is In-directliberally for the Wonder Witch Application.<br> WTD can not use MIDI.  And user application can use serial port.</td></tr>
+</table>
+<br><br>
+
+<br>
+<h3><a name='function'>Liberally functions</a></h3>
+<li>Function call of the WTD is as follows.<br>
+<li>About the details, please see document "DEVELOP.pdf".
+
+<table>
+<tr><th>Liberally Function									</th><th>		</th></tr>
+<tr><td>void WTD_FunctionLoad(<var>&Wtd_Function</var>);	</td><td>Load of the function struct. (This fanction is liberally version only.)<br>
+																	If you want to use the liberally version, you must call this function.</td></tr>
+</table>
+<br>
+
+<table>
+<tr><th>In-direct liberally Function & Function struct.		</th><th>		</th></tr>
+<tr><td>int wtdIL.Stay();									</td><td>Open and setup the WTD.</td></tr>
+<tr><td>int wtdIL.StayOut();								</td><td>Close and shutdown the WTD.</td></tr>
+<tr><td>void wtdIL.Init();									</td><td>Initialize the WTD</td></tr>
+<tr><td>char wtdIL.MusicPlay(<var>char far *Music</var>);	</td><td>Play the music.</td></tr>
+<tr><td>void wtdIL.MusicStop();								</td><td>Stop the music.</td></tr>
+<tr><td>char wtdIL.EffectPlay(<var>char far *Effect</var>)	</td><td>Play the effect.</td></tr>
+<tr><td>void wtdIL.EffectStop();							</td><td>Stop the effect.</td></tr>
+<tr><td>void wtdIL.PcmPlay(<var>char far *PCM</var>);		</td><td>Play the PCM voice.</td></tr>
+<tr><td>void wtdIL.PcmStop();								</td><td>Stop the PCM voice.</td></tr>
+<tr><td>char wtdIL.PcmVoiceSet(<var>char no</var>,<var>char far *wave</var>);	</td><td>Set the voice.</td></tr>
+<tr><td>char wtdIL.SoftEmbSet(<var>char no</var>,<var>char far *emb</var>);		</td><td>Set the envelope</td></tr>
+<tr><td>char far *wtdIL.ChangeFar(<var>void far *add</var>);					</td><td>Convert the far address of the i8086.</td></tr>
+<tr><td>void wtdIL.SoundSetChannel(<var>int mode</var>);	</td><td>Direct device access.(Do not use.)</td></tr>
+<tr><td>int wtdIL.SoundGetChannel();						</td><td>Direct device access.(Do not use.)</td></tr>
+<tr><td>void wtdIL.SoundSetOutput(<var>int mode</var>);		</td><td>Direct device access.(Do not use.)</td></tr>
+<tr><td>int wtdIL.SoundGetOutput(<var>int mode</var>);		</td><td>Direct device access.(Do not use.)</td></tr>
+<tr><td>int wtdIL.SoundGetRandom();							</td><td>Get Rundom</td></tr>
+<tr><td>void wtdIL.SetPlayMode(<var>int mode</var>);		</td><td>Direct device access.(Do not use.)</td></tr>
+<tr><td>int wtdIL.GetPlayMode();							</td><td>Direct device access.(Do not use.)</td></tr>
+<tr><td>void wtdIL.SetMusicVolume(<var>char volume</var>);	</td><td>Set the volume of the music.</td></tr>
+<tr><td>int wtdIL.GetMusicVolume();							</td><td>Get the volume of the music.</td></tr>
+<tr><td>void wtdIL.SetEffectVolume(<var>char volume</var>);	</td><td>Set the volume of the effect.</td></tr>
+<tr><td>int wtdIL.GetEffectVolume();						</td><td>Get the volume of the effect.</td></tr>
+<tr><td>void wtdIL.SetPcmVolume(<var>char volume</var>);	</td><td>Set the volume of the PCM voice.</td></tr>
+<tr><td>int wtdIL.GetPcmVolume();							</td><td>Get the volume of the PCM voice.</td></tr>
+<tr><td>void wtdIL.SetFIFO(<var>int size</var>,<var>char far *FIFO</var>);	</td><td>Set the FIFO buffer of the serial communication of the MIDI.</td></tr>
+</table>
+<br><br>
+
+<br>
+<h3><a name='memory'>Structure and Using memory of the WTD</a></h3>
+<li>Work area of the WTD is as follows.<br>
+<li>About the details, please see document "DEVELOP.pdf".
+<table>
+<tr><th>Address			</th><th>Area	</th></tr>
+<tr><td>0x0000 to 0x00FF</td><td>Work area for user.</td></tr>
+<tr><td>0x0100 to 0x01FF</td><td>Voice table for the PCM of the WonderSwan.</td></tr>
+<tr><td>0x0200 to 0x037F</td><td>Envelope table for the expression, pitch bend and panpot.</td></tr>
+<tr><td>0x0380 to 0x03FF</td><td>Common structure.</td></tr>
+<tr><td>0x0400 to 0x05FF</td><td>Individual structure for the effect.</td></tr>
+<tr><td>0x0600 to 0x0FFF</td><td>Individual structure for the music.</td></tr>
+</table>
+<br>
+<h4>liberally version</h4>
+<li>WTD have a global variable "_WTD_work" (C-language name is WTD_work[0x1000]).<br>
+<li>User application can access it global variable by exturn define.<br>
+<br>
+<h4>In-direct liberally of the Wonder Witch</h4>
+<li>When stay WTD, WTD make work area on the heap area (4096byte).<br>
+<br><br>
+
+<br>
+<h3><a name='format'>Data format</a></h3>
+<li><a href='./format/wtd.html'>.WTD (Music data) file</a><br>
+<li><a href='./format/wtv.html'>.WTV (Voice data) file</a><br>
+<li><a href='./format/wsc.html'>.WSC (ROM image of the WonderSwan emulator) file</a><br>
+<br><br>
+
+<br>
+</div>
+<!-----------------------------------------------------------------------------
+	フッター
+------------------------------------------------------------------------------>
+<div id='footer'>
+
+<table>
+<tr><td width='640pt' colspan='4'><i>WonderSwan Total Sound Driver</i><br></td></tr>
+</table>
+
+</div>
+<!---------------------------------------------------------------------------->
+</BODY>
+</html>

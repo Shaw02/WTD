@@ -1,12 +1,12 @@
 +-----------------------------------------------------------------------------
-| タイトル | Ｗonder Swan Ｔotal Sound Ｄriver  Version 1.09
+| タイトル | WonderSwan Total Sound Driver  Version 1.0a
 |ファイル名| wtdIL???.LZH
-| カテゴリ | 音源ドライバー
-| 動作機種 | Wonder Swan 及びその上位互換
-|前提ソフト| FreyaOS ver1.14以降
+| カテゴリ | Music driver of the WonderSwan.
+| 動作機種 | Wonder Swan, or higher.
+|前提ソフト| FreyaOS ver1.14, or higher (IL version) or Wonder Swan Emulator
 | 圧縮方式 | lh5
-|転載の可否| User's Manualを参照
-|  備  考  | 技術サポートは、FSPNET(FSPNET.TXT参照)で行います
+|転載の可否| Please refer the User's Manual
+|  備  考  | Support site = "http://homepage1.nifty.com/~sha_w"
 +-----------------------------------------------------------------------------
 
 	　特徴　（ 取扱説明書からの引用 ）
@@ -23,15 +23,12 @@ PCM Voice発生時だけは頻度に割り込み処理を行う必要があり、処理速度が低下致し
 
 	変更点
 
-
-Version 1.09						2007. 5. 1
+Version 1.0a						2007. 7.19
 		以下の機能を追加・修正
-	●ROMイメージメーカ
-	・ROMイメージ中用のビュアーを開発。
-	　エミュレータでも演奏情報がモニターできるようにした。
-
-	※　フォルダー構成を若干変更しています。
-	※　以前のVersionをお持ちの場合、消してから解凍することをお勧めします。
+	●ドキュメント
+	・USER MANUALのエンベロープの説明が間違えていたのを修正。
+	　定義できる最大数は16個と記載していましたが、正しくは24個です。
+	・簡易的な英文マニュアルを作成。
 
 
 
@@ -47,4 +44,4 @@ Version 1.09						2007. 5. 1
 
 
 
-制作のファイルは【wtdIL107.LZH】です。
+制作のファイルは【wtdIL10a.LZH】です。

@@ -1,0 +1,178 @@
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'
+            'http://www.w3.org/TR/html4/loose.dtd'>
+
+<html lang='ja'>
+
+<head>
+	<meta http-equiv='Content-Type' content='text/html;charset=Shift_JIS'>
+	<meta http-equiv='Content-Style-Type' content='text/css'>
+	<link rel='stylesheet' type='text/css' href='../wtd.css'>
+	<title>WTD -wtc</title>
+</head>
+
+<BODY>
+<!-----------------------------------------------------------------------------
+	ツールバー（レイヤー２）
+------------------------------------------------------------------------------>
+<div id='header'>
+
+<table>
+<tr><td width='640pt'><i>WonderSwan Total Sound Driver</i></td></tr>
+<tr><td width='640pt'>
+	<a href='../index.html'>Top</a>
+</td></tr>
+</table>
+<!--（↑このコンテンツの位置。）-->
+
+</div>
+<!-----------------------------------------------------------------------------
+	コンテンツ本体（レイヤー１）
+------------------------------------------------------------------------------>
+<div id='contents'>
+
+<h2>wtc (MML Compiler)</h2>				<!--（コマンドの名前。）-->
+<!------------------------------------------------------------->
+<h3>Summary</h3>
+This software can compile from the ".MML" file to the "*.WTD" and "*.FX" file.<br>
+This software is 16bit MS-DOS application.<br>
+<br>
+<table>
+<caption>About the file</caption>
+<tr><th>extension</th><th></th></tr>
+<tr><td>*.MML	</td><td>MML(Music Macro Language) Sorce file.</td></tr>
+<tr><td>*.WTD	</td><td>Music data for the WTD.</td></tr>
+<tr><td>*.FX	</td><td>File format for the Wonder Witch(BANDAI and QUTE).</td></tr>
+<tr><td>*.WSC	</td><td>ROM image file for the Wonder Swan Emulator.</td></tr>
+</table>
+<br>
+
+<h3>Command line format</h3>
+WTC <var>filename</var>
+<ul>
+	<var>filename</var>
+	<ul>
+		Convert sorcefile.( "*.MML" file )<br>
+	</ul>
+</ul>
+
+<br>
+<h3><a name='reference'>MML Reference</a></h3>
+<table>
+<caption>Header command</caption>
+<tr><th>Command																		</th><th></th></tr>
+<tr><td><a href='./mml/h_header.html'>TI <var>title</var>							</a></td><td>Title of the .FX(WonderWitch format) file.</td></tr>
+<tr><td><a href='./mml/h_header.html'>FI <var>filename</var>						</a></td><td>File name of the .FX(WonderWitch format) file.</td></tr>
+<tr><td><a href='./mml/h_header.html'>TB <var>timebase</var>						</a></td><td>The number of the time base.</td></tr>
+<tr><td><a href='./mml/h_header.html'>PA <var>part</var>							</a></td><td>The number of the part(channel / track).</td></tr>
+<tr><td><a href='./mml/h_header.html'>FX <var>switch</var>							</a></td><td>Make switch of the .FX(WonderWitch format) file</td></tr>
+<tr><td><a href='./mml/h_voice.html'>@ <var>no</var>, <var>waveform[32]</var>		</a></td><td rowspan='2'>Define the voice data for the WonderSwan PCM.</td></tr>
+<tr><td><a href='./mml/h_voice.html'>@F <var>no</var>, <var>no2</var>, <var>filename</var>	</a></td></tr>
+<tr><td><a href='./mml/h_envelope.html'>E <var>no</var>, <var>envelope[6]</var>		</a></td><td rowspan='2'>Define the envelope data.</td></tr>
+<tr><td><a href='./mml/h_envelope.html'>Ex <var>no</var>, <var>envelope[13]</var>	</a></td></tr>
+<tr><td><a href='./mml/h_include.html'>IN <var>filename</var>						</a></td><td>Include file.</td></tr>
+<tr><td><a href='./mml/h_macro.html'>$ <var>Sn</var>	<var>MML</var>				</a></td><td>Define the macro.</td></tr>
+<tr><td><a href='./mml/h_channel.html'>C <var>ch</var>(,<var>ch</var>,..)	<var>MML</var>	</a></td><td>Set the part(channel / track).</td></tr>
+</table>
+When you write those command, you must write in the beginning of a line.<br>
+<br>
+
+<table>
+<caption>MML Command for the part and macro.</caption>
+<tr><th>MML Command																</th><th>Instruments</th><th>Function</th></tr>
+<tr><td><a href='./mml/k_exclamation.html'>	!								</a></td><td>PCM,MIDI	</td><td>Switch of the work memory access.</td></tr>
+<tr><td><a href='./mml/k_quotationw.html'>	"<var>address</var>				</a></td><td>PCM,MIDI	</td><td>Set work memory address upper 8bit</td></tr>
+<tr><td><a href='./mml/k_dollar.html'>		$<var>Sn</var>					</a></td><td>PCM,MIDI	</td><td>Call the macro.</td></tr>
+<tr><td><a href='./mml/k_quotations.html'>	'<var>velocity</var>			</a></td><td>MIDI		</td><td>Accent.(for a velocity)</td></tr>
+<tr><td><a href='./mml/k_paren.html'>		(								</a></td><td>PCM,MIDI	</td><td>Relative expression.(cc:11) (down)</td></tr>
+<tr><td><a href='./mml/k_paren.html'>		)								</a></td><td>PCM,MIDI	</td><td>Relative expression.(cc:11) (up)</td></tr>
+<tr><td><a href='./mml/k_asterisk.html'>	*<var>type</var>,<var>n</var>	</a></td><td>PCM,MIDI	</td><td>Switch of the LFO(Low Frequency Oscillator).</td></tr>
+<tr><td><a href='./mml/k_slash.html'>		/<var>type</var>,<var>n</var>	</a></td><td>PCM,MIDI	</td><td>Switch of the Envelope.</td></tr>
+<tr><td><a href='./mml/k_number.html'>	0,<var>address</var>,<var>var</var>	</a></td><td>PCM,MIDI	</td><td>MOV [<var>address</var>], <var>var</var> ( [<var>address</var>] = <var>var</var> )</td></tr>
+<tr><td><a href='./mml/k_number.html'>	1,<var>address</var>,<var>var</var>	</a></td><td>PCM,MIDI	</td><td>ADD [<var>address</var>], <var>var</var> ( [<var>address</var>] = [<var>address</var>] + <var>var</var> )</td></tr>
+<tr><td><a href='./mml/k_number.html'>	2,<var>address</var>,<var>var</var>	</a></td><td>PCM,MIDI	</td><td>SUB [<var>address</var>], <var>var</var> ( [<var>address</var>] = [<var>address</var>] - <var>var</var> )</td></tr>
+<tr><td><a href='./mml/k_number.html'>	3,<var>address</var>,<var>var</var>	</a></td><td>PCM,MIDI	</td><td>AND [<var>address</var>], <var>var</var> ( [<var>address</var>] = [<var>address</var>] & <var>var</var> )</td></tr>
+<tr><td><a href='./mml/k_number.html'>	4,<var>address</var>,<var>var</var>	</a></td><td>PCM,MIDI	</td><td>OR  [<var>address</var>], <var>var</var> ( [<var>address</var>] = [<var>address</var>] | <var>var</var> )</td></tr>
+<tr><td><a href='./mml/k_number.html'>	5,<var>address</var>,<var>var</var>	</a></td><td>PCM,MIDI	</td><td>XOR [<var>address</var>], <var>var</var> ( [<var>address</var>] = [<var>address</var>] ^ <var>var</var> )</td></tr>
+<tr><td><a href='./mml/k_number.html'>	6,<var>address</var>,<var>var</var>	</a></td><td>PCM,MIDI	</td><td>SET [<var>address</var>], <var>var</var></td></tr>
+<tr><td><a href='./mml/k_number.html'>	7,<var>address</var>,<var>var</var>	</a></td><td>PCM,MIDI	</td><td>RES [<var>address</var>], <var>var</var></td></tr>
+<tr><td><a href='./mml/k_number.html'>	8,<var>address</var>,<var>var</var>	</a></td><td>PCM,MIDI	</td><td>CMP [<var>address</var>], <var>var</var></td></tr>
+<tr><td><a href='./mml/k_number.html'>	9,<var>address</var>,<var>var</var>	</a></td><td>PCM,MIDI	</td><td>TEST [<var>address</var>], <var>var</var></td></tr>
+<tr><td><a href='./mml/k_repeat.html'>	[									</a></td><td>PCM,MIDI	</td><td>Repeat start point.</td></tr>
+<tr><td><a href='./mml/k_repeat.html'>	:									</a></td><td>PCM,MIDI	</td><td>Repeat exit.</td></tr>
+<tr><td><a href='./mml/k_repeat.html'>	;<var>flag</var>					</a></td><td>PCM,MIDI	</td><td>Repeat conditional exit.</td></tr>
+<tr><td><a href='./mml/k_repeat.html'>	]<var>count</var>					</a></td><td>PCM,MIDI	</td><td>Repeat end point.</td></tr>
+<tr><td><a href='./mml/k_than.html'>	<									</a></td><td>PCM,MIDI	</td><td>Relative octave.(down)</td></tr>
+<tr><td><a href='./mml/k_than.html'>	>									</a></td><td>PCM,MIDI	</td><td>Relative octave.(up)</td></tr>
+<tr><td><a href='./mml/k_at.html'>		@<var>no</var>						</a></td><td rowspan='4'>PCM,MIDI	</td><td rowspan='4'>PCM : Set the voice.<br>MIDI : Send the program change message</td></tr>
+<tr><td><a href='./mml/k_at.html'>		@F<var>no</var>						</a></td></tr>
+<tr><td><a href='./mml/k_at.html'>		@S<var>no</var>,<var>delay</var>	</a></td></tr>
+<tr><td><a href='./mml/k_at.html'>		@R<var>no</var>						</a></td></tr>
+<tr><td><a href='./mml/l_b.html'>		B<var>pitch</var>(,<var>range</var>)</a></td><td>MIDI		</td><td>Send the pitch bend message.</td></tr>
+<tr><td><a href='./mml/l_c.html'>		C<var>track</var>					</a></td><td>PCM,MIDI	</td><td>Set the channel and Instruments.</td></tr>
+<tr><td><a href='./mml/l_d.html'>		D<var>detune</var>					</a></td><td>PCM,MIDI	</td><td>Set the detune of the interval.</td></tr>
+<tr><td><a href='./mml/l_e.html'>		E<var>type</var>,<var>no</var>		</a></td><td>PCM,MIDI	</td><td>Set the envelope.</td></tr>
+<tr><td><a href='./mml/l_f.html'>		F<var>volume</var>					</a></td><td>MIDI		</td><td>Send the volume.(cc:7)</td></tr>
+<tr><td><a href='./mml/l_g.html'>		G<var>pressure</var>				</a></td><td>MIDI		</td><td>Send the channel Pressure.</td></tr>
+<tr><td><a href='./mml/l_h.html'>		H<var>lsb</var>,<var>msb</var>		</a></td><td>MIDI		</td><td>Send the bank select(cc:0,32)</td></tr>
+<tr><td><a href='./mml/l_k.html'>		K<var>delay</var>					</a></td><td>PCM,MIDI	</td><td>Set the keyon delay.</td></tr>
+<tr><td><a href='./mml/l_l.html'>		L									</a></td><td>PCM,MIDI	</td><td>Set the lnfinity loop point.</td></tr>
+<tr><td><a href='./mml/l_m.html'>		M<var>delay</var>,<var>mod</var>	</a></td><td>MIDI		</td><td>Send the modlation.(cc:1)</td></tr>
+<tr><td><a href='./mml/l_n.html'>		N<var>lsb</var>,<var>msb</var>,<var>data</var>	</a></td><td>MIDI		</td><td>Send the Non Registered Parameter.(cc:6,98～99)</td></tr>
+<tr><td><a href='./mml/l_o.html'>		O<var>s</var>						</a></td><td>MIDI		</td><td>Send the Sostenuto.(cc:66)</td></tr>
+<tr><td><a href='./mml/l_p.html'>		P<var>s</var>						</a></td><td>PCM,MIDI	</td><td>PCM : Mode switch of the WonderSwan PCM.<br>MIDI : Send the Hold(Dumper pedal, Sustain) (cc:64)</td></tr>
+<tr><td><a href='./mml/l_q.html'>		Q<var>gatetime</var>				</a></td><td>PCM,MIDI	</td><td>Set the gate time.(8 division)</td></tr>
+<tr><td><a href='./mml/l_r.html'>		R<var>breath</var>					</a></td><td>MIDI		</td><td>Send the Breath Controller (cc:2)</td></tr>
+<tr><td><a href='./mml/l_s.html'>		S<var>s</var>						</a></td><td>MIDI		</td><td>Send the Soft pedal.(cc:67)</td></tr>
+<tr><td><a href='./mml/l_t.html'>		T<var>foot</var>					</a></td><td>MIDI		</td><td>Send the Foot Controller.(cc:4)</td></tr>
+<tr><td><a href='./mml/l_q.html'>		U<var>gatetime</var>				</a></td><td>PCM,MIDI	</td><td>Set the gate time.(100 division)</td></tr>
+<tr><td><a href='./mml/l_v.html'>		V<var>detune</var>					</a></td><td>PCM,MIDI	</td><td>Set the detune of the expression</td></tr>
+<tr><td><a href='./mml/l_x.html'>X{<var>data[1]</var>,<var>data[2]</var>,...,<var>data[n]</var>,}	</a></td><td rowspan='2'>MIDI		</td><td rowspan='2'>Send the system exclusive message.</td></tr>
+<tr><td><a href='./mml/l_x.html'>X{<var>data[1]</var>,<var>data[2]</var>,...,(<var>data[i]</var>,...,<var>data[j]</var>),...,<var>data[n]</var>,}	</a></td></tr>
+<tr><td><a href='./mml/l_z.html'>Z{<var>data[1]</var>,<var>data[2]</var>,...,<var>data[n]</var>,}	</a></td><td>MIDI		</td><td>Send data of the RS-232C.</td></tr>
+<tr><td><a href='./mml/k_underscore.html'>	_<var>trance</var>				</a></td><td>PCM,MIDI	</td><td>Set the transposition</td></tr>
+<tr><td><a href='./mml/s_a.html'>c(<var>accidental</var>)(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)	</a></td><td>PCM,MIDI	</td><td>Note of the C Doh</td></tr>
+<tr><td><a href='./mml/s_a.html'>d(<var>accidental</var>)(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)	</a></td><td>PCM,MIDI	</td><td>Note of the D Re</td></tr>
+<tr><td><a href='./mml/s_a.html'>e(<var>accidental</var>)(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)	</a></td><td>PCM,MIDI	</td><td>Note of the E Mi</td></tr>
+<tr><td><a href='./mml/s_a.html'>f(<var>accidental</var>)(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)	</a></td><td>PCM,MIDI	</td><td>Note of the F Fa</td></tr>
+<tr><td><a href='./mml/s_a.html'>g(<var>accidental</var>)(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)	</a></td><td>PCM,MIDI	</td><td>Note of the G Sol</td></tr>
+<tr><td><a href='./mml/s_a.html'>a(<var>accidental</var>)(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)	</a></td><td>PCM,MIDI	</td><td>Note of the A La</td></tr>
+<tr><td><a href='./mml/s_a.html'>b(<var>accidental</var>)(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)	</a></td><td>PCM,MIDI	</td><td>Note of the B H Si</td></tr>
+<tr><td><a href='./mml/s_a.html'>r(<var>length</var>)(<var>period</var>)(<var>tie/slur</var>)							</a></td><td>PCM,MIDI	</td><td>Pause</td></tr>
+<tr><td><a href='./mml/s_k.html'>		k<var>velocity</var>				</a></td><td>MIDI		</td><td>Set the keyon velocity.</td></tr>
+<tr><td><a href='./mml/s_l.html'>		l<var>length</var>					</a></td><td rowspan='2'>PCM,MIDI	</td><td rowspan='2'>Set the length when omit length pf the note command.</td></tr>
+<tr><td><a href='./mml/s_l.html'>		l%<var>step</var>					</a></td></tr>
+<tr><td><a href='./mml/s_m.html'>		m<var>type</var>,<var>dr</var>,<var>sp</var>,<var>lv</var>,<var>co</var>		</a></td><td>PCM,MIDI	</td><td>Set the LFO(Low Frequency Oscillator).</td></tr>
+<tr><td><a href='./mml/s_n.html'>		n<var>noise</var>					</a></td><td>PCM		</td><td>Set the pink noise of the WonderSwan PCM channel 4.</td></tr>
+<tr><td><a href='./mml/s_o.html'>		o<var>octave</var>					</a></td><td>PCM,MIDI	</td><td>Set the octave.</td></tr>
+<tr><td><a href='./mml/s_p.html'>		p<var>panpot</var>(,<var>mode</var>)</a></td><td rowspan='2'>PCM,MIDI	</td><td rowspan='2'>Set the panpot.(cc:10)</td></tr>
+<tr><td><a href='./mml/s_p.html'>		p%<var>panpot</var>(,<var>mode</var>)</a></td></tr>
+<tr><td><a href='./mml/s_q.html'>		q<var>gatetime</var>				</a></td><td>PCM,MIDI	</td><td>Set the gate time.(tick)</td></tr>
+<tr><td><a href='./mml/s_s.html'>		s<var>level</var>,<var>rate</var>	</a></td><td>PCM		</td><td>Set the sweep of the WonderSwan PCM channel 3.</td></tr>
+<tr><td><a href='./mml/s_t.html'>		t<var>tempo</var>					</a></td><td rowspan='2'>PCM,MIDI	</td><td rowspan='2'>Set the tempo.<br>(Set the H-blank interrupt of the WonderSwan)</td></tr>
+<tr><td><a href='./mml/s_t.html'>		t%<var>H-Blank</var>				</a></td></tr>
+<tr><td><a href='./mml/s_q.html'>		u<var>gatetime</var>				</a></td><td>PCM,MIDI	</td><td>Set the pronunciation time.(tick)</td></tr>
+<tr><td><a href='./mml/s_v.html'>		v<var>expression</var>				</a></td><td rowspan='2'>PCM,MIDI	</td><td rowspan='2'>Set the expression.(cc:11)</td></tr>
+<tr><td><a href='./mml/s_v.html'>		v%<var>expression</var>				</a></td></tr>
+<tr><td><a href='./mml/s_x.html'>		x<var>dev</var>						</a></td><td>PCM,MIDI	</td><td>Set the number of the relative expression</td></tr>
+<tr><td><a href='./mml/s_y.html'>		y<var>cc</var>,<var>data</var>		</a></td><td>MIDI		</td><td>Send the control change message of the MIDI.</td></tr>
+<tr><td><a href='./mml/k_brace.html'>{<var>accidental</var>,<var>note</var>}</a></td><td>PCM,MIDI	</td><td>Set the accidental.</td></tr>
+</table>
+PCM : PCM with a built in WonderSwan.<br>
+MIDI : Connected MIDI with RS-232C.<br>
+<br><br>
+
+<br>
+</div>
+<!-----------------------------------------------------------------------------
+	フッター
+------------------------------------------------------------------------------>
+<div id='footer'>
+
+<table>
+<tr><td width='640pt' colspan='4'><i>WonderSwan Total Sound Driver</i><br></td></tr>
+</table>
+
+</div>
+<!---------------------------------------------------------------------------->
+</BODY>
+</html>

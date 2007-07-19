@@ -1,0 +1,80 @@
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'
+            'http://www.w3.org/TR/html4/loose.dtd'>
+
+<html lang='ja'>
+
+<head>
+	<meta http-equiv='Content-Type' content='text/html;charset=Shift_JIS'>
+	<meta http-equiv='Content-Style-Type' content='text/css'>
+	<link rel='stylesheet' type='text/css' href='../../wtd.css'>
+	<title>WTD -MML Reference</title>
+</head>
+
+<BODY>
+<!-----------------------------------------------------------------------------
+	ツールバー（レイヤー２）
+------------------------------------------------------------------------------>
+<div id='header'>
+
+<table>
+<tr><td width='640pt'><i>WonderSwan Total Sound Driver</i></td></tr>
+<tr><td width='640pt'>
+	<a href='../../index.html'>Top</a>＼
+	<a href='../wtc.html'>MML Compiler</a>＼
+	<a href='../wtc.html#reference'>MML Reference</a>
+</td></tr>
+</table>
+<!--（↑このコンテンツの位置。）-->
+
+</div>
+<!-----------------------------------------------------------------------------
+	コンテンツ本体（レイヤー１）
+------------------------------------------------------------------------------>
+<div id='contents'>
+
+<h2>MML Reference - @</h2>				<!--（コマンドの名前。）-->
+<!------------------------------------------------------------->
+This command can set the voice data for the WonderSwan.<br>
+
+<h3>Format</h3>
+When you write those command, you must write in the beginning of a line.<br>
+<br>
+@ <var>No</var>, <var>d0</var>, <var>d1</var>, to ,<var>d31</var><br>
+@F <var>No</var>, <var>No2</var>, <var>Filename</var><br>
+<br>
+<br>
+
+<br>
+<h3>Input</h3>
+<table>
+<tr><th>Input				</th><th>Range		</th><th>Default</th><th></th></tr>
+<tr><td><var>No	</var>		</td><td>0 to 15	</td><td>	-	</td><td>Setting voice number for the music data.</td></tr>
+<tr><td><var>No2</var>		</td><td>0 to 15	</td><td>	-	</td><td>Reading voice number of the .WTV(voice) file.</td></tr>
+<tr><td><var>d0 to 31</var>	</td><td>0 to 15	</td><td>	-	</td><td>Setting the wave(tone / voice) data of the WonderSwan.<br>Sampling rate = 32 / 1 wavelength.<br>Quantum number = 4bit</td></tr>
+<tr><td><var>Filename</var>	</td><td> -			</td><td>	-	</td><td>File name of the .WTV(voice) file.</td></tr>
+</table>
+<img src='h_voice.jpg'>
+<br>
+<br>
+
+<h3>Explanation</h3>
+This command can set voice data for the WonderSwan.<br>
+This is common data for the music and effect.<br>
+<br>
+<br>
+
+<br>
+</div>
+<!-----------------------------------------------------------------------------
+	フッター
+------------------------------------------------------------------------------>
+<div id='footer'>
+
+<table>
+<tr><td width='640pt' colspan='4'><i>WonderSwan Total Sound Driver</i><br></td></tr>
+</table>
+
+</div>
+<!---------------------------------------------------------------------------->
+</BODY>
+</html>
