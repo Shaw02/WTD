@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC '-//W3C//DTD HTML 4.01 Transitional//EN'
+            'http://www.w3.org/TR/html4/loose.dtd'>
+
+<html lang='ja'>
+
+<head>
+	<meta http-equiv='Content-Type' content='text/html;charset=Shift_JIS'>
+	<meta http-equiv='Content-Style-Type' content='text/css'>
+	<link rel='stylesheet' type='text/css' href='../../wtd.css'>
+	<title>WTD -Function Reference</title>
+</head>
+
+<BODY>
+<!-----------------------------------------------------------------------------
+	ツールバー（レイヤー２）
+------------------------------------------------------------------------------>
+<div id='header'>
+
+<table>
+<tr><td width='640pt'><i>WonderSwan Total Sound Driver</i></td></tr>
+<tr><td width='640pt'>
+	<a href='../../index.html'>Top</a>＼
+	<a href='../index.html'>Software Development Kit</a>＼
+	<a href='../index.html#function'>Function Reference</a>
+</td></tr>
+</table>
+<!--（↑このコンテンツの位置。）-->
+
+</div>
+<!-----------------------------------------------------------------------------
+	コンテンツ本体（レイヤー１）
+------------------------------------------------------------------------------>
+<div id='contents'>
+
+<h2>Function Reference - Function load</h2>				<!--（コマンドの名前。）-->
+<!------------------------------------------------------------->
+This liberally function can load the WTD controlling function.<br>
+Those function can use liberally version only.<br>
+
+<br>
+<h3>Format</h3>
+<ul>
+	void	WTD_FunctionLoad(WtdIL	near	<var>*Wtd_Function</var>);<br>
+</ul>
+<br>
+
+<br>
+<h3>Input</h3>
+<table>
+<tr><th>Input									</th><th></th></tr>
+<tr><td>WtdIL	near	<var>*Wtd_Function</var></td><td>Structure of WTD controlling function.</td></tr>
+</table>
+<br><br>
+
+<br>
+<h3>Output</h3>
+<table>
+<tr><th>Type	</th><th>			</th></tr>
+<tr><td>void	</td><td>nothing	</td></tr>
+</table>
+<br><br>
+
+
+<br>
+<h3>Explanation</h3>
+This command can load the WTD controlling function.<br>
+Librally version WTD have this function only.<br>
+About the controlling the WTD, you can call the fnctions via the structure of WTD controlling functions.<br>
+please see example.<br>
+<br><br>
+
+<br>
+<h3>Example.</h3>
+<table><tr><td><pre><code>
+#include "wtd.h"
+
+/* global variable */
+static	WtdIL	WtdIl;		/* WTD controlling functions */
+static	Wtd_Sys	*WtdSys;		/* WTD system structure */
+static	Wtd	*WtdState[20];	/* WTD part structure */
+
+/* This is in a librally file */
+extern	char	WTD_Work[4096];	/* WTD work area */
+extern	void	WTD_FunctionLoad(WtdIL	near	*Wtd_Function);
+
+/* main routine */
+void main(){
+	int	i;
+
+	/* Get pointer of the WTD system structure */
+	WtdSys = (Wtd_Sys*)(&WTD_Work + WTD_WorkAdd_System);
+
+	/* Get pointer of the WTD part structure */
+	for(i=0;i<20;i++){
+		WtdState[i]=(Wtd*)(&WTD_Work + WTD_WorkAdd_Ch0 + i * WTD_WorkChSize);
+	}
+
+	/* Load the WTD controlling functions */
+	WTD_FunctionLoad(&wtdIL);
+
+	/* Stay and initialize of the WTD */
+	wtdIL.Stay();
+
+	/* Play the music */
+	wtdIL.MusicPlay( <var>far pointer of the music file</var> );
+
+</code></pre></td></tr></table>
+<br><br>
+
+<br>
+</div>
+<!-----------------------------------------------------------------------------
+	フッター
+------------------------------------------------------------------------------>
+<div id='footer'>
+
+<table>
+<tr><td width='640pt' colspan='4'><i>WonderSwan Total Sound Driver</i><br></td></tr>
+</table>
+
+</div>
+<!---------------------------------------------------------------------------->
+</BODY>
+</html>

@@ -75,13 +75,14 @@ We confirm that the LSI-C86 for WonderWitch can use those liberally.<br>
 
 <table>
 <tr><th>Liberally Function									</th><th>		</th></tr>
-<tr><td>void WTD_FunctionLoad(<var>&Wtd_Function</var>);	</td><td>Load of the function struct. (This fanction is liberally version only.)<br>
-																	If you want to use the liberally version, you must call this function.</td></tr>
+<tr><td><a href='function/functionload.html'>
+		void WTD_FunctionLoad(<var>&Wtd_Function</var>);	</a></td><td>Load of the function struct. (This fanction is liberally version only.)<br>
+																		If you want to use the liberally version, you must call this function.</td></tr>
 </table>
 <br>
 
 <table>
-<tr><th>In-direct liberally Function & Function struct.		</th><th>		</th></tr>
+<tr><th>In-direct liberally functions & WTD controlling functions	</th><th>		</th></tr>
 <tr><td>int wtdIL.Stay();									</td><td>Open and setup the WTD.</td></tr>
 <tr><td>int wtdIL.StayOut();								</td><td>Close and shutdown the WTD.</td></tr>
 <tr><td>void wtdIL.Init();									</td><td>Initialize the WTD</td></tr>
@@ -113,8 +114,7 @@ We confirm that the LSI-C86 for WonderWitch can use those liberally.<br>
 
 <br>
 <h3><a name='memory'>Structure and Using memory of the WTD</a></h3>
-<li>Work area of the WTD is as follows.<br>
-<li>About the details, please see document "DEVELOP.pdf".
+<li>Work area (4096bytes) of the WTD is as follows.<br>
 <table>
 <tr><th>Address			</th><th>Area	</th></tr>
 <tr><td>0x0000 to 0x00FF</td><td>Work area for user.</td></tr>

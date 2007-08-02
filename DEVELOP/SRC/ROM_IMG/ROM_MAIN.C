@@ -180,11 +180,11 @@ void main(){
 //---------- 以下音階----------
 				k=i*2;
 
-			    j=WtdState[i]->Key;
+			    count=WtdState[i]->KeySet[0];	//KeyからKeySet[0]へ変更(S.W.)
 				
 			
 				// 休符
-				if(j==255){
+				if(count==255){
 					sprintf(szBuf,"o-r  ");
 					// スプライトは画面の外に
 					VramSprite->Atr[k].x = VramSprite->Atr[k+1].x = 240;
@@ -192,10 +192,12 @@ void main(){
 				}
 				else{
 					// オクターブを代入
-					l=WtdState[i]->Octave;
+					//l=WtdState[i]->Octave;
+					l=(count/12)-1;		//KeySet[0]から計算に変更(S.W.)
 					// c～bを判別
-					count=WtdState[i]->KeySet[0];
-					j%=12;
+					//count=WtdState[i]->KeySet[0];		//上に移動
+					//j%=12
+					j=(count%12);		//KeySet[0]から計算に変更(S.W.)
 					// オクターブ1～8かつ発音してる時のみ扱う
 					if(l>0 && l<9){
 						// オクターブと音階

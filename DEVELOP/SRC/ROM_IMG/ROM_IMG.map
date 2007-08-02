@@ -1,8 +1,8 @@
 
  Start  Stop   Length Name                   Class
- F0000H F3F52H 03F53H TEXT                   CODE
- F3F60H F5A50H 01AF1H _TEXT                  CODE
- F5A60H F68AFH 00E50H _GHOST_DATA            CODE
+ F0000H F3F3BH 03F3CH TEXT                   CODE
+ F3F40H F5A36H 01AF7H _TEXT                  CODE
+ F5A40H F688FH 00E50H _GHOST_DATA            CODE
  00000H 00E4FH 00E50H DATA                   DATA
  00E50H 00E50H 00000H _DATA                  DATA
  00E50H 00ED7H 00088H BSS                    DATA
@@ -62,12 +62,12 @@
  F000:3730       _IRAM_Dump
  F000:3851       _debug_main
  F000:3871       _main
- F000:3F60       _sprintf
- F000:3F82       _vsprintf
- F000:3FA4       sprintf0
- F000:4123       scandeci
- F000:4140       WanderSwanTotalSoundDriver_
- F000:41D5       _WTD_FunctionLoad
- F000:4A94       I_Start
+ F000:3F40       _sprintf
+ F000:3F62       _vsprintf
+ F000:3F84       sprintf0
+ F000:4103       scandeci
+ F000:4120       WanderSwanTotalSoundDriver_
+ F000:41B5       _WTD_FunctionLoad
+ F000:4A74       I_Start
 
 Program entry point at F000:0000

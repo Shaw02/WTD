@@ -18,9 +18,9 @@
 
 
 /* カウンターの最大値 */
-#define	MaxSec				60
-#define	MaxMin				60
-#define	MaxHr				24
+#define	MaxSec				59
+#define	MaxMin				59
+#define	MaxHr				23
 
 /*--------------------------------------*/
 /*	構造体定義							*/

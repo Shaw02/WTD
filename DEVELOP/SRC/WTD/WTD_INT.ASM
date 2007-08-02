@@ -410,11 +410,13 @@ I_Play_Step1:					;
 I_Play_Step2:					;
 
 ;音長による、音色制御
+	test	ds:[di].WTD_Program2nd,80h	;必要性の確認
+	jnz	I_Play_Step8			;
+	cmp	ds:[di].WTD_Key,0ffh		;休符？
+	jz	I_Play_Step8			;
 	mov	ax,ds:[di].WTD_Leng		;'@'コマンド
 	sub	ax,ds:[di].WTD_LengCounter	;
 	cmp	ax,ds:[di].WTD_ProgramRate	;
-	jnz	I_Play_Step8			;
-	test	ds:[di].WTD_Program2nd,80h	;必要性の確認
 	jnz	I_Play_Step8			;
 	push	ax				;
 	mov	al,ds:[di].WTD_Program2nd	;

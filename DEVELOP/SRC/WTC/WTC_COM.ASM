@@ -747,6 +747,11 @@ cMCD_tranceFlat:				;
 
 cMCD_tranceNatu:				;
 	mov	cs:[cMCD_tranceFlag],000h	;èâä˙âª
+cMCD_tranceNatuLoop:
+	call	CREAD			;
+	cmp	ah,'}'			;}Ç‹Ç≈êiÇﬁÅB
+	jnz	cMCD_tranceNatuLoop	;
+;	jmp	cMCD_tranceEnd		;
 
 cMCD_tranceEnd:
 	mov	ah,cs:[cMCD_tranceFlag]	;
