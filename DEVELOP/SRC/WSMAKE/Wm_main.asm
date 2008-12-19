@@ -94,6 +94,15 @@ _main:
 		mov	ax,cs:[pWSC_File]	;
 		add	ax,01000h		;
 		mov	ds,ax			;
+		mov	bx,0FFE0h		;
+
+		mov	word ptr ds:[bx],05357h	;
+		add	bx,2			;
+		mov	word ptr ds:[bx],04652h	;
+		add	bx,2			;
+		mov	word ptr ds:[bx],00100h	;
+		add	bx,2			;
+
 		mov	bx,0FFF0h		;
 		mov	byte ptr ds:[bx],0EAh	;jmp
 		inc	bx			;

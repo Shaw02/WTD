@@ -1,5 +1,5 @@
 
  Start  Stop   Length Name                   Class
- 00000H 00704H 00705H CODE                   
+ 00000H 0071CH 0071DH CODE                   
 
 Program entry point at 0000:0100

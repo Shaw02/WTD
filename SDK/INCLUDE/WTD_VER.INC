@@ -7,5 +7,5 @@
 ;						A.Watanabe		|
 ;									|
 ;=======================================================================|
-WtdIL_Version		equ	'1.0b',0	;•¶š—ñ
-WTdIL_Version_N		equ	010bh		;”’l
+WtdIL_Version		equ	'1.0c',0	;•¶š—ñ
+WTdIL_Version_N		equ	010ch		;”’l

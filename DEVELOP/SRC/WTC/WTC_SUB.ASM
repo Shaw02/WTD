@@ -15,7 +15,7 @@ WTD_TITLE	DB	'Wonder Swan Total Souund Driver',0Dh,0Ah,24h
 VER_P		DB	'Version '
 		DB	WtdIL_Version
 		DB	0Dh,0Ah,24h
-TPRINT:					;
+TPRINT	proc	near
 	MOV	AX,CS			;
 	MOV	DS,AX			;
 	MOV	AH,09H			;
@@ -29,10 +29,11 @@ TPRINT:					;
 	MOV	AH,09H			;
 	INT	21H			;
 	RET
+TPRINT	endp
 ;---------------------------------------------------------------|
 ;		コンパイルルーチン				|
 ;---------------------------------------------------------------|
-COMPAIL:				;コンパイル
+COMPAIL	proc	near			;コンパイル
 	MOV	AX,CS:[segWTD_File]	;
 	MOV	DS,AX			;DS←WTD SEGMENT
 	MOV	AX,CS:[segMML_File]	;
@@ -43,28 +44,25 @@ COMPAIL:				;コンパイル
 	CALL	c_Command		;パートコンパイル
 	CALL	c_Head_end		;ヘッダー設定(一番最後に呼ぶ。)
 
-	cmp	cs:[cHCD_FlagFx],00h	;FX形式フラグが立ってるか？
-	jnz	COMPAIL_Step0		;立ってなかったら、終わり。
-	call	WTD_SAVE		;ＷＴＤ形式でセーブする
-COMPAIL_Step0:				;
+	.if	(cs:[cHCD_FlagFx]==00h)
+		call	WTD_SAVE		;ＷＴＤ形式でセーブする
+	.else
+		call	FX_SAVE			;ＦＸ形式でセーブする。
+	.endif
 
-	cmp	cs:[cHCD_FlagFx],01h	;FX形式フラグが立ってるか？
-	jnz	COMPAIL_Step1		;立ってなかったら、終わり。
-	call	FX_SAVE			;ＦＸ形式でセーブする。
-COMPAIL_Step1:				;
-
-COMPAIL_End:				;
 	ret				;RETURN
+COMPAIL	endp
 ;---------------------------------------------------------------|
 ;		コンパイルデータのＦＳＰ形式セーブ		|
 ;---------------------------------------------------------------|
-WTD_SAVE:
+WTD_SAVE	proc	near
 	call	SOPEN			;
 	mov	dx,cs:[pWTD_File]	;
 	call	MSAVE			;
 	call	SCLOSE			;
 	ret				;
-FX_SAVE:
+WTD_SAVE	endp
+FX_SAVE		proc	near
 	call	FXopen			;
 	mov	dx,07Fh			;
 	call	FXsave			;
@@ -72,6 +70,7 @@ FX_SAVE:
 	call	MSAVE			;
 	call	SCLOSE			;
 	ret
+FX_SAVE		endp
 ;---------------------------------------------------------------|
 ;		１６進数コード～ASCII CODE(255)			|
 ;---------------------------------------------------------------|
@@ -1424,8 +1423,8 @@ ZERROR	DB	'ＦＳＰが常駐していません。',0AH,0DH,'$'
 OERROR	DB	'オープンに失敗しました',0DH,0AH,'$'
 CERROR	DB	'クローズに失敗しました',0DH,0AH,'$'
 LERROR	DB	'ループ関係がおかしいです。',0DH,0AH,'$'
-MACERR	DB	'マクロでマクロを呼び出し過ぎです。',0DH,0AH,'$'
-MACERR2	DB	'定義されていないマクロを使用しています。',0DH,0AH,'$'
+MACERR	DB	'定義されていないマクロを使用しています。',0DH,0AH,'$'
+MACERR2	DB	'マクロでマクロを呼び出し過ぎです。',0DH,0AH,'$'
 INCERR	DB	'存在しないインクルードファイルを指定しています。',0DH,0AH,'$'
 VOIERR	DB	'存在しない音色ファイルを指定しています。',0DH,0AH,'$'
 
