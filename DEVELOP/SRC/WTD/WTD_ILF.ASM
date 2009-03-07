@@ -19,7 +19,7 @@
 IL:							;IL構造体先頭
 IL_Link_Pos	dw	0				;未使用
 		dw	0				;
-IL_N_Methods	dw	25				;ファンクション数
+IL_N_Methods	dw	((offset IL_F_End)-(offset IL_GetInfo))/4	;ファンクション数
 IL_GetInfo	dw	offset CGROUP:_GetInfo		;ILinfo構造体を得る
 		dw	0				;far *TEST_GetInfo();
 IL_F00		dw	offset CGROUP:_Stay		;
@@ -70,6 +70,7 @@ IL_F22		dw	offset CGROUP:_GetPcmVolume	;
 		dw	0				;
 IL_F23		dw	offset CGROUP:_SetFIFO		;
 		dw	0				;
+IL_F_End:
 ;===============================================================|
 ;		ILinfo構造体定義（全てポインタ）		|
 ;===============================================================|
@@ -112,21 +113,14 @@ ILinfoD_Depends		dw	0		;未使用（ポインタ）
 ;===============================================================|
 ifdef	library				;※　ライブラリ版のみ必要
 
-	public	_WTD_FunctionLoad	;外部宣言
+	public	WTD_FunctionLoad	;外部宣言
 
-_WTD_FunctionLoad	proc	near	;
-	push	bp			;
-	mov	bp,sp			;
-
-	push	cx			;
-	push	si			;
-	push	di			;
-	push	ds			;
-	push	es			;
+WTD_FunctionLoad	proc	near c	uses cx si di ds es,
+	Wtd_Function:word
 
 	push	ds			;
 	pop	es			;es←DGROUP
-	mov	di,word ptr [bp + 04h]	;di←Wtd_Functionのポインタ
+	mov	di,Wtd_Function		;di←Wtd_Functionのポインタ
 
 	push	cs			;
 	pop	ds			;ds←CGROUP
@@ -137,22 +131,15 @@ _WTD_FunctionLoad	proc	near	;
 	rep	movsw			;IL_Link_Pos, IL_Link_Methodの転送
 
 	mov	cx,word ptr CS:[IL_N_Methods]	;構造体のサイズ計算
-_WTD_FucntionLoad_Loop1:
-	movsw				;
-	mov	es:[di],cs		;関数群の転送
-	add	di,2			;
-	add	si,2			;
-	dec	cx			;
-	jnz	_WTD_FucntionLoad_Loop1	;
+	.repeat
+		movsw				;
+		mov	es:[di],cs		;関数群の転送
+		add	di,2			;
+		add	si,2			;
+	.untilcxz
 
-	pop	es			;
-	pop	ds			;
-	pop	di			;
-	pop	si			;
-	pop	cx			;
-	pop	bp			;
 	ret				;
-_WTD_FunctionLoad	endp		;
+WTD_FunctionLoad	endp		;
 endif
 ;****************************************************************
 ;*								*
@@ -169,11 +156,11 @@ endif
 ;	処理							|
 ;		ILinfoポインタの取得				|
 ;===============================================================|
-_GetInfo	proc far		;
+_GetInfo	proc far c		;
 	push	cs			;
 	pop	dx			;LSI-C86
 	mov	ax,offset CGROUP:ILinfo	;dx:ax←far pointer
-	retf				;
+	ret				;
 _GetInfo	endp			;
 ;===============================================================|
 ;	int	(far *Stay)();					|
@@ -186,15 +173,8 @@ _GetInfo	endp			;
 ;	処理							|
 ;		WTD本体の常駐					|
 ;===============================================================|
-_Stay		proc far		;
-	push	bp			;bpレジスタの保存
-	mov	bp,sp			;bp←sp
-	push	bx			;
-	push	cx			;
-	push	dx			;
-	push	di			;
-	push	ds			;
-	push	es			;
+_Stay		proc far c	uses bx cx dx di ds es	;
+
 	pushf				;レジスタ保存
 
 	cli				;割り込み禁止
@@ -313,15 +293,10 @@ endif	;--------------------------------
 	xor	ax,ax			;正常終了(ax=0000h)
 
 _Stay_End:
+
 	popf				;レジスタ復帰
-	pop	es			;割り込みの許可は不要。
-	pop	ds			;(popfがあるため。)
-	pop	di			;
-	pop	dx			;
-	pop	cx			;
-	pop	bx			;
-	pop	bp			;bpレジスタの復帰
-	retf				;終了
+
+	ret				;終了
 _Stay		endp			;
 ;===============================================================|
 ;	int	(far *StayOut)();				|
@@ -334,12 +309,7 @@ _Stay		endp			;
 ;	処理							|
 ;		WTD本体の常駐解除				|
 ;===============================================================|
-_StayOut	proc far		;
-	push	bx			;
-	push	di			;
-	push	si			;
-	push	ds			;
-	push	es			;レジスタ保存
+_StayOut	proc far c	uses bx di si ds es
 	pushf				;
 
 	cli				;割り込み禁止
@@ -410,12 +380,7 @@ endif	;--------------------------------
 _StayOut_End:
 
 	popf				;
-	pop	es			;レジスタ復帰
-	pop	ds			;
-	pop	si			;
-	pop	di			;
-	pop	bx			;
-	retf				;終了
+	ret				;終了
 _StayOut	endp			;
 ;===============================================================|
 ;	void	(far *Init)();					|
@@ -427,11 +392,8 @@ _StayOut	endp			;
 ;	処理							|
 ;		デバイスの初期化				|
 ;===============================================================|
-_Init	proc far			;
-	push	bp			;レジスタ保存
-	push	ax			;
-	push	si			;
-	push	ds			;
+_Init	proc far c	uses bp ax si ds
+
 ;---------------------------------------------------------------
 ;ワークエリアの取得
 
@@ -461,20 +423,16 @@ _Init	proc far			;
 
 ifndef	hyoka	;------------------------廉価版は無し
 	call	SM_init			;GM Resetの送信
-;FIFO送信まで待つ。			;
-_Init_FIFO:				;
-	call	IC_Send			;送信
-	mov	ax,ds:[si].WTD_Sys_ComFIFO_Cnt
-	cmp	ax,ds:[si].WTD_Sys_ComFIFO_Adr
-	jnz	_Init_FIFO		;
+
+	;FIFO送信まで待つ。		;
+	.repeat
+		call	IC_Send			;送信
+		mov	ax,ds:[si].WTD_Sys_ComFIFO_Cnt
+	.until	(ax==ds:[si].WTD_Sys_ComFIFO_Adr)
 endif	;--------------------------------
 
 ;---------------------------------------------------------------
-	pop	ds			;レジスタ復帰
-	pop	si			;
-	pop	ax			;
-	pop	bp			;
-	retf				;終了
+	ret				;終了
 _Init	endp				;
 ;===============================================================|
 ;	char	(far *MusicPlay)(char far *Music);		|
@@ -489,24 +447,21 @@ _Init	endp				;
 ;	処理							|
 ;		演奏を開始する					|
 ;===============================================================|
-_MusicPlay	proc far		;
-	push	bp			;bpレジスタの保存
-	mov	bp,sp			;bp←sp
-	push	bx			;
-	push	dx			;
-	push	di			;
-	push	si			;
-	push	ds			;レジスタ保存
-
-	in	al,Int_Enable		;
-	and	al,Int_HblankReset	;
-	out	Int_Enable,al		;
+_MusicPlay	proc far c	uses bx cx dx di si ds es,
+	fptMusic:far ptr byte
 
 ;---------------------------------------------------------------
 ;演奏の停止
 
 	push	cs			;
 	call	near ptr _MusicStop	;演奏停止・割込周期の初期化
+
+;---------------------------------------------------------------
+;割り込み禁止
+
+	in	al,Int_Enable		;
+	and	al,Int_HblankReset	;
+	out	Int_Enable,al		;
 
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
@@ -525,8 +480,13 @@ _MusicPlay	proc far		;
 
 ;---------------------------------------------------------------
 ;演奏アドレスの設定
-	push	word ptr [bp + 08h]	;引数の取得	Segment
-	push	word ptr [bp + 06h]	;		Offset
+
+;	push	word ptr [bp + 08h]	;引数の取得	Segment
+;	push	word ptr [bp + 06h]	;		Offset
+
+	les	ax,fptMusic
+	push	es
+	push	ax
 	push	cs			;データ変換
 	call	near ptr _ChangeFar	;dxax = wtdIL.ChangeFar(*Music);
 	add	sp,+4			;
@@ -540,83 +500,74 @@ _MusicPlay	proc far		;
 ;---------------------------------------------------------------
 ;データ形式チェック
 
-;ヘッダー文字列チェック
-	cmp	word ptr es:[bx].WTD_Mus_Name,'TW'	;'WTD',0
-	jz	_MusicPlay_Chk1			;
-	mov	ax,1				;
-	jmp	_MusicPlay_End			;
-_MusicPlay_Chk1:
+	;ヘッダー文字列チェック
+	.if	(word ptr es:[bx].WTD_Mus_Name!='TW')	;'WTD',0
+		mov	ax,1				;
+		jmp	_MusicPlay_End			;
+	.endif
 
-;バージョンチェック
+	;バージョンチェック
 	mov	ax,es:[bx].WTD_Mus_Version	;
 	xchg	ah,al				;ax←Music Data Version
-	push	bx				;
-	mov	bx,WTdIL_Version_N		;
-	cmp	bx,ax				;if (Ver - ax >= 0) then NG
-	pop	bx				;
-	jnc	_MusicPlay_Chk2			;
-	mov	ax,2				;
-	jmp	_MusicPlay_End			;
+	.if	(ax>WTdIL_Version_N)
+		mov	ax,2			;
+		jmp	_MusicPlay_End		;
+	.endif
 _MusicPlay_Chk2:
 
 
 ;---------------------------------------------------------------
 ;データ登録
 
-;初期設定
+	;初期設定
 	mov	ch,es:[bx].WTD_Mus_Voice	;数の取得 Voice
 	mov	cl,es:[bx].WTD_Mus_Emb		;数の取得 Emb
 	push	bx				;
 	mov	bx,es:[bx].WTD_Mus_DataAdr	;
 
-;WS内蔵PCM波形データの登録
-_MusicPlay_Loop2:				;
-	cmp	ch,0				;
-	jz	_MusicPlay_Loop2_End		;
-	xor	ax,ax				;
-	mov	al,es:[bx]			;音色番号
-	inc	bx				;
-	push	es				;
-	push	bx				;波形データ
-	push	ax				;
-	push	cs				;
-	call	near ptr _PcmVoiceSet		;登録
-	add	sp,+6				;
-	add	bx,16				;
-	dec	ch				;
-	jnz	_MusicPlay_Loop2		;
-_MusicPlay_Loop2_End:				;
+	;WS内蔵PCM波形データの登録
+	.while	(ch!=0)
+		xor	ax,ax				;
+		mov	al,es:[bx]			;音色番号
+		inc	bx				;
+		push	es				;
+		push	bx				;波形データ
+		push	ax				;
+		push	cs				;
+		call	near ptr _PcmVoiceSet		;登録
+		add	sp,+6				;
+		add	bx,16				;
+		dec	ch				;
+	.endw
 
-;エンベロープデータの登録
-_MusicPlay_Loop3:				;
-	cmp	cl,0				;
-	jz	_MusicPlay_Loop3_End		;
-	xor	ax,ax				;
-	mov	al,es:[bx]			;音色番号
-	inc	bx				;
-	push	es				;
-	push	bx				;エンベロープデータ
-	push	ax				;
-	push	cs				;
-	call	near ptr _SoftEmbSet		;登録
-	add	sp,+6				;
-	add	bx,16				;
-	dec	cl				;
-	jnz	_MusicPlay_Loop3		;
-_MusicPlay_Loop3_End:				;
+	;エンベロープデータの登録
+	.while	(cl!=0)
+		xor	ax,ax				;
+		mov	al,es:[bx]			;音色番号
+		inc	bx				;
+		push	es				;
+		push	bx				;エンベロープデータ
+		push	ax				;
+		push	cs				;
+		call	near ptr _SoftEmbSet		;登録
+		add	sp,+6				;
+		add	bx,16				;
+		dec	cl				;
+	.endw
 
-;レジスタ復帰
-	pop	bx				;
+	pop	bx				;レジスタ復帰
 
 ;---------------------------------------------------------------
 ;個別ワークの設定
 
 ;チャンネル数の取得
 	mov	ch,es:[bx].WTD_Mus_Part	;チャンネル数の取得
-	cmp	ch,MusicMaxPart		;パート数チェック
-	jc	_MusicPlay_Step2	;
-	mov	ch,MusicMaxPart		;最大値を越えてたら最大値に。
-_MusicPlay_Step2:			;
+;	cmp	ch,MusicMaxPart		;パート数チェック
+;	jc	_MusicPlay_Step2	;
+	.if	(ch>MusicMaxPart)	
+		mov	ch,MusicMaxPart		;最大値を越えてたら最大値に。
+	.endif
+;_MusicPlay_Step2:			;
 
 ;演奏パート数保存
 	push	cx			;レジスタ保存
@@ -640,7 +591,7 @@ _MusicPlay_Step2:			;
 	pop	cx			;
 	pop	di			;
 
-_MusicPlay_Loop1:				;
+	.repeat
 ;	xor	ax,ax				;Stosbによる初期化
 ;	mov	ds:[di].WTD_FlagControl,ax	;
 ;	mov	ds:[di].WTD_FlagTai,al		;
@@ -711,17 +662,12 @@ _MusicPlay_Loop1:				;
 	mov	ax,es:[bx]			;
 	mov	ds:[di].WTD_Address,ax		;
 
-;
 ;	その他の設定
-;
 	add	di,WTD_WorkChSize	;構造体分、加算
 	add	bx,2			;アドレスインクリメント
 	inc	cl			;
 	dec	ch			;
-	jz	_MusicPlay_Step1	;
-	jmp	_MusicPlay_Loop1	;
-
-_MusicPlay_Step1:			;
+	.until	(zero?)
 
 	pop	cx			;レジスタ復帰
 ;---------------------------------------------------------------
@@ -754,13 +700,7 @@ _MusicPlay_End:
 	or	al,Int_HblankSet	;
 	out	Int_Enable,al		;
 
-	pop	ds			;レジスタの復帰
-	pop	si			;
-	pop	di			;
-	pop	dx			;
-	pop	bx			;
-	pop	bp			;bpレジスタの復帰
-	retf				;終了
+	ret				;終了
 _MusicPlay	endp			;
 ;===============================================================|
 ;	void	(far *MusicStop)();				|
@@ -772,9 +712,7 @@ _MusicPlay	endp			;
 ;	処理							|
 ;		演奏の終了					|
 ;===============================================================|
-_MusicStop	proc far		;
-	pusha				;
-	push	ds			;
+_MusicStop	proc far c	uses bp ax bx cx dx di si ds
 
 	in	al,Int_Enable		;
 	and	al,Int_HblankReset	;
@@ -802,62 +740,56 @@ _MusicStop	proc far		;
 ;チャンネル数
 	xor	cx,cx					;
 	mov	ch,ds:[si].WTD_Sys_MusicPart		;使用トラック数
-	or	ch,ch					;
-	jz	_MusicStop_Step1			;
+	.while	(ch!=0)
+		mov	cl,ds:[di].WTD_Channel		;
 
-_MusicStop_Loop1:					;
-	mov	cl,ds:[di].WTD_Channel			;
+		;初期化すべき事項
+		mov	ax,003Fh		;演奏終了
+		or	ds:[di].WTD_FlagControl,ax
 
-;初期化すべき事項
-	mov	ax,003Fh			;
-	or	ds:[di].WTD_FlagControl,ax	;演奏終了
+		mov	dx,offset CGROUP:I_Table_KeyOff
+		call	I_Table_Jump		;キーオフ
 
-	mov	dx,offset CGROUP:I_Table_KeyOff
-	call	I_Table_Jump		;キーオフ
+		mov	ax,0			;エクスプレッション = 0
+		mov	dx,offset CGROUP:I_Table_Volume
+		call	I_Table_Jump		;(エンベロープ音量。)
 
-	mov	ax,0			;エクスプレッション = 0
-	mov	dx,offset CGROUP:I_Table_Volume
-	call	I_Table_Jump		;(エンベロープ音量。)
+		mov	ax,8192			;ベンド = 8192
+		mov	dx,offset CGROUP:I_Table_Frection
+		call	I_Table_Jump		;
 
-	mov	ax,8192			;ベンド = 8192
-	mov	dx,offset CGROUP:I_Table_Frection
-	call	I_Table_Jump		;
+		mov	ax,0			;音色 = 0
+		mov	dx,offset CGROUP:I_Table_Voice
+		call	I_Table_Jump		;
 
-	mov	ax,0			;音色 = 0
-	mov	dx,offset CGROUP:I_Table_Voice
-	call	I_Table_Jump		;
-
-	mov	ax,64			;パンポット = 64
 ifndef	hyoka	;------------------------廉価版は無し
-	mov	cl,MIDI_Ctrl_Pan	;
-	mov	dx,offset CGROUP:I_Table_CtrlChgB
-	call	I_Table_Jump		;
+		mov	ax,64			;パンポット = 64
+		mov	cl,MIDI_Ctrl_Pan	;
+		mov	dx,offset CGROUP:I_Table_CtrlChgB
+		call	I_Table_Jump		;
 endif	;--------------------------------
 
-	mov	ax,100			;音量 = 100
 ifndef	hyoka	;------------------------廉価版は無し
-	mov	cl,MIDI_Ctrl_Volume	;
-	mov	dx,offset CGROUP:I_Table_CtrlChgB
-	call	I_Table_Jump		;
+		mov	ax,100			;音量 = 100
+		mov	cl,MIDI_Ctrl_Volume	;
+		mov	dx,offset CGROUP:I_Table_CtrlChgB
+		call	I_Table_Jump		;
 endif	;--------------------------------
 
-	mov	ax,0			;モード　初期化
-	mov	dx,offset CGROUP:I_Table_Mode
-	call	I_Table_Jump		;
+		mov	ax,0			;モード　初期化
+		mov	dx,offset CGROUP:I_Table_Mode
+		call	I_Table_Jump		;
 
+		mov	ax,8000h		;演奏終了
+		or	ds:[di].WTD_FlagControl,ax
 
-	mov	ax,8000h			;
-	or	ds:[di].WTD_FlagControl,ax	;演奏終了
-;
-;	その他
-;
-	add	di,WTD_WorkChSize	;構造体分、加算
-	dec	ch			;
-	jz	_MusicStop_Step1	;
-	jc	_MusicStop_Step1	;
-	jmp	_MusicStop_Loop1	;
+;		その他
+;		to do	あれば
 
-_MusicStop_Step1:			;
+		add	di,WTD_WorkChSize	;構造体分、加算
+		dec	ch			;
+	.endw
+
 ;---------------------------------------------------------------
 ;共通構造体設定
 
@@ -880,9 +812,7 @@ _MusicStop_Step1:			;
 	or	al,Int_HblankSet	;
 	out	Int_Enable,al		;
 
-	pop	ds			;
-	popa				;
-	retf				;終了
+	ret				;終了
 _MusicStop	endp			;
 ;===============================================================|
 ;	char	(far *EffectPlay)(char far *Effect);		|
@@ -897,24 +827,21 @@ _MusicStop	endp			;
 ;	処理							|
 ;		効果音の発生					|
 ;===============================================================|
-_EffectPlay	proc far		;
-	push	bp			;bpレジスタの保存
-	mov	bp,sp			;bp←sp
-	push	bx			;
-	push	dx			;
-	push	di			;
-	push	si			;
-	push	ds			;レジスタ保存
-
-	in	al,Int_Enable		;
-	and	al,Int_HblankReset	;
-	out	Int_Enable,al		;
+_EffectPlay	proc far c	uses bx cx dx di si ds es,
+	fptEffect:far ptr byte
 
 ;---------------------------------------------------------------
 ;演奏の停止
 
 	push	cs			;
 	call	near ptr _EffectStop	;演奏停止・割込周期の初期化
+
+;---------------------------------------------------------------
+;割り込み禁止
+
+	in	al,Int_Enable		;
+	and	al,Int_HblankReset	;
+	out	Int_Enable,al		;
 
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
@@ -933,8 +860,12 @@ _EffectPlay	proc far		;
 
 ;---------------------------------------------------------------
 ;演奏アドレスの設定
-	push	word ptr [bp + 08h]	;引数の取得	Segment
-	push	word ptr [bp + 06h]	;		Offset
+;	push	word ptr [bp + 08h]	;引数の取得	Segment
+;	push	word ptr [bp + 06h]	;		Offset
+
+	les	ax,fptEffect
+	push	es
+	push	ax
 	push	cs			;データ変換
 	call	near ptr _ChangeFar	;dxax = wtdIL.ChangeFar(*Effect);
 	add	sp,+4			;
@@ -948,73 +879,61 @@ _EffectPlay	proc far		;
 ;---------------------------------------------------------------
 ;データ形式チェック
 
-;ヘッダー文字列チェック
-	cmp	word ptr es:[bx].WTD_Mus_Name,'TW'	;'WTD',0
-	jz	_EffectPlay_Chk1			;
-	mov	ax,1					;
-	jmp	_EffectPlay_End				;
-_EffectPlay_Chk1:
+	;ヘッダー文字列チェック
+	.if	(word ptr es:[bx].WTD_Mus_Name!='TW')	;'WTD',0
+		mov	ax,1					;
+		jmp	_EffectPlay_End				;
+	.endif
 
-;バージョンチェック
+	;バージョンチェック
 	mov	ax,es:[bx].WTD_Mus_Version	;
 	xchg	ah,al				;ax←Effect Data Version
-	push	bx				;
-	mov	bx,WTdIL_Version_N		;
-	cmp	bx,ax				;if (Ver - ax >= 0) then NG
-	pop	bx				;
-	jnc	_EffectPlay_Chk2		;
-	mov	ax,2				;
-	jmp	_EffectPlay_End			;
-_EffectPlay_Chk2:				;
+	.if	(ax>WTdIL_Version_N)
+		mov	ax,2			;
+		jmp	_EffectPlay_End		;
+	.endif
 
 
 ;---------------------------------------------------------------
 ;データ登録
 
-;初期設定
+	;初期設定
 	mov	ch,es:[bx].WTD_Mus_Voice	;数の取得 Voice
 	mov	cl,es:[bx].WTD_Mus_Emb		;数の取得 Emb
 	push	bx				;
 	mov	bx,es:[bx].WTD_Mus_DataAdr	;
 
-;WS内蔵PCM波形データの登録
-_EffectPlay_Loop2:				;
-	cmp	ch,0				;
-	jz	_EffectPlay_Loop2_End		;
-	xor	ax,ax				;
-	mov	al,es:[bx]			;音色番号
-	inc	bx				;
-	push	es				;
-	push	bx				;波形データ
-	push	ax				;
-	push	cs				;
-	call	near ptr _PcmVoiceSet		;登録
-	add	sp,+6				;
-	add	bx,16				;
-	dec	ch				;
-	jnz	_EffectPlay_Loop2		;
-_EffectPlay_Loop2_End:				;
+	;WS内蔵PCM波形データの登録
+	.while	(ch!=0)
+		xor	ax,ax				;
+		mov	al,es:[bx]			;音色番号
+		inc	bx				;
+		push	es				;
+		push	bx				;波形データ
+		push	ax				;
+		push	cs				;
+		call	near ptr _PcmVoiceSet		;登録
+		add	sp,+6				;
+		add	bx,16				;
+		dec	ch				;
+	.endw
 
-;エンベロープデータの登録
-_EffectPlay_Loop3:				;
-	cmp	cl,0				;
-	jz	_EffectPlay_Loop3_End		;
-	xor	ax,ax				;
-	mov	al,es:[bx]			;音色番号
-	inc	bx				;
-	push	es				;
-	push	bx				;エンベロープデータ
-	push	ax				;
-	push	cs				;
-	call	near ptr _SoftEmbSet		;登録
-	add	sp,+6				;
-	add	bx,16				;
-	dec	cl				;
-	jnz	_EffectPlay_Loop3		;
-_EffectPlay_Loop3_End:				;
+	;エンベロープデータの登録
+	.while	(cl!=0)
+		xor	ax,ax				;
+		mov	al,es:[bx]			;音色番号
+		inc	bx				;
+		push	es				;
+		push	bx				;エンベロープデータ
+		push	ax				;
+		push	cs				;
+		call	near ptr _SoftEmbSet		;登録
+		add	sp,+6				;
+		add	bx,16				;
+		dec	cl				;
+	.endw
 
-;レジスタ復帰
-	pop	bx				;
+	pop	bx				;レジスタ復帰
 
 ;---------------------------------------------------------------
 ;個別ワークの設定
@@ -1048,7 +967,7 @@ _EffectPlay_Step2:			;
 	pop	cx			;
 	pop	di			;
 
-_EffectPlay_Loop1:				;
+	.repeat
 	mov	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
 ;	xor	ax,ax				;Stosbによる初期化
 ;	mov	ds:[di].WTD_FlagControl,ax	;
@@ -1120,17 +1039,12 @@ _EffectPlay_Loop1:				;
 	mov	ax,es:[bx]			;
 	mov	ds:[di].WTD_Address,ax		;
 
-;
 ;	その他の設定
-;
 	add	di,WTD_WorkChSize	;構造体分、加算
 	add	bx,2			;アドレスインクリメント
 	inc	cl			;
 	dec	ch			;
-	jz	_EffectPlay_Step1	;
-	jmp	_EffectPlay_Loop1	;
-
-_EffectPlay_Step1:			;
+	.until	(zero?)
 
 	pop	cx			;レジスタ復帰
 ;---------------------------------------------------------------
@@ -1159,13 +1073,7 @@ _EffectPlay_End:
 	or	al,Int_HblankSet	;
 	out	Int_Enable,al		;
 
-	pop	ds			;レジスタの復帰
-	pop	si			;
-	pop	di			;
-	pop	dx			;
-	pop	bx			;
-	pop	bp			;bpレジスタの復帰
-	retf				;終了
+	ret				;終了
 _EffectPlay	endp			;
 ;===============================================================|
 ;	void	(far *EffectStop)();				|
@@ -1177,9 +1085,7 @@ _EffectPlay	endp			;
 ;	処理							|
 ;		効果音の発生終了				|
 ;===============================================================|
-_EffectStop	proc far		;
-	pusha				;
-	push	ds			;
+_EffectStop	proc far c	uses bp ax bx cx dx di si ds
 
 	in	al,Int_Enable		;
 	and	al,Int_HblankReset	;
@@ -1207,36 +1113,31 @@ _EffectStop	proc far		;
 ;チャンネル数
 	xor	cx,cx					;
 	mov	ch,ds:[si].WTD_Sys_EffectPart		;使用トラック数
-	or	ch,ch					;
-	jz	_EffectStop_Step1			;
+	.while	(ch!=0)
+		mov	cl,ds:[di].WTD_Channel			;
 
-_EffectStop_Loop1:					;
-	mov	cl,ds:[di].WTD_Channel			;
+		;初期化すべき事項
+		mov	ax,003Fh			;
+		or	ds:[di].WTD_FlagControl,ax	;演奏終了
 
-;初期化すべき事項
-	mov	ax,003Fh			;
-	or	ds:[di].WTD_FlagControl,ax	;演奏終了
+		mov	dx,offset CGROUP:I_Table_KeyOff	;
+		call	I_Table_Jump			;キーオフ
 
-	mov	dx,offset CGROUP:I_Table_KeyOff	;
-	call	I_Table_Jump			;キーオフ
+		push	cx				;
+		mov	ch,cl				;チャンネルの取得
+		call	I_Effect_Return			;効果音復帰処理
+		pop	cx				;
 
-	push	cx				;
-	mov	ch,cl				;チャンネルの取得
-	call	I_Effect_Return			;効果音復帰処理
-	pop	cx				;
+		mov	ax,8000h			;
+		or	ds:[di].WTD_FlagControl,ax	;演奏終了
 
-	mov	ax,8000h			;
-	or	ds:[di].WTD_FlagControl,ax	;演奏終了
-;
-;	その他
-;
-	add	di,WTD_WorkChSize		;構造体分、加算
-	dec	ch				;
-	jz	_EffectStop_Step1		;
-	jc	_EffectStop_Step1		;
-	jmp	_EffectStop_Loop1		;
+;		その他
+;		to do	あれば
 
-_EffectStop_Step1:				;
+		add	di,WTD_WorkChSize		;構造体分、加算
+		dec	ch				;
+	.endw
+
 ;---------------------------------------------------------------
 ;共通構造体設定
 
@@ -1255,9 +1156,7 @@ _EffectStop_Step1:				;
 	or	al,Int_HblankSet	;
 	out	Int_Enable,al		;
 
-	pop	ds			;
-	popa				;
-	retf				;終了
+	ret				;終了
 _EffectStop	endp			;
 ;===============================================================|
 ;	char	(far *PcmPlay)(char far *Pcm);			|
@@ -1273,24 +1172,21 @@ _EffectStop	endp			;
 ;	処理							|
 ;		Waveファイルの解析と、発生準備			|
 ;===============================================================|
-_PcmPlay	proc far		;
-	push	bp			;bpレジスタの保存
-	mov	bp,sp			;bp←sp
-	push	bx			;
-	push	dx			;
-	push	di			;
-	push	si			;
-	push	ds			;レジスタ保存
-
-	in	al,Int_Enable		;
-	and	al,Int_HblankReset	;
-	out	Int_Enable,al		;
+_PcmPlay	proc far c	uses bx cx dx di si ds es,
+	fptPCM:far ptr byte
 
 ;---------------------------------------------------------------
 ;演奏の停止
 
 	push	cs			;
 	call	near ptr _PcmStop	;演奏停止・割込周期の初期化
+
+;---------------------------------------------------------------
+;割り込み禁止
+
+	in	al,Int_Enable		;
+	and	al,Int_HblankReset	;
+	out	Int_Enable,al		;
 
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
@@ -1309,8 +1205,12 @@ _PcmPlay	proc far		;
 
 ;---------------------------------------------------------------
 ;演奏アドレスの設定
-	push	word ptr [bp + 08h]	;
-	push	word ptr [bp + 06h]	;引数の取得
+;	push	word ptr [bp + 08h]	;
+;	push	word ptr [bp + 06h]	;引数の取得
+
+	les	ax,fptPCM
+	push	es
+	push	ax
 	push	cs			;データ変換
 	call	near ptr _ChangeFar	;dxax = wtdIL.ChangeFar(*Pcm);
 	add	sp,+4			;
@@ -1449,13 +1349,7 @@ _PcmPlay_End:
 	or	al,Int_HblankSet	;
 	out	Int_Enable,al		;
 
-	pop	ds			;
-	pop	si			;
-	pop	di			;
-	pop	dx			;
-	pop	bx			;
-	pop	bp			;bpレジスタの復帰
-	retf				;終了
+	ret				;終了
 _PcmPlay	endp			;
 ;===============================================================|
 ;	void	(far *PcmStop)();				|
@@ -1467,9 +1361,7 @@ _PcmPlay	endp			;
 ;	処理							|
 ;		PCM Voice の発生終了準備			|
 ;===============================================================|
-_PcmStop	proc far		;
-	pusha				;
-	push	ds			;
+_PcmStop	proc far c	uses bp ax bx cx dx di si ds
 
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
@@ -1511,9 +1403,7 @@ _PcmStop	proc far		;
 
 ;---------------------------------------------------------------
 
-	pop	ds			;
-	popa				;
-	retf				;終了
+	ret				;終了
 _PcmStop	endp			;
 ;===============================================================|
 ;	char	(far *PcmVoiceSet)(char no,char far *wave);	|
@@ -1526,16 +1416,9 @@ _PcmStop	endp			;
 ;	処理							|
 ;		WS内蔵PCM波形データをドライバーに登録する。	|
 ;===============================================================|
-_PcmVoiceSet	proc far		;
-	push	bp			;bpレジスタの保存
-	mov	bp,sp			;bp←sp
-	push	bx			;
-	push	cx			;
-	push	dx			;
-	push	di			;
-	push	si			;
-	push	ds			;
-	push	es			;レジスタ保存
+_PcmVoiceSet	proc far c	uses bx cx dx di si ds es,
+	cNumber:byte,
+	fptWave:far ptr byte
 
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
@@ -1555,41 +1438,31 @@ _PcmVoiceSet	proc far		;
 ;---------------------------------------------------------------
 ;設定
 
-;音色番号取得
+	;音色番号取得
 	xor	ax,ax			;
-	mov	al,[bp + 06h]		;ax←音色番号
-;音色番号チェック
-	cmp	al,16			;16以下？
-	jc	_PCMVoiceSet_Step1	;
-	mov	ax,11			;でなかったら、エラー
-	jmp	_PCMVoiceSet_End	;
-_PCMVoiceSet_Step1:			;
-;音色転送先アドレス設定
+	mov	al,cNumber		;ax←音色番号
+
+	;音色番号チェック
+	.if	(al>15)			;16以下？
+		mov	ax,11		;でなかったら、エラー
+		jmp	_PCMVoiceSet_End
+	.endif
+
+	;音色転送
 	shl	ax,4			;
 	add	di,ax			;di＝di＋ax×16
-
-;波形データアドレス取得
-	lds	si,[bp + 08h]		;ds:si←送り元
-
-;転送
+	lds	si,fptWave		;ds:si←送り元
 	mov	cx,8			;16Byte転送
 	rep	movsw			;ブロック転送
 
 ;---------------------------------------------------------------
 
-;エラー無し
+	;エラー無し
 	xor	ax,ax			;ax←0
 
 _PCMVoiceSet_End:
-	pop	es			;レジスタ復帰
-	pop	ds			;
-	pop	si			;
-	pop	di			;
-	pop	dx			;
-	pop	cx			;
-	pop	bx			;
-	pop	bp			;bpレジスタの復帰
-	retf				;終了
+
+	ret				;終了
 _PcmVoiceSet	endp			;
 ;===============================================================|
 ;	char	(far *SoftEmbSet)(char no,char far *emb);	|
@@ -1602,16 +1475,9 @@ _PcmVoiceSet	endp			;
 ;	処理							|
 ;		エンベロープデータをドライバーに登録する。	|
 ;===============================================================|
-_SoftEmbSet	proc far		;
-	push	bp			;bpレジスタの保存
-	mov	bp,sp			;bp←sp
-	push	bx			;
-	push	cx			;
-	push	dx			;
-	push	di			;
-	push	si			;
-	push	ds			;
-	push	es			;レジスタ保存
+_SoftEmbSet	proc far c	uses bx cx dx di si ds es,
+	cNumber:byte,
+	fptWave:far ptr byte
 
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
@@ -1631,23 +1497,20 @@ _SoftEmbSet	proc far		;
 ;---------------------------------------------------------------
 ;設定
 
-;音色番号取得
+	;音色番号取得
 	xor	ax,ax			;
-	mov	al,[bp + 06h]		;ax←音色番号
-;音色番号チェック
-	cmp	al,24			;24以下？
-	jc	_SoftEmbSet_Step1	;
-	mov	ax,11			;でなかったら、エラー
-	jmp	_SoftEmbSet_End		;
-_SoftEmbSet_Step1:			;
-;音色転送先アドレス設定
+	mov	al,cNumber		;ax←音色番号
+
+	;音色番号チェック
+	.if	(al>23)			;24以下？
+		mov	ax,11		;でなかったら、エラー
+		jmp	_SoftEmbSet_End	
+	.endif
+
+	;転送
 	shl	ax,4			;
 	add	di,ax			;di＝di＋ax×16
-
-;波形データアドレス取得
-	lds	si,[bp + 08h]		;ds:si←送り元
-
-;転送
+	lds	si,fptWave		;ds:si←送り元
 	mov	cx,8			;16Byte転送
 	rep	movsw			;ブロック転送
 
@@ -1657,15 +1520,7 @@ _SoftEmbSet_Step1:			;
 	xor	ax,ax			;ax←0
 
 _SoftEmbSet_End:
-	pop	es			;レジスタ復帰
-	pop	ds			;
-	pop	si			;
-	pop	di			;
-	pop	dx			;
-	pop	cx			;
-	pop	bx			;
-	pop	bp			;bpレジスタの復帰
-	retf				;終了
+	ret				;終了
 _SoftEmbSet	endp			;
 ;===============================================================|
 ;	void far *(far *ChangeFar)(void far *add);		|
@@ -1677,23 +1532,23 @@ _SoftEmbSet	endp			;
 ;	処理							|
 ;		far pointerの変換。offset=0x000?にする。	|
 ;===============================================================|
-_ChangeFar	proc far		;
-	push	bp			;bpレジスタの保存
-	mov	bp,sp			;bp←sp
+_ChangeFar	proc far c,
+	fptData:far ptr byte
 
 ;---------------------------------------------------------------
 ;ファーポインタ変換
 
-	mov	ax,word ptr [bp + 06h]	;ax←far pointer offset
+;	mov	ax,word ptr [bp + 06h]	;ax←far pointer offset
+	mov	ax,word ptr fptData	;ax←far pointer offset
 	mov	dx,ax			;
 	and	ax,000Fh		;ax←残りの16byte分
 	shr	dx,4			;
-	add	dx,word ptr [bp + 08h]	;dx←ax / 16 + far pointer segment
+;	add	dx,word ptr [bp + 08h]	;dx←ax / 16 + far pointer segment
+	add	dx,word ptr fptData+2	;dx←ax / 16 + far pointer segment
 
 ;---------------------------------------------------------------
 
-	pop	bp			;bpレジスタの復帰
-	retf				;終了
+	ret				;終了
 _ChangeFar	endp			;
 ;===============================================================|
 ;	void	(far *SoundSetChannel)(int mode);		|
@@ -1706,22 +1561,13 @@ _ChangeFar	endp			;
 ;	処理							|
 ;		Channel modeの設定				|
 ;===============================================================|
-_SoundSetChannel	proc far	;
-	push	bp			;bpレジスタの保存
-	mov	bp,sp			;bp←sp
-	push	ax			;
+_SoundSetChannel	proc far c	uses ax,
+	iMode:word
 
-;---------------------------------------------------------------
-;設定ルーチンへ
-
-	mov	ax,word ptr [bp + 06h]	;ax←mode
+	mov	ax,iMode		;ax←mode
 	call	SP_Set_Channel		;Chennel modeの設定
 
-;---------------------------------------------------------------
-
-	pop	ax			;
-	pop	bp			;bpレジスタの復帰
-	retf				;終了
+	ret				;終了
 _SoundSetChannel	endp		;
 ;===============================================================|
 ;	int	(far *SoundGetChannel)();			|
@@ -1733,9 +1579,9 @@ _SoundSetChannel	endp		;
 ;	処理							|
 ;		Channel modeの取得				|
 ;===============================================================|
-_SoundGetChannel	proc far	;
+_SoundGetChannel	proc far c	;
 	call	SP_Get_Channel		;Channel mode の取得
-	retf				;終了
+	ret				;終了
 _SoundGetChannel	endp		;
 ;===============================================================|
 ;	void	(far *SoundSetOutput)(int mode);		|
@@ -1748,22 +1594,13 @@ _SoundGetChannel	endp		;
 ;	処理							|
 ;		Output modeの設定				|
 ;===============================================================|
-_SoundSetOutput	proc far		;
-	push	bp			;bpレジスタの保存
-	mov	bp,sp			;bp←sp
-	push	ax			;
+_SoundSetOutput	proc far c	uses ax,
+	iMode:word
 
-;---------------------------------------------------------------
-;設定ルーチンへ
-
-	mov	ax,word ptr [bp + 06h]	;ax←mode
+	mov	ax,iMode		;ax←mode
 	call	SP_Set_Output		;Output modeの設定
 
-;---------------------------------------------------------------
-
-	pop	ax			;
-	pop	bp			;bpレジスタの復帰
-	retf				;終了
+	ret				;終了
 _SoundSetOutput	endp			;
 ;===============================================================|
 ;	int	(far *SoundGetOutput)();			|
@@ -1775,9 +1612,9 @@ _SoundSetOutput	endp			;
 ;	処理							|
 ;		Output modeの取得				|
 ;===============================================================|
-_SoundGetOutput	proc far		;
+_SoundGetOutput	proc far c		;
 	call	SP_Get_Output		;Output modeの取得
-	retf				;終了
+	ret				;終了
 _SoundGetOutput	endp			;
 ;===============================================================|
 ;	int	(far *SoundGetRandom)();			|
@@ -1789,29 +1626,24 @@ _SoundGetOutput	endp			;
 ;	処理							|
 ;		疑似乱数を得る					|
 ;===============================================================|
-_SoundGetRandom	proc far		;
+_SoundGetRandom	proc far c		;
 	call	SP_Get_Random		;乱数の取得
-	retf				;終了
+	ret				;終了
 _SoundGetRandom	endp			;
 ;===============================================================|
 ;	void	(far *SetMusicVolume)(char volume);		|
 ;===============================================================|
 ;	引き数							|
-;		
+;		cVolume						|
 ;	返り値							|
-;		
+;		無し						|
 ;	処理							|
-;		
+;		マスターボリュームの設定			|
 ;===============================================================|
-_SetMusicVolume	proc far		;
-	push	bp			;bpレジスタの保存
-	mov	bp,sp			;bp←sp
-	pusha				;
-	push	ds			;
+_SetMusicVolume	proc far c	uses ax bx si ds,
+	cVolume:byte
 
 ;---------------------------------------------------------------
-;ワークアドレスの取得
-
 ;ワークアドレスの取得
 ;	push	SRAM_Segment			;
 ;	pop	ds				;ds←SRAMセグメント
@@ -1819,42 +1651,33 @@ _SetMusicVolume	proc far		;
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	mov	di,bx				;
-	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
+;	mov	di,bx				;
+;	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
 	mov	si,bx				;
 	add	si,WTD_WorkAdd_System		;ds:si←System
 
 ;---------------------------------------------------------------
 ;設定
-	mov	al,byte ptr [bp + 06h]		;
+	mov	al,cVolume			;
 	mov	ds:[si].WTD_Sys_VolumeMusic,al	;
 
 ;---------------------------------------------------------------
 
-	pop	ds			;
-	popa				;
-	pop	bp			;bpレジスタの復帰
-	retf				;終了
+	ret				;終了
 _SetMusicVolume	endp			;
 ;===============================================================|
 ;	char	(far *GetMusicVoluem)();			|
 ;===============================================================|
 ;	引き数							|
-;		
+;		無し						|
 ;	返り値							|
-;		
+;		ax	Volume					|
 ;	処理							|
-;		
+;		マスターボリュームの取得			|
 ;===============================================================|
-_GetMusicVolume	proc far		;
-	push	bx			;
-	push	di			;
-	push	si			;
-	push	ds			;
+_GetMusicVolume	proc far c	uses bx si ds
 
 ;---------------------------------------------------------------
-;ワークアドレスの取得
-
 ;ワークアドレスの取得
 ;	push	SRAM_Segment			;
 ;	pop	ds				;ds←SRAMセグメント
@@ -1862,8 +1685,8 @@ _GetMusicVolume	proc far		;
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	mov	di,bx				;
-	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
+;	mov	di,bx				;
+;	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
 	mov	si,bx				;
 	add	si,WTD_WorkAdd_System		;ds:si←System
 
@@ -1874,31 +1697,22 @@ _GetMusicVolume	proc far		;
 
 ;---------------------------------------------------------------
 
-	pop	ds			;
-	pop	si			;
-	pop	di			;
-	pop	bx			;
-	retf				;終了
+	ret				;終了
 _GetMusicVolume	endp			;
 ;===============================================================|
 ;	void	(far *SetEffectVolume)(char volume);		|
 ;===============================================================|
 ;	引き数							|
-;		
+;		iVolume	音量					|
 ;	返り値							|
-;		
+;		無し						|
 ;	処理							|
-;		
+;		効果音のマスターボリュームの設定		|
 ;===============================================================|
-_SetEffectVolume	proc far	;
-	push	bp			;bpレジスタの保存
-	mov	bp,sp			;bp←sp
-	pusha				;
-	push	ds			;
+_SetEffectVolume	proc far c	uses ax bx si ds,
+	cVolume:byte
 
 ;---------------------------------------------------------------
-;ワークアドレスの取得
-
 ;ワークアドレスの取得
 ;	push	SRAM_Segment			;
 ;	pop	ds				;ds←SRAMセグメント
@@ -1906,42 +1720,33 @@ _SetEffectVolume	proc far	;
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	mov	di,bx				;
-	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
+;	mov	di,bx				;
+;	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
 	mov	si,bx				;
 	add	si,WTD_WorkAdd_System		;ds:si←System
 
 ;---------------------------------------------------------------
 ;設定
-	mov	al,byte ptr [bp + 06h]		;
+	mov	al,cVolume			;
 	mov	ds:[si].WTD_Sys_VolumeEffect,al	;
 
 ;---------------------------------------------------------------
 
-	pop	ds			;
-	popa				;
-	pop	bp			;bpレジスタの復帰
-	retf				;終了
+	ret				;終了
 _SetEffectVolume	endp		;
 ;===============================================================|
 ;	char	(far *GetEffectVolume)();			|
 ;===============================================================|
 ;	引き数							|
-;		
+;		無し						|
 ;	返り値							|
-;		
+;		ボリューム					|
 ;	処理							|
-;		
+;		効果音のマスターボリュームの取得		|
 ;===============================================================|
-_GetEffectVolume	proc far	;
-	push	bx			;
-	push	di			;
-	push	si			;
-	push	ds			;
+_GetEffectVolume	proc far c	uses bx si ds
 
 ;---------------------------------------------------------------
-;ワークアドレスの取得
-
 ;ワークアドレスの取得
 ;	push	SRAM_Segment			;
 ;	pop	ds				;ds←SRAMセグメント
@@ -1949,8 +1754,8 @@ _GetEffectVolume	proc far	;
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	mov	di,bx				;
-	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
+;	mov	di,bx				;
+;	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
 	mov	si,bx				;
 	add	si,WTD_WorkAdd_System		;ds:si←System
 
@@ -1961,11 +1766,7 @@ _GetEffectVolume	proc far	;
 
 ;---------------------------------------------------------------
 
-	pop	ds			;
-	pop	si			;
-	pop	di			;
-	pop	bx			;
-	retf				;終了
+	ret				;終了
 _GetEffectVolume	endp		;
 ;===============================================================|
 ;	void	(far *SetPcmVolume)(char volume);		|
@@ -1977,15 +1778,10 @@ _GetEffectVolume	endp		;
 ;	処理							|
 ;		PCM Voice の音量を設定する。			|
 ;===============================================================|
-_SetPcmVolume	proc far		;
-	push	bp			;bpレジスタの保存
-	mov	bp,sp			;bp←sp
-	pusha				;
-	push	ds			;
+_SetPcmVolume	proc far c	uses ax bx si ds,
+	cVolume:byte
 
 ;---------------------------------------------------------------
-;ワークアドレスの取得
-
 ;ワークアドレスの取得
 ;	push	SRAM_Segment			;
 ;	pop	ds				;ds←SRAMセグメント
@@ -1993,44 +1789,35 @@ _SetPcmVolume	proc far		;
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	mov	di,bx				;
-	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
+;	mov	di,bx				;
+;	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
 	mov	si,bx				;
 	add	si,WTD_WorkAdd_System		;ds:si←System
 
 ;---------------------------------------------------------------
 ;設定
-	mov	al,byte ptr [bp + 06h]		;
+	mov	al,cVolume			;
 	mov	ds:[si].WTD_Sys_VolumePcm,al	;al←Set Data
 	mov	ah,0fh				;ah←Set Bit
 	call	SP_Set_VolumePCM		;
 
 ;---------------------------------------------------------------
 
-	pop	ds			;
-	popa				;
-	pop	bp			;bpレジスタの復帰
-	retf				;終了
+	ret				;終了
 _SetPcmVolume	endp			;
 ;===============================================================|
 ;	char	(far *GetPcmVolume)();				|
 ;===============================================================|
 ;	引き数							|
-;		
+;		無し						|
 ;	返り値							|
-;		
+;		音量						|
 ;	処理							|
-;		
+;		PCM Voice の音量を取得する。			|
 ;===============================================================|
-_GetPcmVolume	proc far		;
-	push	bx			;
-	push	di			;
-	push	si			;
-	push	ds			;
+_GetPcmVolume	proc far c	uses bx si ds
 
 ;---------------------------------------------------------------
-;ワークアドレスの取得
-
 ;ワークアドレスの取得
 ;	push	SRAM_Segment			;
 ;	pop	ds				;ds←SRAMセグメント
@@ -2038,8 +1825,8 @@ _GetPcmVolume	proc far		;
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	mov	di,bx				;
-	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
+;	mov	di,bx				;
+;	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
 	mov	si,bx				;
 	add	si,WTD_WorkAdd_System		;ds:si←System
 
@@ -2050,11 +1837,7 @@ _GetPcmVolume	proc far		;
 
 ;---------------------------------------------------------------
 
-	pop	ds			;
-	pop	si			;
-	pop	di			;
-	pop	bx			;
-	retf				;終了
+	ret				;終了
 _GetPcmVolume	endp			;
 ;===============================================================|
 ;	void	(far *SetFIFO)(int size,char far *FIFO);	|
@@ -2067,14 +1850,12 @@ _GetPcmVolume	endp			;
 ;	処理							|
 ;		FIFOバッファを設定する。			|
 ;===============================================================|
-_SetFIFO	proc far		;
+_SetFIFO	proc far c	uses ax bx di si ds es,
+	szFIFO:word,
+	fptFIFO:far ptr byte
+
 ifndef	hyoka;-------------------------------
-	push	bp			;bpレジスタの保存
-	mov	bp,sp			;bp←sp
-	push	ds			;
-	pusha				;
-	pushf				;
-	sti				;レジスタ保存
+	pushf				;フラグ保存
 
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
@@ -2090,19 +1871,19 @@ ifndef	hyoka;-------------------------------
 	add	si,WTD_WorkAdd_System		;ds:si←System
 
 ;---------------------------------------------------------------
-_SetFIFO_Loop:
-	cli					;FIFOバッファが
-	mov	ax,ds:[si].WTD_Sys_ComFIFO_Cnt	;空になるまで待つ。
-	cmp	ax,ds:[si].WTD_Sys_ComFIFO_Adr	;
-	jz	_SetFIFO_Step			;
-	sti					;
-	jmp	_SetFIFO_Loop			;
-_SetFIFO_Step:
-	mov	ax,[bp + 06h]			;
+
+	cli
+	.repeat				;FIFOバッファが空になるまで待つ。
+	mov	ax,ds:[si].WTD_Sys_ComFIFO_Cnt	
+	.until	(ax==ds:[si].WTD_Sys_ComFIFO_Adr)
+	sti
+
+	mov	ax,szFIFO			;
 	mov	ds:[si].WTD_Sys_ComFIFO_Size,ax	;
 
-	push	word ptr [bp + 0ah]		;引数の取得	Segment
-	push	word ptr [bp + 08h]		;		Offset
+	les	ax,fptFIFO			;
+	push	es				;引数の取得	Segment
+	push	ax				;		Offset
 	push	cs				;データ変換
 	call	near ptr _ChangeFar		;dxax = wtdIL.ChangeFar(*FIFO);
 	add	sp,+4				;
@@ -2112,9 +1893,7 @@ _SetFIFO_Step:
 ;---------------------------------------------------------------
 
 	popf				;レジスタ復帰
-	popa				;
-	pop	ds			;
-	pop	bp			;
 endif;----------------------------------------
-	retf				;
+
+	ret				;
 _SetFIFO	endp			;

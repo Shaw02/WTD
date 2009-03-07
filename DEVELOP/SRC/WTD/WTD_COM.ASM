@@ -44,15 +44,11 @@ COMM_TimeOut		equ	0ffffh	;タイムアウトの時間
 ;		回線を38400bpsに設定、通信回線を開く。		|
 ;===============================================================|
 	even				;偶数アドレス配置
-C_Open	proc near			;
-	push	ax			;
-	push	bx			;
+C_Open	proc near	uses ax		;
 	
 	mov	al,COMM_OrReset + COMM_Baudrate38k + COMM_Enable
 	out	COMM_Status,al		;
 
-	pop	bx			;
-	pop	ax			;
 	ret				;
 C_Open	endp				;
 ;===============================================================|
@@ -66,8 +62,7 @@ C_Open	endp				;
 ;		通信回線を閉じる。				|
 ;===============================================================|
 	even				;偶数アドレス配置
-C_Close	proc near			;
-	push	ax			;
+C_Close	proc near	uses ax		;
 
 C_Close_2:				;
 	in	al,COMM_Status		;ステータス読み込み
@@ -83,7 +78,6 @@ C_Close_1:				;
 	and	al,INT_CommSendReset	;シリアル送信エンプティー
 	out	Int_Enable,al		;割り込み禁止
 
-	pop	ax			;
 	ret				;
 C_Close	endp				;
 ;===============================================================|
@@ -216,19 +210,13 @@ C_Send_Word	endp			;
 ;		回線にデータを出力する。			|
 ;===============================================================|
 	even				;偶数アドレス配置
-C_Send_Block	proc near		;
-	push	si			;
-	push	cx			;
-	push	ax			;レジスタ保存
+C_Send_Block	proc near	uses ax cx si
 
 C_Send_Block_1:
 	lods	byte ptr es:[si]	;
 	call	C_Send			;送信
 	loop	C_Send_Block_1		;
 	
-	pop	ax			;レジスタ復帰
-	pop	cx			;
-	pop	si			;
 	ret				;
 C_Send_Block	endp			;
 ;===============================================================|
@@ -242,7 +230,7 @@ C_Send_Block	endp			;
 ;		回線にデータを出力する。			|
 ;===============================================================|
 	even				;偶数アドレス配置
-IC_Send:
+IC_Send	proc	near
 	push	es			;
 	push	di			;
 	push	bx			;
@@ -289,5 +277,6 @@ IC_Send_e:
 	pop	di			;
 	pop	es			;
 	ret				;
+IC_Send	endp
 ;===============================================================|
 endif

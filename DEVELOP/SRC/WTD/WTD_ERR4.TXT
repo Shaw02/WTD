@@ -1,6 +1,6 @@
 Microsoft (R) MASM Compatibility Driver
 Copyright (C) Microsoft Corp 1993.  All rights reserved.
 
- Invoking: ML.EXE /I. /Zm /c /IC:\WWitch\WTD\SDK\include /Cp /Cx /Dlibrary=1 /DIRAM=1 /FoWTD_IRAM.obj WTD.asm 
+ Invoking: ML.EXE /I. /Zm /c /IC:\WWitch\WTD\SDK\include /Cp /Cx /Dlibrary=1 /DIRAM=1 /Fl /Sa /FoWTD_IRAM.obj WTD.asm 
 
  Assembling: WTD.asm

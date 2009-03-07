@@ -25,7 +25,7 @@ FILES = wtd.asm wtd_com.asm wtd_icmd.asm wtd_idev.asm wtd_ilf.asm wtd_int.asm wt
 AFLAG1 = /Dhyoka=1
 AFLAG2 = /Dlibrary=1
 AFLAG3 = /Dlibrary=1 /Dhyoka=1
-AFLAG4 = /Dlibrary=1 /DIRAM=1
+AFLAG4 = /Dlibrary=1 /DIRAM=1 /la
 AFLAG5 = /Dlibrary=1 /Dhyoka=1 /DIRAM=1
 
 all: $(PROJ).fx $(PROJ1).fx $(PROJ2).lib $(PROJ3).lib $(PROJ4).lib $(PROJ5).lib

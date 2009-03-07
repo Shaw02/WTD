@@ -21,7 +21,7 @@ rom_disp.c 249: Warning: illegal pointer combination (param)
 rom_disp.c 251: Warning: illegal pointer combination (param)
 rom_time.c 102: Warning: illegal pointer combination (=)
 debug.c 64: Warning: 'iKey' not used
-ROM_MAIN.c 136: Warning: illegal pointer combination (param)
-ROM_MAIN.c 167: Warning: illegal pointer combination (param)
-ROM_MAIN.c 243: Warning: useless expression
-ROM_MAIN.c 253: Warning: useless expression
+ROM_MAIN.c 137: Warning: illegal pointer combination (param)
+ROM_MAIN.c 168: Warning: illegal pointer combination (param)
+ROM_MAIN.c 244: Warning: useless expression
+ROM_MAIN.c 254: Warning: useless expression

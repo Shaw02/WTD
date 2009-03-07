@@ -68,7 +68,7 @@ endif		;---------------------
 ;=======================================================================|
 _TEXT	segment para public 'CODE'
 
-;	org	0000h			;明示の必要性？
+	org	0000h			;明示の必要性？
 
 	public	WanderSwanTotalSoundDriver_
 WanderSwanTotalSoundDriver_:

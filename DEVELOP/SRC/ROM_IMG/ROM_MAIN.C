@@ -120,9 +120,10 @@ void main(){
 /* IL関数のロード	*/
 	WTD_FunctionLoad(&wtdIL);
 
+//			nDebug=debug_main(); //終わったら0を返す
+
 /* WTD設定	*/
 	wtdIL.Stay();
-
 
 	// キーボード表示
 	DrawInit();

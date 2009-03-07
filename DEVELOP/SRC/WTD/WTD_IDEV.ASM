@@ -54,38 +54,39 @@ I_Table_Jump:				;
 
 ;---------------------------------------------------------------
 
-;ジャンプテーブルアドレスの設定
+	;ジャンプテーブルアドレスの設定
 	mov	bx,dx			;bx←dx(Jump table address)
-;チャンネル・音源情報の取得
-	xor	ax,ax			;
+	;チャンネル・音源情報の取得
+;	xor	ax,ax			;後でandでbit resetしてる。
 	mov	al,ds:[di].WTD_Channel	;ax←Channel
 
-;チャンネルと音源情報の個別化
-;ch←チャンネル情報
+	;チャンネルと音源情報の個別化
+	;ch←チャンネル情報
 	mov	ch,al			;
 	and	ch,0fh			;ch←チャンネル(音源情報無し)
-;ax←音源情報×２
+	;ax←音源情報×２
 	shr	ax,6			;ax←音源タイプ(負論理)
 	not	ax			;ax←正論理にする。
 	and	ax,02h			;ax←音源タイプ以外を消す。
-;ジャンプアドレス格納アドレスの取得
+	;ジャンプアドレス格納アドレスの取得
 	add	bx,ax			;bx←音源タイプを加算
 
-;ジャンプアドレスの取得
+	;ジャンプアドレスの取得
 	mov	dx,word ptr cs:[bx]	;
 
 ;---------------------------------------------------------------
 
-;不必要なレジスタの復帰
+	;不必要なレジスタの復帰
 	pop	ax			;レジスタ復帰
 	pop	bx			;
-;ルーチン呼び出し
+	;ルーチン呼び出し
 	call	dx			;呼び出し
-;残ったレジスタの復帰
+	;残ったレジスタの復帰
 	pop	cx			;
 	pop	dx			;残りのレジスタ復帰
 	pop	bp			;
-;終了
+
+	;終了
 	ret				;
 ;===============================================================|
 ;			KeyOn					|
@@ -106,33 +107,31 @@ I_Table_KeyOn:
 ;-------------[	WS内蔵PCM ]-------------
 	even				;偶数アドレス配置
 I_SP_KeyOn:				;
-	push	cx			;
 	push	bx			;
 	push	ax			;レジスタ保存
 
 	mov	ds:[di].WTD_KeySet,al	;今回のデータを書き込み
 
-;キーコードの分解（キー，オクターブ）
+	;キーコードの分解（キー，オクターブ）
 	xor	ah,ah				;ax←KeyCode
 	mov	cl,12				;
 	idiv	cl				;ah←Key(余) / al←Octave(商)
-;オクターブの書き込み
+	;オクターブの書き込み
 	dec	al				;オクターブ補正(Drv値)
 	mov	ds:[di].WTD_OctaveSet,al	;オクターブ書き込み
-;テーブル読み込み（ベンド変換）
+	;テーブル読み込み（ベンド変換）
 	mov	al,ah				;
 	mov	ah,0				;ax←Key
 	shl	ax,1				;
 	mov	bx,offset CGROUP:I_Frection_Table
 	add	bx,ax				;
 	mov	ax,cs:[bx]			;ax←Pitch Bend
-;ベンドの書き込み
+	;ベンドの書き込み
 	mov	ds:[di].WTD_Frection,ax		;Bendとして処理
-;（ハードウェアにKeyOnは無い。）
+	;（ハードウェアにKeyOnは無い。）
 
 	pop	ax			;レジスタ復帰
 	pop	bx			;
-	pop	cx			;
 	ret				;
 ;-------------[	外部MIDI  ]-------------
 	even				;偶数アドレス配置
@@ -141,30 +140,29 @@ ifndef	hyoka	;------------------------廉価版は無し
 	push	bx			;
 	push	ax			;レジスタ保存
 
-;実際に出力したオクターブ。
-;（MIDI制御では要らないけど、ビュアー用に計算しておく。）
-;レジスタ保存
+	;実際に出力したオクターブ。
+	;（MIDI制御では要らないけど、ビュアー用に計算しておく。）
+	;レジスタ保存
 	push	ax				;
 	push	cx				;
-;キーコードの分解（キー，オクターブ）
+	;キーコードの分解（キー，オクターブ）
 	xor	ah,ah				;ax←KeyCode
 	mov	cl,12				;
 	idiv	cl				;ah←Key(余) / al←Octave(商)
-;オクターブの書き込み
+	;オクターブの書き込み
 	dec	al				;
 	mov	ds:[di].WTD_OctaveSet,al	;オクターブ書き込み
-;レジスタ復帰
+	;レジスタ復帰
 	pop	cx				;
 	pop	ax				;
 
-;バッファ書き込み
+	;バッファ書き込み
 	xor	bx,bx				;
 	mov	bl,ds:[di].WTD_KeySetPointer	;ポインタ読み込み
 	mov	al,ds:[di+bx].WTD_KeySet	;バッファ読み込み
-	cmp	al,0ffh				;内容は空？
-	jz	I_SM_KeyOn_ChkEnd		;空でなかったら
-	call	SM_KeyOff			;空ということにする。
-I_SM_KeyOn_ChkEnd:				;
+	.if	(al!=0ffh)			;内容は空？
+		call	SM_KeyOff		;空ということにする。
+	.endif
 	pop	ax				;
 	push	ax				;ax←引数を復帰
 	mov	ds:[di+bx].WTD_KeySet,al	;今回のデータを書き込み
@@ -172,14 +170,12 @@ I_SM_KeyOn_ChkEnd:				;
 	and	bx,07h				;
 	mov	ds:[di].WTD_KeySetPointer,bl	;ポインタ保存
 
-;送信
-I_SM_KeyOn_Out:
+	;送信
 	mov	ah,ds:[di].WTD_Velocity	;ah←ベロシティー
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Acsent
-	jz	I_SM_KeyOn_DeviceOut	;もしアクセントだったら、それ用。
-	mov	ah,ds:[di].WTD_AcsentVelocity
-	and	ds:[di].WTD_FlagControl,WTD_Ctrl_AcsentR
-I_SM_KeyOn_DeviceOut:			;
+	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_Acsent)
+		mov	ah,ds:[di].WTD_AcsentVelocity	;もしアクセントだったら、それ用。
+		and	ds:[di].WTD_FlagControl,WTD_Ctrl_AcsentR
+	.endif
 	call	SM_KeyOn		;デバイス出力。
 
 	pop	ax			;レジスタ復帰
@@ -213,20 +209,17 @@ ifndef	hyoka	;------------------------廉価版は無し
 	push	bx			;
 	push	ax			;レジスタ保存
 
-;バッファに書かれている内容を全てkeyOffし、空にする。
-	mov	cl,8				;８回ループ
+	;バッファに書かれている内容を全てkeyOffし、空にする。
+	mov	cx,8				;８回ループ
 	xor	bx,bx				;
-
-I_SM_KeyOff_Loop:				;
-	mov	al,ds:[di+bx].WTD_KeySet	;バッファ読み込み
-	mov	ds:[di+bx].WTD_KeySet,0ffh	;空データの書き込み
-	inc	bx				;
-	cmp	al,0ffh				;
-	jz	I_SM_KeyOff_Step1		;
-	call	SM_KeyOff			;KeyOffの送信
-I_SM_KeyOff_Step1:
-	dec	cl				;カウンタディクリメント
-	jnz	I_SM_KeyOff_Loop		;
+	.repeat
+		mov	al,ds:[di+bx].WTD_KeySet	;バッファ読み込み
+		mov	ds:[di+bx].WTD_KeySet,0ffh	;空データの書き込み
+		inc	bx				;
+		.if	(al!=0ffh)			;
+			call	SM_KeyOff		;KeyOffの送信
+		.endif
+	.untilcxz
 ;
 ;	　ポインタは面倒だから戻さない。
 ;	どうせ、クルクル回っているから、処理時間が無駄。
@@ -252,80 +245,68 @@ I_Table_Volume:
 	dw	I_SM_Volume		
 ;-------------[	WS内蔵PCM ]-------------
 	even				;偶数アドレス配置
-I_SP_Volume:				;
+I_SP_Volume	proc	near	uses	ax bx
 
-;レジスタ保存
-	push	dx			;
-	push	bx			;
-	push	cx			;
-	push	si			;
+	push	cx			;chを保存
 
-;音量保存。
+	;音量保存。
 	mov	ds:[di].WTD_ExprSet,al	;
-	shl	al,1			;(Range:0～255)
+	cbw				;ax←al
+	shl	ax,1			;(Range:0～255)
+	mov	cx,ax			;cx←音量
 
-;音量の次元を[dB]に変換
-;	and	ax,00ffh		;
-;	mov	bx,offset CGROUP:I_Volume_Table
-;	mov	si,ax			;
-;	mov	al,cs:[bx + si]		;cl←int(256*(log(al+1)/log(257)))
-	mov	cl,al			;
-
-;パンポット読み込み
+	;パンポット読み込み
 	mov	al,ds:[di].WTD_PanSet		;
+	.if	!(ds:[di].WTD_Pan&080h)		;
 
-	mov	ah,ds:[di].WTD_Pan		;
-	rol	ah,1				;
-	shr	ah,1				;Bit 7 Reset & Bit 7 -> Cy Flag
-	jc	I_SP_Volume_Logarithmic		;jc
+		;パンポットは、リニアに変化。
+		mov	dx,007fh			;
+		and	ax,dx				;
+		sub	dx,ax				;
+		shl	ax,2				;ax←右の音量
+		shl	dx,2				;dx←左の音量
 
-I_SP_Volume_Linear:				;
-;パンポットは、リニアに変化。
-	push	cx				;
+		.if	(ah!=0)				;
+			mov	ax,00ffh		;右のLimit処理
+		.endif					;
 
-	mov	cx,007fh			;
-	and	ax,cx				;
-	sub	cx,ax				;
-	shl	ax,2				;ax←右の音量
-	shl	cx,2				;cx←左の音量
+		.if	(dh!=0)				;
+			mov	dx,00ffh		;左のLimit処理
+		.endif					;
 
-	cmp	ah,0				;
-	jz	I_SP_Volume_Linear_L1		;
-	mov	ax,00ffh			;
-I_SP_Volume_Linear_L1:				;右の処理
+		mov	ah,dl				;al←右のレベル
+	.else
 
-	cmp	ch,0				;
-	jz	I_SP_Volume_Linear_L2		;
-	mov	cx,00ffh			;
-I_SP_Volume_Linear_L2:				;左の処理
+		;パンポットの次元を[dB]に変換
+		shl	al,1				;
+		mov	ah,0ffh				;al←右のレベル
+		sub	ah,al				;ah←左のレベル
 
-	mov	ah,cl				;al←右のレベル
-	pop	cx				;ah←左のレベル
-	jmp	I_SP_Volume_Make		;
+		push	ds				;
+		push	cs				;
+		pop	ds				;
+		mov	bx,offset CGROUP:I_Volume_Table	;
+		xchg	al,ah				;
+		xlat
+;		mov	si,ax				;si←左
+;		and	si,00ffh			;
+;		mov	al,cs:[bx + si]			;
+		xchg	al,ah				;ah←左のレベル
+		xlat
+;		mov	si,ax				;si←右
+;		and	si,00ffh			;
+;		mov	al,cs:[bx + si]			;al←右のレベル
+		pop	ds				;
 
-I_SP_Volume_Logarithmic:
-;パンポットの次元を[dB]に変換
-	shl	al,1				;
-	mov	ah,0ffh				;al←右のレベル
-	sub	ah,al				;ah←左のレベル
+	.endif
 
-	mov	bx,offset CGROUP:I_Volume_Table	;
-	xchg	al,ah				;
-	mov	si,ax				;si←左
-	and	si,00ffh			;
-	mov	al,cs:[bx + si]			;
-;	mov	bx,offset CGROUP:I_Volume_Table	;
-	xchg	al,ah				;ah←左のレベル
-	mov	si,ax				;si←右
-	and	si,00ffh			;
-	mov	al,cs:[bx + si]			;al←右のレベル
 
-I_SP_Volume_Make:
-;パンポットの合成
-;左演算
-	xchg	ax,cx
-	push	ax			;
-	xor	ah,ah			;
+
+	;パンポットの合成
+	xchg	cx,ax		;cx←左右の音量
+	push	ax		;ax←音量
+
+	;左演算
 	inc	ax			;ax←音量+1
 	push	cx			;
 	mov	cl,ch			;
@@ -335,9 +316,10 @@ I_SP_Volume_Make:
 	dec	ax			;
 	pop	cx			;
 	mov	ch,ah			;ch←左の音量
-	pop	ax			;
-;右演算
-	xor	ah,ah			;
+
+	pop	ax
+
+	;右演算
 	inc	ax			;ax←音量+1
 	push	cx			;
 	xor	ch,ch			;
@@ -346,40 +328,35 @@ I_SP_Volume_Make:
 	dec	ax			;
 	pop	cx			;
 	mov	cl,ah			;cl←右の音量
-;合成
+
+	;合成
 	and	ch,0f0h			;上位4bitのみ
 	and	cl,0f0h			;上位4bitのみ
 	shr	cl,4			;
 	or	ch,cl			;
 	mov	al,ch			;al←左右の音量
 
-	pop	si			;
+;	pop	si			;
 	pop	cx			;チャンネル情報を戻す。
 
-	cmp	ds:[di].WTD_ExprPanSet,al	;
-	jz	I_SP_Volume_End			;前回と同じだったらいらない。
+	.if	(ds:[di].WTD_ExprPanSet!=al)	;前回と同じだったらいらない。
+		mov	ds:[di].WTD_ExprPanSet,al
+		call	SP_Set_Volume
+	.endif
 
-	mov	ds:[di].WTD_ExprPanSet,al	;
-	call	SP_Set_Volume			;
-
-I_SP_Volume_End:
-	pop	bx			;
-	pop	dx			;
 	ret				;
+I_SP_Volume	endp
 ;-------------[	外部MIDI  ]-------------
 	even				;偶数アドレス配置
 I_SM_Volume:				;
 ifndef	hyoka	;------------------------廉価版は無し
-	cmp	ds:[di].WTD_ExprSet,al	;
-	jz	I_SM_Volume_End		;前回と同じだったらいらない。
-
-	push	cx			;レジスタ保存
-	mov	ds:[di].WTD_ExprSet,al	;
-	mov	cl,MIDI_Ctrl_Expression	;
-	call	SM_ControlByte		;
-	pop	cx			;レジスタ復帰
-
-I_SM_Volume_End:			;
+	.if	(ds:[di].WTD_ExprSet!=al)	;前回と同じだったらいらない。
+		push	cx			;レジスタ保存
+		mov	ds:[di].WTD_ExprSet,al	;
+		mov	cl,MIDI_Ctrl_Expression	;
+		call	SM_ControlByte		;
+		pop	cx			;レジスタ復帰
+	.endif
 endif	;--------------------------------
 	ret				;
 ;===============================================================|
@@ -401,40 +378,37 @@ I_Table_Frection:
 	even				;偶数アドレス配置
 ;DeviceOut = 2048 - (Table / 2^(3 + Octave))
 I_SP_Frection:				;
-	push	cx			;
 	push	ax			;レジスタ保存
+	push	bx			;
 
-;オクターブ処理
+	;オクターブ処理
 	mov	cl,ds:[di].WTD_OctaveSet
 	add	cl,3			;
 	shr	ax,cl			;
 	mov	bx,ax			;
 	mov	ax,2048			;
 	sub	ax,bx			;
-	jnc	I_SP_Frection_Step	;
-	xor	ax,ax			;オーバーフローしたら、０にする。
-I_SP_Frection_Step:			;
+	.if	(Carry?)		;
+		xor	ax,ax		;オーバーフローしたら、０にする。
+	.endif
 
-	cmp	ds:[di].WTD_FrectionSet,ax	;前回と同じだったらいらない。
-	jz	I_SP_Frection_End		;
+	;出力
+	.if	(ds:[di].WTD_FrectionSet!=ax)	;前回と同じだったらいらない。
+		mov	ds:[di].WTD_FrectionSet,ax
+		call	SP_Set_Frection		;周波数の設定
+	.endif
 
-	mov	ds:[di].WTD_FrectionSet,ax	;
-	call	SP_Set_Frection			;周波数の設定
-
-I_SP_Frection_End:			;
+	pop	bx			;
 	pop	ax			;レジスタ復帰
-	pop	cx			;
 	ret				;
 ;-------------[	外部MIDI  ]-------------
 	even				;偶数アドレス配置
 I_SM_Frection:				;
 ifndef	hyoka	;------------------------廉価版は無し
-	cmp	ds:[di].WTD_BendSet,ax	;前回と同じだったらいらない。
-	jz	I_SM_Frection_End	;
-
-	mov	ds:[di].WTD_BendSet,ax	;
-	call	SM_PitchBend		;
-I_SM_Frection_End:			;
+	.if	(ds:[di].WTD_BendSet!=ax)	;前回と同じだったらいらない。
+		mov	ds:[di].WTD_BendSet,ax	;
+		call	SM_PitchBend		;
+	.endif
 endif	;--------------------------------
 	ret				;
 ;===============================================================|
@@ -455,35 +429,33 @@ I_Table_Voice:
 ;-------------[	WS内蔵PCM ]-------------
 	even				;偶数アドレス配置
 I_SP_Voice:				;
-	cmp	ds:[di].WTD_Voice,al	;前回と同じだったらいらない。
-	jz	I_SP_Voice_End		;
+	.if	(ds:[di].WTD_Voice!=al)	;前回と同じだったらいらない。
 
-	push	ax			;
-	push	si			;レジスタ保存
+		push	ax			;
+		push	si			;レジスタ保存
 
-	mov	ds:[di].WTD_Voice,al	;音色番号保存
-	xor	ah,ah			;
-	shl	ax,4			;ax←al×16
-	mov	si,bp			;
-	add	si,WTD_WorkAdd_Wave	;
-	add	si,ax			;ds:si←音色のあるアドレス
+		mov	ds:[di].WTD_Voice,al	;音色番号保存
+		xor	ah,ah			;
+		shl	ax,4			;ax←al×16
+		mov	si,bp			;
+		add	si,WTD_WorkAdd_Wave	;
+		add	si,ax			;ds:si←音色のあるアドレス
 
-	call	SP_Set_Voice		;音色セット
+		call	SP_Set_Voice		;音色セット
 
-	pop	si			;レジスタ復帰
-	pop	ax			;
-I_SP_Voice_End:				;
+		pop	si			;レジスタ復帰
+		pop	ax			;
+
+	.endif
 	ret				;
 ;-------------[	外部MIDI  ]-------------
 	even				;偶数アドレス配置
 I_SM_Voice:				;
 ifndef	hyoka	;------------------------廉価版は無し
-	cmp	ds:[di].WTD_Program,al	;前回と同じだったらいらない。
-	jz	I_SM_Voice_End		;
-
-	mov	ds:[di].WTD_Program,al	;
-	call	SM_Program		;
-I_SM_Voice_End:				;
+	.if	(ds:[di].WTD_Program!=al)	;前回と同じだったらいらない。
+		mov	ds:[di].WTD_Program,al	;
+		call	SM_Program		;
+	.endif
 endif	;-------------------------------
 	ret				;
 ;===============================================================|

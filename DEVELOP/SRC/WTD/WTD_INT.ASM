@@ -173,24 +173,26 @@ I_Start_Step1:
 	;レジスタ設定
 	mov	di,bp					;
 	add	di,WTD_WorkAdd_PCM			;di←パート個別構造体
-	push	es					;レジスタ保存
 
 	;アドレス取得
+	push	es					;レジスタ保存
 	les	si,dword ptr ds:[di].WTD_PcmAddress	;es:si←Play Address
 	mov	dx,es					;dx:si←Play Address
 	;データ取得
 	mov	al,es:[si]				;(注意：PipeLine)
-	inc	si					;
+	inc	si					;フラグも変化させる
 	;データ出力
 	out	PCM_Com_VolumeCh2,al			;出力
 
 	;ポインタチェック（セグメント境界？）
-	jnz	I_PcmVoice_Step1			;
-	add	dx,1000h				;セグメント増やす
-I_PcmVoice_Step1:					;
+	.if	(zero?)
+		add	dx,1000h			;セグメント増やす
+	.endif
 	;アドレス保存
 	mov	word ptr ds:[di].WTD_PcmAddress+0,si	;アドレス保存
 	mov	word ptr ds:[di].WTD_PcmAddress+2,dx	;(注意：PipeLine)
+	pop	es					;レジスタ復帰
+
 
 	;終了？
 	sub	word ptr ds:[di].WTD_PcmSize+0,1	;PcmSize ディクリメント
@@ -203,7 +205,6 @@ I_PcmVoice_Step1:					;
 	and	ds:[bx].WTD_Sys_Flag,WTD_Sys_PcmR	;処理終了
 
 I_PcmVoice_End:						;
-	pop	es					;レジスタ復帰
 I_PcmStep:						;
 	;PCM Voice終わり				;
 	;---------------				;
@@ -273,57 +274,46 @@ I_MusicEffect:					;
 ;---------------------------------------------------------------
 ;演奏ルーチン
 
-;演奏あるか？
-	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_Music	;
-	jz	I_MusicEffect_MusicStep			;
+	;演奏あるか？
+	.if	(ds:[bx].WTD_Sys_Flag&WTD_Sys_Music)
 
-;レジスタ設定
-	mov	di,bp				;
-	add	di,WTD_WorkAdd_Ch0		;di←パート個別構造体
-	mov	ax,ds:[bx].WTD_Sys_MusicSegment	;
-	mov	es,ax				;es←演奏データセグメント
+		;レジスタ設定
+		mov	di,bp				;
+		add	di,WTD_WorkAdd_Ch0		;di←パート個別構造体
+		mov	es,ds:[bx].WTD_Sys_MusicSegment	;es←演奏データセグメント
 
+		;演奏処理ルーチンの呼び出し
+		xor	cx,cx				;製品版は最大'20'。
+		mov	cl,ds:[bx].WTD_Sys_MusicPart	;廉価版は最大' 4'。
+		.while	(cx!=0)
+			call	I_Play			;
+			add	di,WTD_WorkChSize	;構造体のサイズは80h(0x80)
+			dec	cx			;
+		.endw
 
-;演奏処理ルーチンの呼び出し
-	xor	cx,cx				;製品版は最大'20'。
-	mov	cl,ds:[bx].WTD_Sys_MusicPart	;廉価版は最大' 4'。
-	or	cx,cx				;
-	jz	I_MusicEffect_MusicStep		;
-	even					;偶数アドレス配置
-I_MusicEffect_MusicLoop:			;
-	call	I_Play				;
-	add	di,WTD_WorkChSize		;構造体のサイズは80h(0x80)
-	sub	cx,1				;
-	jnz	I_MusicEffect_MusicLoop		;
-
-I_MusicEffect_MusicStep:
+	.endif
 
 ;---------------------------------------------------------------
 ;効果音ルーチン
 
-;効果音あるか？
-	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_Effect	;
-	jz	I_MusicEffect_EffectStep		;
+	;効果音あるか？
+	.if	(ds:[bx].WTD_Sys_Flag&WTD_Sys_Effect)
 
-;レジスタ設定
-	mov	di,bp				;
-	add	di,WTD_WorkAdd_Ech0		;di←パート個別構造体
-	mov	ax,ds:[bx].WTD_Sys_EffectSegment
-	mov	es,ax				;es←効果音データセグメント
+		;レジスタ設定
+		mov	di,bp					;
+		add	di,WTD_WorkAdd_Ech0			;di←パート個別構造体
+		mov	es,ds:[bx].WTD_Sys_EffectSegment	;es←効果音データセグメント
 
-;演奏処理ルーチンの呼び出し
-	xor	cx,cx				;
-	mov	cl,ds:[bx].WTD_Sys_EffectPart	;最大'3'。
-	or	cx,cx				;
-	jz	I_MusicEffect_EffectStep	;
-	even					;偶数アドレス配置
-I_MusicEffect_EffectLoop:			;
-	call	I_Play				;
-	add	di,WTD_WorkChSize		;構造体のサイズは80h(0x80)
-	sub	cx,1				;
-	jnz	I_MusicEffect_EffectLoop	;
+		;演奏処理ルーチンの呼び出し
+		xor	cx,cx				;
+		mov	cl,ds:[bx].WTD_Sys_EffectPart	;最大'3'。
+		.while	(cx!=0)
+			call	I_Play			;
+			add	di,WTD_WorkChSize	;構造体のサイズは80h(0x80)
+			dec	cx			;
+		.endw
 
-I_MusicEffect_EffectStep:			;
+	.endif
 
 ;---------------------------------------------------------------
 ;PCM Vioce効果音が発生しており、尚かつ終了であるならば、
@@ -390,103 +380,100 @@ I_MusicEffect_PcmCheck_End:			;
 	even				;偶数アドレス配置
 I_Play:					;
 	pusha				;
-;---------------------------------------------------------------
 
-;演奏チェック
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_PlayEnd
-	jz	I_Play_Step1			;
-	jmp	I_Play_StepE			;
-I_Play_Step1:					;
 
-;音長カウンター・ディクリメント
-	dec	ds:[di].WTD_LengCounter		;
+	;演奏チェック
+	.if	!(ds:[di].WTD_FlagControl&WTD_Ctrl_PlayEnd)
 
-;音長による、キーオンディレイ
-	mov	ax,ds:[di].WTD_Leng		;'k'コマンドの判定
-	sub	ax,ds:[di].WTD_LengCounter	;
-	cmp	ax,ds:[di].WTD_KeyOnDelay	;
-	jnz	I_Play_Step2			;
-	call	I_Play_KeyOn			;
-I_Play_Step2:					;
 
-;音長による、音色制御
-	test	ds:[di].WTD_Program2nd,80h	;必要性の確認
-	jnz	I_Play_Step8			;
-	cmp	ds:[di].WTD_Key,0ffh		;休符？
-	jz	I_Play_Step8			;
-	mov	ax,ds:[di].WTD_Leng		;'@'コマンド
-	sub	ax,ds:[di].WTD_LengCounter	;
-	cmp	ax,ds:[di].WTD_ProgramRate	;
-	jnz	I_Play_Step8			;
-	push	ax				;
-	mov	al,ds:[di].WTD_Program2nd	;
-	and	al,07fh				;上位bitのマスク
-	mov	dx,offset CGROUP:I_Table_Voice	;
-	call	I_Table_Jump			;
-	pop	ax				;
-I_Play_Step8:					;
+	;音長カウンター・ディクリメント
+	dec	ds:[di].WTD_LengCounter
+	mov	ax,ds:[di].WTD_Leng			;
+	sub	ax,ds:[di].WTD_LengCounter		;ax←経過時間
 
-;音長による、ゲートタイム制御
-	cmp	ax,ds:[di].WTD_GateTimeStepFirst
-	jz	I_Play_Step3			;'u'コマンドの判定
-	mov	ax,ds:[di].WTD_Leng		;'Q','U','q'コマンドの判定
-	mov	ch,ds:[di].WTD_GateTime8	;ch←GateTime8
-	rol	ch,1				;
-	shr	ch,1				;Bit 7 Reset & Bit 7 -> Cy Flag
-	jc	I_Play_Step5			;
 
-	mov	dx,8				;'Q'コマンド
-	sub	dl,ch				;dx = 8 － ch
-	mul	dx				;dx:ax = ax × dx
-	shr	dx,1				;
-	shr	ax,1				;
-	shr	dx,1				;
-	shr	ax,1				;
-	shr	dx,1				;
-	shr	ax,1				;ax = dx:ax ÷ cl
-	jmp	short I_Play_Step6		;
+	;音長による、キーオンディレイ
+	.if	(ax==ds:[di].WTD_KeyOnDelay)		;'k'コマンドの判定
+		call	I_Play_KeyOn			;
+	.endif
 
-	even					;偶数アドレス配置
-I_Play_Step5:					;'U'コマンド
-	mov	cl,100				;cl = 100
-	mov	dx,100				;dx = 100
-	sub	dl,ch				;dx = dx － ch
-	mul	dx				;dx:ax = ax × dx
-	xor	ch,ch				;
-	div	cx				;ax = dx:ax ÷ cl
-I_Play_Step6:					;
-	add	ax,ds:[di].WTD_GateTimeStepLast	;ax = ax + WTD_GateTimeStepLast
-	jnc	I_Play_Step7			;オーバーフローしたら、
-	mov	ax,0ffffh			;最大値に修正。
-I_Play_Step7:					;
-	cmp	ax,ds:[di].WTD_LengCounter	;
-	jnz	I_Play_Step4			;
-I_Play_Step3:					;
-	call	I_Play_KeyOff			;
-I_Play_Step4:					;
 
-;音長カウンタ０ならば、コマンド処理
-	cmp	ds:[di].WTD_LengCounter,0		;音長カウンタ＝０？
-	jnz	I_Play_StepE				;
-	mov	si,ds:[di].WTD_Address			;es:si←Play Address
-	call	I_Play_Loop				;制御ルーチンへ。
-	mov	ds:[di].WTD_Address,si			;
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_PlayEnd
-	jnz	I_Play_StepE				;演奏終了？
-	cmp	ds:[di].WTD_KeyOnDelay,0		;KeyOnDelayは０？
-	jnz	I_Play_StepE				;
-	call	I_Play_KeyOn				;であれば、KeyOn
+	;音長による、音色制御
+	.if	( !(ds:[di].WTD_Program2nd&80h) && (ds:[di].WTD_Key!=0ffh) && (ax==ds:[di].WTD_ProgramRate) )
+		push	ax				;
+		mov	al,ds:[di].WTD_Program2nd	;
+		and	al,07fh				;上位bitのマスク
+		mov	dx,offset CGROUP:I_Table_Voice	;
+		call	I_Table_Jump			;
+		pop	ax				;
+	.endif
 
-;制御ルーチンへ
-I_Play_StepE:					;
+
+	;音長による、ゲートタイム制御
+	.if	(ax!=ds:[di].WTD_GateTimeStepFirst)	;'u'コマンドでkeyoffするか？
+
+		mov	ax,ds:[di].WTD_Leng		;'Q','U','q'コマンドの判定
+		mov	ch,ds:[di].WTD_GateTime8	;ch←GateTime8
+		rol	ch,1				;
+		shr	ch,1				;Bit 7 Reset & Bit 7 -> Cy Flag
+		.if	(!Carry?)
+			mov	dx,8			;'Q'コマンド
+			sub	dl,ch			;dx = 8 － ch
+			mul	dx			;dx:ax = ax × dx
+			shr	dx,1			;
+			shr	ax,1			;
+			shr	dx,1			;
+			shr	ax,1			;
+			shr	dx,1			;
+			shr	ax,1			;ax = dx:ax ÷ cl
+		.else
+			mov	cl,100			;cl = 100
+			mov	dx,100			;dx = 100
+			sub	dl,ch			;dx = dx － ch
+			mul	dx			;dx:ax = ax × dx
+			xor	ch,ch			;
+			div	cx			;ax = dx:ax ÷ cl
+		.endif
+
+		add	ax,ds:[di].WTD_GateTimeStepLast	;ax = ax + WTD_GateTimeStepLast
+		.if	(Carry?)			;オーバーフローしたら、
+			mov	ax,0ffffh		;最大値に修正。
+		.endif					;
+		.if	(ax==ds:[di].WTD_LengCounter)	;
+			call	I_Play_KeyOff		;
+		.endif
+
+	.else
+		call	I_Play_KeyOff			;
+
+	.endif
+
+
+	;音長カウンタ０ならば、コマンド処理
+	.if	(ds:[di].WTD_LengCounter==0)		;音長カウンタ＝０？
+
+		mov	si,ds:[di].WTD_Address		;es:si←Play Address
+		call	I_Play_Loop			;制御ルーチンへ。
+		mov	ds:[di].WTD_Address,si		;
+
+;		;演奏終了？　＆　KeyOnDelayは０？
+		.if	(!(ds:[di].WTD_FlagControl&WTD_Ctrl_PlayEnd) && (ds:[di].WTD_KeyOnDelay==0))
+			call	I_Play_KeyOn		;であれば、KeyOn
+		.endif
+	.endif
+
+
+
+	.endif
+
+	;制御ルーチンへ
 	call	I_Play_Pan			;パン制御
 	call	I_Play_Volume			;音量制御
-	cmp	ds:[di].WTD_ExprSet,0		;　音量０だったら、
-	jz	I_Play_StepEnd			;　以下の処理は無し。
-	call	I_Play_Frection			;音程制御
+	.if	(ds:[di].WTD_ExprSet!=0)	;　音量０でなかったら
+		call	I_Play_Frection		;音程制御
+	.endif
 
-;---------------------------------------------------------------
-I_Play_StepEnd:				;
+
 	popa				;
 	ret				;
 ;****************************************************************
@@ -498,31 +485,27 @@ I_Play_StepEnd:				;
 ;****************************************************************
 	even				;偶数アドレス配置
 I_Play_Loop:				;
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_PlayEnd
-	jnz	I_Loop_StepE		;演奏チェック
-	cmp	ds:[di].WTD_LengCounter,0
-	jnz	I_Loop_StepE		;音長チェック
-	jmp	I_Loop_Step1		;
-I_Loop_StepE:				;
+
+	.while	( !(ds:[di].WTD_FlagControl&WTD_Ctrl_PlayEnd) && (ds:[di].WTD_LengCounter==0) )
+
+		;演奏データ読み込み
+		mov	al,es:[si]		;
+		inc	si			;
+
+		;コマンドタイプチェック
+		rol	al,1			;
+		shr	al,1			;cy←Command Type
+
+		;それぞれへ条件コール
+		.if	(Carry?)
+			call	I_PlayKey		;
+		.else
+			call	I_PlayCommand		;
+		.endif
+
+	.endw
+
 	ret				;
-	even				;偶数アドレス配置
-I_Loop_Step1:				;
-
-;演奏データ読み込み
-	mov	al,es:[si]		;
-	inc	si			;
-
-;コマンドタイプチェック
-	rol	al,1			;
-	shr	al,1			;cy←Command Type
-
-;それぞれへ条件コール・その後、ループする。
-	jc	I_Loop_Step2		;
-	call	I_PlayCommand		;
-	jmp	I_Play_Loop		;Loop
-I_Loop_Step2:				;
-	call	I_PlayKey		;
-	jmp	I_Play_Loop		;Loop
 ;****************************************************************
 ;*								*
 ;*			割り込みルーチン			*
@@ -552,82 +535,75 @@ I_Play_KeyOn:				;
 I_Play_KeyOn_Start:			;
 	pusha				;レジスタ保存
 
-;前回の音符は、タイ？
+	;前回の音符は、タイ？
 	test	ds:[di].WTD_FlagTai,02h	;前回タイあったか？
 	jnz	I_Play_KeyOn_StepEnd	;
 
-;音色制御
-	mov	al,ds:[di].WTD_Program2nd	;'@'コマンド
-	and	al,ds:[di].WTD_Program3rd	;必要性の確認
-	and	al,080h				;第2,3パラメータの指定が
-	jnz	I_Play_KeyOn_Step8		;無かったら、処理は無し。
-	mov	al,ds:[di].WTD_Program1st	;
-	and	al,07fh				;上位bitのマスク
-	mov	dx,offset CGROUP:I_Table_Voice	;
-	call	I_Table_Jump			;
-I_Play_KeyOn_Step8:				;
 
-;音量Embは処理必要。
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_ExprEmb
-	jz	I_Play_KeyOn_Step4		;
-	mov	cx,WTD_Ctrl_EmbVol		;
-	mov	dx,WTD_ExprEmb			;
-	call	I_Play_KeyOn_Emb		;
-	jmp	I_Play_KeyOn_Step4End		;
-I_Play_KeyOn_Step4:				;
-	mov	ds:[di].WTD_ExprEmbLevelSet,0ffh
-I_Play_KeyOn_Step4End:				;
+	;音色制御
+	mov	al,ds:[di].WTD_Program2nd	;'@'コマンド必要性の確認
+	and	al,ds:[di].WTD_Program3rd	;第2,3パラメータの指定が無かったら、処理は無し。
+	.if	!(al&080h)
+		mov	al,ds:[di].WTD_Program1st	;
+		and	al,07fh				;上位bitのマスク
+		mov	dx,offset CGROUP:I_Table_Voice	;
+		call	I_Table_Jump			;
+	.endif
 
-	test	ds:[di].WTD_FlagControl,0037h	;音量Embは処理必要。
-	jz	I_Play_KeyOn_Step7	;ソフトウェア処理がなかったら飛ばす。
+	;音量Embは処理必要。
+	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_ExprEmb)
+		mov	cx,WTD_Ctrl_EmbVol		;
+		mov	dx,WTD_ExprEmb			;
+		call	I_Play_KeyOn_Emb		;
+	.else
+		mov	ds:[di].WTD_ExprEmbLevelSet,0ffh
+	.endif
 
-;音程LFO
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_BendLfo
-	jz	I_Play_KeyOn_Step1		;
-	mov	dx,WTD_BendLFO			;
-	call	I_Play_KeyOn_LFO		;
-I_Play_KeyOn_Step1:				;
+;	.if	(ds:[di].WTD_FlagControl&0037h)	;音量Emb以外の確認。ソフトウェア処理がなかったら飛ばす。
 
-;音程Emb
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_BendEmb
-	jz	I_Play_KeyOn_Step2		;
-	mov	cx,WTD_Ctrl_EmbFreq		;
-	mov	dx,WTD_BendEmb			;
-	call	I_Play_KeyOn_Emb		;
-I_Play_KeyOn_Step2:				;
+	;音程Emb
+	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_BendEmb)
+		mov	cx,WTD_Ctrl_EmbFreq		;
+		mov	dx,WTD_BendEmb			;
+		call	I_Play_KeyOn_Emb		;
+	.endif
 
-;音量LFO
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_ExprLFO
-	jz	I_Play_KeyOn_Step3		;
-	mov	dx,WTD_ExprLFO			;
-	call	I_Play_KeyOn_LFO		;
-I_Play_KeyOn_Step3:				;
+	;パンEmb
+	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_PanEmb)
+		mov	cx,WTD_Ctrl_EmbPan		;
+		mov	dx,WTD_PanEmb			;
+		call	I_Play_KeyOn_Emb		;
+	.endif
 
-;パンLFO
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_PanLFO
-	jz	I_Play_KeyOn_Step5		;
-	mov	dx,WTD_PanLFO			;
-	call	I_Play_KeyOn_LFO		;
-I_Play_KeyOn_Step5:				;
+	;音量LFO
+	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_ExprLFO)
+		mov	dx,WTD_ExprLFO			;
+		call	I_Play_KeyOn_LFO		;
+	.endif
 
-;パンEmb
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_PanEmb
-	jz	I_Play_KeyOn_Step6		;
-	mov	cx,WTD_Ctrl_EmbPan		;
-	mov	dx,WTD_PanEmb			;
-	call	I_Play_KeyOn_Emb		;
-I_Play_KeyOn_Step6:				;
+	;音程LFO
+	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_BendLfo)
+		mov	dx,WTD_BendLFO			;
+		call	I_Play_KeyOn_LFO		;
+	.endif
 
-;モジュレーション
-I_Play_KeyOn_Step7:
+	;パンLFO
+	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_PanLFO)
+		mov	dx,WTD_PanLFO			;
+		call	I_Play_KeyOn_LFO		;
+	.endif
+
+;	.endif
+
 ifndef	hyoka	;--------------------------------廉価版は無し
-	xor	ax,ax				;
-	cmp	ds:[di].WTD_ModLevelSet,al	;
-	jz	I_Play_KeyOn_StepEnd		;前回とおなじ？
-	mov	ds:[di].WTD_ModLevelSet,al	;
-	mov	cl,MIDI_Ctrl_Mod		;
-	mov	dx,offset CGROUP:I_Table_CtrlChgB
-	call	I_Table_Jump			;モジュレーションを０にする。
+	;モジュレーション
+	xor	ax,ax					;
+	.if	(ds:[di].WTD_ModLevelSet!=al)		;
+		mov	ds:[di].WTD_ModLevelSet,al	;
+		mov	cl,MIDI_Ctrl_Mod		;
+		mov	dx,offset CGROUP:I_Table_CtrlChgB
+		call	I_Table_Jump			;モジュレーションを０にする。
+	.endif
 endif	;----------------------------------------
 
 I_Play_KeyOn_StepEnd:			;
@@ -646,47 +622,42 @@ I_Play_KeyOff:
 I_Play_KeyOff_Start:			;
 	pusha				;レジスタ保存
 
-;ハードウェアをKeyOff
+	;ハードウェアをKeyOff
 	mov	dx,offset CGROUP:I_Table_KeyOff	;
 	call	I_Table_Jump			;KeyOff
 
-;音色制御
-	test	ds:[di].WTD_Program3rd,80h	;'@'コマンド
-	jnz	I_Play_KeyOff_Step5		;必要性の確認
-	mov	al,ds:[di].WTD_Program3rd	;
-	and	al,07fh				;上位bitのマスク
-	mov	dx,offset CGROUP:I_Table_Voice	;
-	call	I_Table_Jump			;
-I_Play_KeyOff_Step5:				;
+	;音色制御
+	.if	!(ds:[di].WTD_Program3rd&80h)	;'@'コマンド	必要性の確認
+		mov	al,ds:[di].WTD_Program3rd	;
+		and	al,07fh				;上位bitのマスク
+		mov	dx,offset CGROUP:I_Table_Voice	;
+		call	I_Table_Jump			;
+	.endif
 
-;音程Emb
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_BendEmb
-	jz	I_Play_KeyOff_Step1		;
-	mov	cx,WTD_Ctrl_EmbFreq		;
-	mov	dx,WTD_BendEmb			;
-	call	I_Play_KeyOff_Emb		;
-I_Play_KeyOff_Step1:				;
+	;音量Emb
+	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_ExprEmb)
+		mov	cx,WTD_Ctrl_EmbVol		;
+		mov	dx,WTD_ExprEmb			;
+		call	I_Play_KeyOff_Emb		;
+	.else
+		.if	(ds:[di].WTD_Channel&80h)	;MIDIパートの場合は操作しない。
+			mov	ds:[di].WTD_ExprEmbLevelSet,000h
+		.endif
+	.endif
 
-;音量Emb
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_ExprEmb
-	jz	I_Play_KeyOff_Step2		;
-	mov	cx,WTD_Ctrl_EmbVol		;
-	mov	dx,WTD_ExprEmb			;
-	call	I_Play_KeyOff_Emb		;
-	jmp	I_Play_KeyOff_StepEnd		;
-I_Play_KeyOff_Step2:				;
-	test	ds:[di].WTD_Channel,80h		;MIDIパートの場合は操作しない。
-	jz	I_Play_KeyOff_Step3		;
-	mov	ds:[di].WTD_ExprEmbLevelSet,000h
-I_Play_KeyOff_Step3:				;
+	;音程Emb
+	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_BendEmb)
+		mov	cx,WTD_Ctrl_EmbFreq		;
+		mov	dx,WTD_BendEmb			;
+		call	I_Play_KeyOff_Emb		;
+	.endif
 
-;パンEmb
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_PanEmb
-	jz	I_Play_KeyOff_Step4		;
-	mov	cx,WTD_Ctrl_EmbPan		;
-	mov	dx,WTD_PanEmb			;
-	call	I_Play_KeyOff_Emb		;
-I_Play_KeyOff_Step4:				;
+	;パンEmb
+	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_PanEmb)
+		mov	cx,WTD_Ctrl_EmbPan		;
+		mov	dx,WTD_PanEmb			;
+		call	I_Play_KeyOff_Emb		;
+	.endif
 
 I_Play_KeyOff_StepEnd:				;
 	popa					;レジスタ復帰
@@ -738,7 +709,7 @@ I_Play_Frection_Step4:				;
 ;ディチューンの加算
 	add	ax,ds:[di].WTD_BendDetune
 
-;音量LFO処理
+;音程LFO処理
 	test	ds:[di].WTD_FlagControl,WTD_Ctrl_BendLFO
 	jz	I_Play_Frection_Step1	;
 	mov	dx,WTD_BendLFO		;
@@ -839,10 +810,12 @@ I_Play_Volume_Step5:			;}
 I_Volume_SoftEffect:				;
 	mov	al,ds:[bx].WTD_Sys_VolumeEffect	;ax←効果音音量
 I_Volume_SoftEnd:				;
-	mov	bx,offset CGROUP:I_Volume_Table	;log演算
+
+;	mov	bx,offset CGROUP:I_Volume_Table	;log演算
 	mov	si,ax			;
 	and	si,00ffh		;
-	mov	al,cs:[bx + si]		;
+	mov	al,byte ptr cs:[CGROUP:I_Volume_Table + si]
+
 	inc	ax			;ax←ソフト音量+1
 	mul	cx			;
 	dec	ax			;al←((2*Vol.+1)×(SoftVol.+1)／256)-1
@@ -954,17 +927,17 @@ I_Play_KeyOn_LFO:				;
 
 	mov	bp,dx					;
 
-;カウンター(Rate)の初期化
+	;カウンター(Rate)の初期化
 	mov	ah,ds:[di + bp].WTD_ChLfo_DecayRate	;DR
 	add	ah,ds:[di + bp].WTD_ChLfo_SpeedRate	;SR
 	mov	ds:[di + bp].WTD_ChLfo_RateCounter,ah	;
 
-;カウンター(Count)の初期化
+	;カウンター(Count)の初期化
 	mov	ah,ds:[di + bp].WTD_ChLfo_Count		;
 	shr	ah,1					;ah = ah / 2
 	mov	ds:[di + bp].WTD_ChLfo_CountCounter,ah	;
 
-;レベルの初期化
+	;レベルの初期化
 	xor	ax,ax					;
 	mov	ds:[di + bp].WTD_ChLfo_LevelSet,ax	;
 

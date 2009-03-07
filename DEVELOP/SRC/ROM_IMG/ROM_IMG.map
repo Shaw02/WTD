@@ -1,8 +1,8 @@
 
  Start  Stop   Length Name                   Class
  F0000H F3F3BH 03F3CH TEXT                   CODE
- F3F40H F5A36H 01AF7H _TEXT                  CODE
- F5A40H F688FH 00E50H _GHOST_DATA            CODE
+ F3F40H F59CCH 01A8DH _TEXT                  CODE
+ F59D0H F681FH 00E50H _GHOST_DATA            CODE
  00000H 00E4FH 00E50H DATA                   DATA
  00E50H 00E50H 00000H _DATA                  DATA
  00E50H 00ED7H 00088H BSS                    DATA
@@ -68,6 +68,31 @@
  F000:4103       scandeci
  F000:4120       WanderSwanTotalSoundDriver_
  F000:41B5       _WTD_FunctionLoad
+ F000:41E5       __GetInfo
+ F000:41EB       __Stay
+ F000:428A       __StayOut
+ F000:42D1       __Init
+ F000:42F5       __MusicPlay
+ F000:446B       __MusicStop
+ F000:44F6       __EffectPlay
+ F000:4665       __EffectStop
+ F000:46C8       __PcmPlay
+ F000:47C2       __PcmStop
+ F000:47EC       __PcmVoiceSet
+ F000:482A       __SoftEmbSet
+ F000:4868       __ChangeFar
+ F000:487B       __SoundSetChannel
+ F000:4888       __SoundGetChannel
+ F000:488C       __SoundSetOutput
+ F000:4899       __SoundGetOutput
+ F000:489D       __SoundGetRandom
+ F000:48A1       __SetMusicVolume
+ F000:48C0       __GetMusicVolume
+ F000:48D8       __SetEffectVolume
+ F000:48F7       __GetEffectVolume
+ F000:490F       __SetPcmVolume
+ F000:4933       __GetPcmVolume
+ F000:494B       __SetFIFO
  F000:4A74       I_Start
 
 Program entry point at F000:0000
