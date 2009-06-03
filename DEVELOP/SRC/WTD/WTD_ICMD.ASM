@@ -28,8 +28,7 @@
 ;===============================================================|
 ;●8bit版========================================================
 I_Read8	proc	near			;
-	mov	al,es:[si]		;データ読み込み
-	inc	si			;ポインタ・インクリメント
+	lodsb	es:[si]			;
 	test	ds:[di].WTD_FlagControl,WTD_Ctrl_WorkSw
 	jz	I_Read8_End		;ワークからであるか？
 
@@ -44,9 +43,7 @@ I_Read8_End:				;
 I_Read8	endp
 ;●16bit版=======================================================
 I_Read16	proc	near		;
-	mov	ax,es:[si]		;データ読み込み
-	inc	si			;ポインタ・インクリメント
-	inc	si			;
+	lodsw	es:[si]
 	test	ds:[di].WTD_FlagControl,WTD_Ctrl_WorkSw
 	jz	I_Read16_End		;ワークからであるか？
 
@@ -101,11 +98,14 @@ I_PlayKey_Auto	endp
 ;		音符コマンドの処理				|
 ;===============================================================|
 ;	●引数							|
-;		al	音符コマンド（00h～7Fh）		|
-;		ds:[di]	パート個別構造体			|
-;		es:[si]	演奏中のポインタ			|
-;	●返値							|
-;		es:[si]	演奏中のポインタ（処理後）		|
+;		ds:bp	ワークベースアドレス	引数		|
+;		ds:bx	共有構造体アドレス	引数		|
+;		ds:di	個別構造体		引数		|
+;		es:si	演奏アドレス		引数		|
+;		al	音符コマンド（00h～7Fh）破壊ok		|
+;	●レジスタ使用						|
+;		cx	汎用			破壊ok		|
+;		dx	汎用			破壊ok		|
 ;===============================================================|
 ;音階コード
 	even				;偶数アドレス配置
@@ -119,7 +119,7 @@ I_PlayKey_Code:
 	db	11			;b
 ;---------------------------------------------------------------
 	even				;偶数アドレス配置
-I_PlayKey	proc	near	uses ax bx cx dx
+I_PlayKey	proc	near	uses bx
 
 	mov	cl,al				;cl←コマンド
 	and	ax,07h				;al←音階情報(0～7)
@@ -182,12 +182,9 @@ I_PlayKey	proc	near	uses ax bx cx dx
 	;音長指定有りの場合
 	.else
 		xor	ax,ax			;
-		mov	al,es:[si]		;ax←音長
-		inc	si			;
+		lodsb	es:[si]			;ax←音長
 		.if	(al==0ffh)
-			mov	ax,es:[si]	;ax = es:[si];
-			inc	si		;si = si + 2;
-			inc	si		;
+			lodsw	es:[si]		;
 		.endif
 	.endif
 
@@ -344,18 +341,18 @@ I_PlayCommand_JumpTable:
 ;		コマンドによる分岐				|
 ;			いわゆる、Ｃ言語でいう'switch'文と同等	|
 ;===============================================================|
-;	●レジスタ使用						|
-;		ax						|
-;		ds:bx	共有構造体アドレス			|
-;		cx	汎用(主にカウンタ)			|
-;		dx	汎用(主に計算)				|
-;		ds:di	個別構造体		引数		|
+;	●引数							|
 ;		ds:bp	ワークベースアドレス	引数		|
-;		es	演奏セグメントアドレス	引数		|
-;		si	演奏オフセットアドレス			|
+;		ds:bx	共有構造体アドレス	引数		|
+;		ds:di	個別構造体		引数		|
+;		es:si	演奏アドレス		引数		|
+;		al	音符コマンド（00h～7Fh）破壊ok		|
+;	●レジスタ使用						|
+;		cx	汎用			破壊ok		|
+;		dx	汎用			破壊ok		|
 ;===============================================================|
 	even				;偶数アドレス配置
-I_PlayCommand	proc	near	uses dx
+I_PlayCommand	proc	near
 
 	push	bx			;
 	mov	bx,ax			
@@ -484,10 +481,11 @@ I_Com29:				;
 	even				;偶数アドレス配置
 I_Com2a:				;
 	push	bx			;
-	push	cx			;
 
-	mov	cl,es:[si]		;cl = 0,1,2
-	inc	si			;
+;	mov	cl,es:[si]		;cl = 0,1,2
+;	inc	si			;
+	lodsb	es:[si]
+	mov	cl,al
 	shl	cl,1			;cl = 0,2,4 (bit)
 
 	xor	ax,ax			;
@@ -503,7 +501,6 @@ I_Com2a:				;
 	and	word ptr ds:[di].WTD_FlagControl,bx
 	or	word ptr ds:[di].WTD_FlagControl,ax
 
-	pop	cx			;
 	pop	bx			;
 	ret				;
 ;===============================================================|
@@ -536,10 +533,11 @@ I_Com2e:				;
 	even				;偶数アドレス配置
 I_Com2f:				;
 	push	bx			;
-	push	cx			;
 
-	mov	cl,es:[si]		;cl = 0,1,2
-	inc	si			;
+;	mov	cl,es:[si]		;cl = 0,1,2
+;	inc	si			;
+	lodsb	es:[si]
+	mov	cl,al
 	shl	cl,1			;cl = 0,2,4 (bit)
 	inc	cl			;cl = 1,3,5 (bit)
 
@@ -557,7 +555,6 @@ I_Com2f:				;
 	and	ds:[di].WTD_FlagControl,bx
 	or	ds:[di].WTD_FlagControl,ax
 
-	pop	cx			;
 	pop	bx			;
 	ret				;
 ;===============================================================|
@@ -667,21 +664,20 @@ I_Com35:				;
 	even				;偶数アドレス配置
 I_Com36:				;
 	push	bx			;
-;アドレスの取得
+
+	;アドレスの取得
 	mov	ah,ds:[di].WTD_WorkAddress
 	call	I_Read8			;
 	mov	bx,ax			;bx←アドレス
 	call	I_Read8			;al←数値
 
-	push	cx
 	mov	cl,al			;
 	mov	al,001h			;
 	shl	al,cl			;
-	pop	cx			;
 
 	or	ds:[bx],al		;ビットセット
-	pop	bx			;
 
+	pop	bx			;
 	jmp	I_Com3x_Flag		;フラグ変化
 ;	ret				;
 ;===============================================================|
@@ -690,21 +686,20 @@ I_Com36:				;
 	even				;偶数アドレス配置
 I_Com37:				;
 	push	bx			;
-;アドレスの取得
+
+	;アドレスの取得
 	mov	ah,ds:[di].WTD_WorkAddress
 	call	I_Read8			;
 	mov	bx,ax			;bx←アドレス
 	call	I_Read8			;al←数値
 
-	push	cx
 	mov	cl,al			;
 	mov	al,0FEh			;
 	rol	al,cl			;
-	pop	cx
 
 	and	ds:[bx],al		;ビットリセット
-	pop	bx			;
 
+	pop	bx			;
 	jmp	I_Com3x_Flag		;フラグ変化
 ;	ret				;
 ;===============================================================|
@@ -771,24 +766,22 @@ I_Com3x_Flag:
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com3a:				;
+	push	bx			;
+
 	;読み込み
-	mov	dx,es:[si]		;
-	inc	si			;
-	inc	si			;
+	lodsw	es:[si]
 
 	;カウンタ・読み込み
-	push	bx			;
 	xor	bx,bx			;
 	mov	bl,ds:[di].WTD_LoopCountPointer
-	mov	al,ds:[di + bx].WTD_LoopCount
-	pop	bx			;
 
 	;チェック
-	.if	(al==1)
+	.if	(ds:[di + bx].WTD_LoopCount==1)
 		dec	ds:[di].WTD_LoopCountPointer
-		mov	si,dx		;
+		mov	si,ax		;
 	.endif
 
+	pop	bx			;
 	ret				;終了
 ;===============================================================|
 ;		Loop Jump Flags					|
@@ -797,16 +790,16 @@ I_Com3a:				;
 I_Com3b:				;
 	mov	ax,ds:[di].WTD_FlagControl
 	and	ax,WTD_Ctrl_WorkCy + WTD_Ctrl_WorkZe
-	shr	ax,4			;ah←WTD内部のフラグ
-	call	I_Read8			;al←曲データ中のフラグ
-	mov	dx,es:[si]		;
-	inc	si			;
-	inc	si			;dx←ループ先
+	shr	ax,4			;
+	call	I_Read8			;dh←WTD内部のフラグ
+	mov	dx,ax			;dl←曲データ中のフラグ
+
+	lodsw	es:[si]			;ax←ループ先
 
 	;チェック
-	.if	(al==ah)
+	.if	(dl==dh)
 		dec	ds:[di].WTD_LoopCountPointer
-		mov	si,dx		;ループ抜け
+		mov	si,ax		;ループ抜け
 	.endif
 
 	ret				;
@@ -945,8 +938,8 @@ I_Com44:				;
 I_Com45:				;
 	push	bx			;
 
-	mov	al,es:[si]		;ax←タイプ
-	inc	si			;
+	lodsb	es:[si]
+
 
 	push	ax			;保存
 	xor	ax,ax			;
@@ -1058,9 +1051,7 @@ I_Com4b:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com4c:				;
-	mov	ax,es:[si]		;
-	inc	si			;
-	inc	si			;
+	lodsw	es:[si]
 
 	;無限ループ	（こっちの方が、高頻度）
 	.if	(ax==0)
@@ -1232,11 +1223,9 @@ endif	;--------------------------------
 	even				;偶数アドレス配置
 I_Com58:				;
 	push	ds			;
-	push	cx			;
 
 I_Com58_Step1:				;
-	mov	al,byte ptr es:[si]	;
-	inc	si			;
+	lodsb	es:[si]
 
 ifndef	hyoka
 	call	C_Send			;送信
@@ -1248,7 +1237,6 @@ endif
 	;ランニングステータスの初期化
 	mov	ds:[bp].WTD_WorkAdd_System+WTD_Sys_RunningStatus,0
 
-	pop	cx			;
 	pop	ds			;
 	ret				;
 ;===============================================================|
@@ -1262,15 +1250,16 @@ I_Com59:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com5a:				;
-	push	cx			;
 
-	xor	cx,cx
-	mov	cl,es:[si]		;
-	inc	si			;
+;	xor	cx,cx
+;	mov	cl,es:[si]		;
+;	inc	si			;
+	xor	ax,ax
+	lodsb	es:[si]
+	mov	cx,ax
 
 	.repeat
-		mov	al,byte ptr es:[si]
-		inc	si		;
+		lodsb	es:[si]
 ifndef	hyoka
 		call	C_Send		;送信
 endif
@@ -1279,7 +1268,6 @@ endif
 	;ランニングステータスの初期化
 	mov	ds:[bp].WTD_WorkAdd_System+WTD_Sys_RunningStatus,0
 
-	pop	cx			;
 	ret				;
 ;===============================================================|
 ;		Loop Start					|
@@ -1288,8 +1276,7 @@ endif
 I_Com5b:				;
 
 	;読み込み
-	mov	al,es:[si]		;
-	inc	si			;
+	lodsb	es:[si]
 
 	;設定
 	inc	ds:[di].WTD_LoopCountPointer
@@ -1316,9 +1303,10 @@ I_Com5c:				;
 I_Com5d:				;
 
 	;読み込み
-	mov	dx,es:[si]		;
-	inc	si			;
-	inc	si			;
+;	mov	dx,es:[si]		;
+;	inc	si			;
+;	inc	si			;
+	lodsw	es:[si]
 
 	;カウンタ・ディクリメント
 	push	bx			;
@@ -1329,7 +1317,7 @@ I_Com5d:				;
 	.if	(zero?)
 		dec	ds:[di].WTD_LoopCountPointer
 	.else
-		mov	si,dx		;
+		mov	si,ax		;
 	.endif
 
 	ret				;
@@ -1427,12 +1415,9 @@ I_Com6b:				;
 	even				;偶数アドレス配置
 I_Com6c:				;
 	xor	ax,ax			;
-	mov	al,es:[si]		;
-	inc	si			;
+	lodsb	es:[si]
 	.if	(al==0FFh)
-		mov	ax,es:[si]	;
-		inc	si		;
-		inc	si		;
+		lodsw	es:[si]
 	.endif
 	mov	ds:[di].WTD_LengDefault,ax
 	ret				;
@@ -1441,43 +1426,31 @@ I_Com6c:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com6d:				;
-	push	bp			;
+	push	bx			;
 
-	mov	al,es:[si]		;
-	inc	si			;
-
-;	mov	bp,WTD_BendLFO		;
-;	cmp	al,0			;
-;	jz	I_Com6d_Step		;
-;	mov	bp,WTD_ExprLFO		;
-;	cmp	al,1			;
-;	jz	I_Com6d_Step		;
-;	mov	bp,WTD_PanLFO		;
-;	cmp	al,2			;
-;	jz	I_Com6d_Step		;
-;I_Com6d_Step:				;
+	lodsb	es:[si]
 
 	.if	(al==0)
-		mov	bp,WTD_BendLFO
+		lea	bx,[di + WTD_BendLFO]
 	.elseif	(al==2)
-		mov	bp,WTD_PanLFO
+		lea	bx,[di + WTD_PanLFO]
 	.else	;(al==1)	デフォルトはEPにしておく
-		mov	bp,WTD_ExprLFO
+		lea	bx,[di + WTD_ExprLFO]
 	.endif
 
 	call	I_Read8			;DR
-	mov	ds:[di+bp].WTD_ChLfo_DecayRate,al
+	mov	ds:[bx].WTD_ChLfo_DecayRate,al
 
 	call	I_Read8			;SR
-	mov	ds:[di+bp].WTD_ChLfo_SpeedRate,al
+	mov	ds:[bx].WTD_ChLfo_SpeedRate,al
 
 	call	I_Read16		;Lv
-	mov	ds:[di+bp].WTD_ChLfo_Level,ax
+	mov	ds:[bx].WTD_ChLfo_Level,ax
 
 	call	I_Read8			;Cnt
-	mov	ds:[di+bp].WTD_ChLfo_Count,al
+	mov	ds:[bx].WTD_ChLfo_Count,al
 
-	pop	bp			;
+	pop	bx			;
 	ret				;
 ;===============================================================|
 ;		Noise mode					|
@@ -1590,7 +1563,6 @@ I_Com78:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com79:				;
-	push	cx
 
 	call	I_Read8			;
 	mov	cl,al			;
@@ -1599,7 +1571,6 @@ I_Com79:				;
 	mov	dx,offset CGROUP:I_Table_CtrlChgB
 	call	I_Table_Jump		;
 
-	pop	cx			;
 	ret				;
 ;===============================================================|
 ;		NULL 'z'					|
@@ -1612,8 +1583,7 @@ I_Com7a:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com7b:				;
-	mov	al,es:[si]		;
-	inc	si			;
+	lodsb	es:[si]
 
 	.if	(al!=0)
 		rol	al,1		;

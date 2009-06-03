@@ -120,8 +120,8 @@ C_Send	proc near			;
 	ret				;
 ;----------------------------------------------------------------
 C_Send_0:
-	mov	ax,ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
-	mov	di,ax			;ax←FIFOポインタCnt
+	mov	di,ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
+;	mov	di,ax			;ax←FIFOポインタCnt
 
 	mov	bx,ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
 
@@ -139,8 +139,9 @@ C_Send_1:				;
 	jmp	C_Send_1		;やり直し。
 
 C_Send_3:				;
-	mov	bx,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Offset
-	mov	es,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Segment
+;	mov	bx,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Offset
+;	mov	es,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Segment
+	les	bx,dword ptr ds:[bp].(WTD_WorkAdd_System+WTD_Sys_ComFIFO_Offset)
 	pop	ax			;FIFOバッファに書き込み
 	push	ax			;
 	mov	byte ptr es:[di+bx],al	;
@@ -213,7 +214,7 @@ C_Send_Word	endp			;
 C_Send_Block	proc near	uses ax cx si
 
 C_Send_Block_1:
-	lods	byte ptr es:[si]	;
+	lodsb
 	call	C_Send			;送信
 	loop	C_Send_Block_1		;
 	
@@ -251,8 +252,8 @@ IC_Send	proc	near
 	test	al,COMM_SendEmpty	;送信バッファ空？
 	jz	IC_send_e0		;Ze←'H'
 
-	mov	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr
-	mov	di,ax			;FIFOポインタの取得
+	mov	di,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr
+;	mov	di,ax			;FIFOポインタの取得
 
 	inc	word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr
 	mov	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr
@@ -260,8 +261,8 @@ IC_Send	proc	near
 	jnz	IC_Send_1		;
 	mov	word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr,0
 IC_Send_1:				;
-	mov	bx,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Offset
-	mov	es,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Segment
+	les	bx,dword ptr ds:[bp].(WTD_WorkAdd_System+WTD_Sys_ComFIFO_Offset)
+;	mov	es,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Segment
 	mov	al,byte ptr es:[di+bx]	;
 	out	COMM_DATA,al		;送信
 

@@ -17,14 +17,15 @@
 ;===============================================================|
 ;		デバイスによるルーチンの分岐			|
 ;===============================================================|
+;	●引数							|
+;		ds:bp	ワークベースアドレス		引数	|
+;		ds:bx	共有構造体アドレス		引数	|
+;		ds:di	個別構造体			引数	|
+;		es;si	演奏アドレス			引数	|
+;		dx	ジャンプテーブルのアドレス	引数	|
+;		cx	汎用				(引数)	|
 ;	●レジスタ使用						|
 ;		ax	汎用（主に計算用）			|
-;		ds:bx	共有構造体アドレス		引数	|
-;		cx	汎用					|
-;		dx	ジャンプテーブルのアドレス	引数	|
-;		ds:di	個別構造体			引数	|
-;		ds:bp	ワークベースアドレス		引数	|
-;		es;si	演奏アドレス			引数	|
 ;								|
 ;	ルーチンに渡す引数					|
 ;		cl	汎用（主にカウンタ用）			|
@@ -119,13 +120,20 @@ I_SP_KeyOn:				;
 	;オクターブの書き込み
 	dec	al				;オクターブ補正(Drv値)
 	mov	ds:[di].WTD_OctaveSet,al	;オクターブ書き込み
+
 	;テーブル読み込み（ベンド変換）
-	mov	al,ah				;
-	mov	ah,0				;ax←Key
-	shl	ax,1				;
-	mov	bx,offset CGROUP:I_Frection_Table
-	add	bx,ax				;
-	mov	ax,cs:[bx]			;ax←Pitch Bend
+;	mov	al,ah				;
+;	mov	ah,0				;ax←Key
+;	shl	ax,1				;
+;	mov	bx,offset CGROUP:I_Frection_Table
+;	add	bx,ax				;
+;	mov	ax,cs:[bx]			;ax←Pitch Bend
+
+	xor	bx,bx
+	mov	bl,ah
+	shl	bx,1
+	mov	ax,cs:[bx + CGROUP:I_Frection_Table]
+
 	;ベンドの書き込み
 	mov	ds:[di].WTD_Frection,ax		;Bendとして処理
 	;（ハードウェアにKeyOnは無い。）
@@ -287,15 +295,9 @@ I_SP_Volume	proc	near	uses	ax bx
 		pop	ds				;
 		mov	bx,offset CGROUP:I_Volume_Table	;
 		xchg	al,ah				;
-		xlat
-;		mov	si,ax				;si←左
-;		and	si,00ffh			;
-;		mov	al,cs:[bx + si]			;
+		xlat					;
 		xchg	al,ah				;ah←左のレベル
-		xlat
-;		mov	si,ax				;si←右
-;		and	si,00ffh			;
-;		mov	al,cs:[bx + si]			;al←右のレベル
+		xlat					;al←右のレベル
 		pop	ds				;
 
 	.endif
@@ -336,7 +338,6 @@ I_SP_Volume	proc	near	uses	ax bx
 	or	ch,cl			;
 	mov	al,ch			;al←左右の音量
 
-;	pop	si			;
 	pop	cx			;チャンネル情報を戻す。
 
 	.if	(ds:[di].WTD_ExprPanSet!=al)	;前回と同じだったらいらない。
@@ -437,8 +438,7 @@ I_SP_Voice:				;
 		mov	ds:[di].WTD_Voice,al	;音色番号保存
 		xor	ah,ah			;
 		shl	ax,4			;ax←al×16
-		mov	si,bp			;
-		add	si,WTD_WorkAdd_Wave	;
+		lea	si,[bp + WTD_WorkAdd_Wave]
 		add	si,ax			;ds:si←音色のあるアドレス
 
 		call	SP_Set_Voice		;音色セット

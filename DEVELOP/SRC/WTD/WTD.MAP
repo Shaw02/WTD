@@ -1,6 +1,0 @@
-
- Start  Stop   Length Name                   Class
- 00000H 01CABH 01CACH _TEXT                  CODE
-
- Origin   Group
- 0000:0   CGROUP

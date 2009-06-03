@@ -148,13 +148,14 @@ I_Start_Step1:
 ;---------------------------------------------------------------
 ;ワークエリアアドレスの取得
 
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bp,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
 	WTD_WorkGet	ds,bp			;ワークエリアアドレスの取得
-	mov	bx,bp				;
-	add	bx,WTD_WorkAdd_System		;ds;bx←共通構造体
 
+	lea	bx,[bp + WTD_WorkAdd_System]	;ds;bx←共通構造体
+
+;---------------------------------------------------------------
+;	●レジスタ割り振り
+;		di	PCM Voice制御用構造体 のポインタ
+;		si	*.wav のポインタ
 ;---------------------------------------------------------------
 ;演奏・効果音・PcmVoiceルーチンの呼び出し
 
@@ -171,28 +172,27 @@ I_Start_Step1:
 	jz	I_PcmStep				;
 
 	;レジスタ設定
-	mov	di,bp					;
-	add	di,WTD_WorkAdd_PCM			;di←パート個別構造体
+;	mov	di,bp					;
+;	add	di,WTD_WorkAdd_PCM			;di←パート個別構造体
+	lea	di,[bp + WTD_WorkAdd_PCM]
 
 	;アドレス取得
-	push	es					;レジスタ保存
-	les	si,dword ptr ds:[di].WTD_PcmAddress	;es:si←Play Address
-	mov	dx,es					;dx:si←Play Address
+	push	ds					;レジスタ保存
+	lds	si,dword ptr ds:[di].WTD_PcmAddress	;es:si←Play Address
 	;データ取得
-	mov	al,es:[si]				;(注意：PipeLine)
-	inc	si					;フラグも変化させる
+;	mov	al,ds:[si]				;(注意：PipeLine)
+;	inc	si					;フラグも変化させる
+	lodsb
+	pop	ds					;レジスタ復帰
 	;データ出力
 	out	PCM_Com_VolumeCh2,al			;出力
 
-	;ポインタチェック（セグメント境界？）
-	.if	(zero?)
-		add	dx,1000h			;セグメント増やす
-	.endif
 	;アドレス保存
 	mov	word ptr ds:[di].WTD_PcmAddress+0,si	;アドレス保存
-	mov	word ptr ds:[di].WTD_PcmAddress+2,dx	;(注意：PipeLine)
-	pop	es					;レジスタ復帰
-
+	;ポインタチェック（セグメント境界？）
+	.if	(si==0)
+		add	word ptr ds:[di].WTD_PcmAddress+2,1000h	;(注意：PipeLine)
+	.endif
 
 	;終了？
 	sub	word ptr ds:[di].WTD_PcmSize+0,1	;PcmSize ディクリメント
@@ -259,18 +259,19 @@ I_Start_End:
 ;===============================================================|
 ;		Music Main					|
 ;===============================================================|
+;	●引数							|
+;		ds:bp	ワークベースアドレス			|
+;		ds:bx	共有構造体アドレス			|
 ;	●レジスタ使用						|
-;		ax	汎用(主に計算)				|
-;		ds:bx	共有構造体アドレス	引数		|
-;		cx	汎用(主にカウンタ)			|
-;		dx	汎用(主に計算)				|
-;		ds:di	個別構造体				|
-;		ds:bp	ワークベースアドレス	引数		|
-;		es:si	演奏アドレス				|
+;		ds:di	個別構造体		破壊ok		|
+;	（	es:si	演奏アドレス		破壊ok	）	|
+;		ax	汎用(主に計算)		破壊ok		|
+;		cx	汎用(主にカウンタ)	破壊ok		|
+;		dx	汎用(主に計算)		破壊ok		|
 ;===============================================================|
 	even					;偶数アドレス配置
-I_MusicEffect:					;
-	push	es				;レジスタ保存
+I_MusicEffect	proc	near	uses	es	;
+
 ;---------------------------------------------------------------
 ;演奏ルーチン
 
@@ -278,8 +279,7 @@ I_MusicEffect:					;
 	.if	(ds:[bx].WTD_Sys_Flag&WTD_Sys_Music)
 
 		;レジスタ設定
-		mov	di,bp				;
-		add	di,WTD_WorkAdd_Ch0		;di←パート個別構造体
+		lea	di,[bp + WTD_WorkAdd_Ch0]
 		mov	es,ds:[bx].WTD_Sys_MusicSegment	;es←演奏データセグメント
 
 		;演奏処理ルーチンの呼び出し
@@ -300,8 +300,7 @@ I_MusicEffect:					;
 	.if	(ds:[bx].WTD_Sys_Flag&WTD_Sys_Effect)
 
 		;レジスタ設定
-		mov	di,bp					;
-		add	di,WTD_WorkAdd_Ech0			;di←パート個別構造体
+		lea	di,[bp + WTD_WorkAdd_Ech0]
 		mov	es,ds:[bx].WTD_Sys_EffectSegment	;es←効果音データセグメント
 
 		;演奏処理ルーチンの呼び出し
@@ -363,105 +362,104 @@ I_MusicEffect_PcmCheck_End:			;
 
 ;---------------------------------------------------------------
 ;終わり
-	pop	es				;レジスタ復帰
+
 	ret					;
+I_MusicEffect	endp
 ;===============================================================|
 ;		Music Control Main				|
 ;===============================================================|
-;	●レジスタ使用						|
-;		ax	汎用(主に計算)				|
-;		ds:bx	共有構造体アドレス	引数		|
-;		cx	汎用(主にカウンタ)			|
-;		dx	汎用(主に計算)				|
-;		ds:di	個別構造体		引数		|
+;	●引数							|
 ;		ds:bp	ワークベースアドレス	引数		|
+;		ds:bx	共有構造体アドレス	引数		|
+;		ds:di	個別構造体		引数		|
+;	●レジスタ使用						|
 ;		es:si	演奏アドレス		引数		|
+;		cx	何パート目？		破壊NG		|
+;		ax	ゲートタイム計算用	破壊ok		|
+;		dx	汎用(主に計算)		破壊ok		|
 ;===============================================================|
 	even				;偶数アドレス配置
-I_Play:					;
-	pusha				;
-
+I_Play	proc	near	uses	cx	;
 
 	;演奏チェック
 	.if	!(ds:[di].WTD_FlagControl&WTD_Ctrl_PlayEnd)
 
-
-	;音長カウンター・ディクリメント
-	dec	ds:[di].WTD_LengCounter
-	mov	ax,ds:[di].WTD_Leng			;
-	sub	ax,ds:[di].WTD_LengCounter		;ax←経過時間
-
-
-	;音長による、キーオンディレイ
-	.if	(ax==ds:[di].WTD_KeyOnDelay)		;'k'コマンドの判定
-		call	I_Play_KeyOn			;
-	.endif
+		;音長カウンター・ディクリメント
+		dec	ds:[di].WTD_LengCounter
+		mov	ax,ds:[di].WTD_Leng			;
+		sub	ax,ds:[di].WTD_LengCounter		;ax←経過時間
 
 
-	;音長による、音色制御
-	.if	( !(ds:[di].WTD_Program2nd&80h) && (ds:[di].WTD_Key!=0ffh) && (ax==ds:[di].WTD_ProgramRate) )
-		push	ax				;
-		mov	al,ds:[di].WTD_Program2nd	;
-		and	al,07fh				;上位bitのマスク
-		mov	dx,offset CGROUP:I_Table_Voice	;
-		call	I_Table_Jump			;
-		pop	ax				;
-	.endif
+		;音長による、キーオンディレイ
+		.if	(ax==ds:[di].WTD_KeyOnDelay)		;'k'コマンドの判定
+			call	I_Play_KeyOn			;
+		.endif
 
 
-	;音長による、ゲートタイム制御
-	.if	(ax!=ds:[di].WTD_GateTimeStepFirst)	;'u'コマンドでkeyoffするか？
+		;音長による、音色制御
+		.if	( !(ds:[di].WTD_Program2nd&80h) && (ds:[di].WTD_Key!=0ffh) && (ax==ds:[di].WTD_ProgramRate) )
+			push	ax				;
+			mov	al,ds:[di].WTD_Program2nd	;
+			and	al,07fh				;上位bitのマスク
+			mov	dx,offset CGROUP:I_Table_Voice	;
+			call	I_Table_Jump			;
+			pop	ax				;
+		.endif
 
-		mov	ax,ds:[di].WTD_Leng		;'Q','U','q'コマンドの判定
-		mov	ch,ds:[di].WTD_GateTime8	;ch←GateTime8
-		rol	ch,1				;
-		shr	ch,1				;Bit 7 Reset & Bit 7 -> Cy Flag
-		.if	(!Carry?)
-			mov	dx,8			;'Q'コマンド
-			sub	dl,ch			;dx = 8 － ch
-			mul	dx			;dx:ax = ax × dx
-			shr	dx,1			;
-			shr	ax,1			;
-			shr	dx,1			;
-			shr	ax,1			;
-			shr	dx,1			;
-			shr	ax,1			;ax = dx:ax ÷ cl
+
+		;音長による、ゲートタイム制御
+		.if	(ax!=ds:[di].WTD_GateTimeStepFirst)	;'u'コマンドでkeyoffするか？
+
+			mov	ax,ds:[di].WTD_Leng		;'Q','U','q'コマンドの判定
+			mov	ch,ds:[di].WTD_GateTime8	;ch←GateTime8
+			rol	ch,1				;
+			shr	ch,1				;Bit 7 Reset & Bit 7 -> Cy Flag
+			.if	(!Carry?)
+				mov	dx,8			;'Q'コマンド
+				sub	dl,ch			;dx = 8 － ch
+				mul	dx			;dx:ax = ax × dx
+				shr	dx,1			;
+				shr	ax,1			;
+				shr	dx,1			;
+				shr	ax,1			;
+				shr	dx,1			;
+				shr	ax,1			;ax = dx:ax ÷ cl
+			.else
+				mov	cl,100			;cl = 100
+				mov	dx,100			;dx = 100
+				sub	dl,ch			;dx = dx － ch
+				mul	dx			;dx:ax = ax × dx
+				xor	ch,ch			;
+				div	cx			;ax = dx:ax ÷ cl
+			.endif
+
+
+			add	ax,ds:[di].WTD_GateTimeStepLast	;ax = ax + WTD_GateTimeStepLast
+			.if	(Carry?)			;オーバーフローしたら、
+				mov	ax,0ffffh		;最大値に修正。
+			.endif					;
+			.if	(ax==ds:[di].WTD_LengCounter)	;
+				call	I_Play_KeyOff		;
+			.endif
+
 		.else
-			mov	cl,100			;cl = 100
-			mov	dx,100			;dx = 100
-			sub	dl,ch			;dx = dx － ch
-			mul	dx			;dx:ax = ax × dx
-			xor	ch,ch			;
-			div	cx			;ax = dx:ax ÷ cl
+			call	I_Play_KeyOff			;
+
 		.endif
 
-		add	ax,ds:[di].WTD_GateTimeStepLast	;ax = ax + WTD_GateTimeStepLast
-		.if	(Carry?)			;オーバーフローしたら、
-			mov	ax,0ffffh		;最大値に修正。
-		.endif					;
-		.if	(ax==ds:[di].WTD_LengCounter)	;
-			call	I_Play_KeyOff		;
+
+		;音長カウンタ０ならば、コマンド処理
+		.if	(ds:[di].WTD_LengCounter==0)		;音長カウンタ＝０？
+
+			mov	si,ds:[di].WTD_Address		;es:si←Play Address
+			call	I_Play_Loop			;制御ルーチンへ。
+			mov	ds:[di].WTD_Address,si		;
+
+	;		;演奏終了？　＆　KeyOnDelayは０？
+			.if	(!(ds:[di].WTD_FlagControl&WTD_Ctrl_PlayEnd) && (ds:[di].WTD_KeyOnDelay==0))
+				call	I_Play_KeyOn		;であれば、KeyOn
+			.endif
 		.endif
-
-	.else
-		call	I_Play_KeyOff			;
-
-	.endif
-
-
-	;音長カウンタ０ならば、コマンド処理
-	.if	(ds:[di].WTD_LengCounter==0)		;音長カウンタ＝０？
-
-		mov	si,ds:[di].WTD_Address		;es:si←Play Address
-		call	I_Play_Loop			;制御ルーチンへ。
-		mov	ds:[di].WTD_Address,si		;
-
-;		;演奏終了？　＆　KeyOnDelayは０？
-		.if	(!(ds:[di].WTD_FlagControl&WTD_Ctrl_PlayEnd) && (ds:[di].WTD_KeyOnDelay==0))
-			call	I_Play_KeyOn		;であれば、KeyOn
-		.endif
-	.endif
-
 
 
 	.endif
@@ -474,8 +472,8 @@ I_Play:					;
 	.endif
 
 
-	popa				;
 	ret				;
+I_Play	endp
 ;****************************************************************
 ;*								*
 ;*			割り込みルーチン			*
@@ -483,14 +481,24 @@ I_Play:					;
 ;*				ループ				*
 ;*								*
 ;****************************************************************
+;===============================================================|
+;	●引数							|
+;		ds:bp	ワークベースアドレス	引数		|
+;		ds:bx	共有構造体アドレス	引数		|
+;		ds:di	個別構造体		引数		|
+;		es:si	演奏アドレス		引数		|
+;	●レジスタ使用						|
+;		cx	何パート目？		破壊ok		|
+;		ax	ゲートタイム計算用	破壊ok		|
+;		dx	汎用(主に計算)		破壊ok		|
+;===============================================================|
 	even				;偶数アドレス配置
-I_Play_Loop:				;
+I_Play_Loop	proc	near		;
 
 	.while	( !(ds:[di].WTD_FlagControl&WTD_Ctrl_PlayEnd) && (ds:[di].WTD_LengCounter==0) )
 
 		;演奏データ読み込み
-		mov	al,es:[si]		;
-		inc	si			;
+		lodsb	es:[si]
 
 		;コマンドタイプチェック
 		rol	al,1			;
@@ -506,6 +514,7 @@ I_Play_Loop:				;
 	.endw
 
 	ret				;
+I_Play_Loop	endp
 ;****************************************************************
 ;*								*
 ;*			割り込みルーチン			*
@@ -513,280 +522,254 @@ I_Play_Loop:				;
 ;*				KeyOn,KeyOff制御		*
 ;*								*
 ;****************************************************************
-;*	●レジスタ使用						*
-;*		ax	汎用(主に計算)				*
-;*		ds:bx	共有構造体アドレス	引数		*
-;*		cx	汎用(主にカウンタ)			*
-;*		dx	汎用(主に計算)				*
-;*		ds:di	個別構造体		引数		*
+;*	●引数							*
 ;*		ds:bp	ワークベースアドレス	引数		*
+;*		ds:bx	共有構造体アドレス	引数		*
+;*		ds:di	個別構造体		引数		*
 ;*		es:si	演奏アドレス		引数		*
+;*	●レジスタ使用						*
+;*		ax	汎用(主に計算)		破壊NG		*
+;*		cx	制御Flag		破壊NG		*
+;*		dx	LFO/EMB制御構造体	破壊ok		*
 ;****************************************************************
 ;===============================================================|
 ;			KeyOn (Hardware,Software)		|
 ;===============================================================|
 	even				;偶数アドレス配置
-I_Play_KeyOn:				;
-	cmp	ds:[di].WTD_Key,0ffh	;休符？
-	jnz	I_Play_KeyOn_Start	;
-	jmp	I_Play_KeyOn_End	;
+I_Play_KeyOn	proc	near	uses	ax cx
 
-	even				;偶数アドレス配置
-I_Play_KeyOn_Start:			;
-	pusha				;レジスタ保存
+	;休符ではない ＆＆ 前回タイではない
+	.if	((ds:[di].WTD_Key!=0ffh) && !(ds:[di].WTD_FlagTai & 02h))
 
-	;前回の音符は、タイ？
-	test	ds:[di].WTD_FlagTai,02h	;前回タイあったか？
-	jnz	I_Play_KeyOn_StepEnd	;
+		;音色制御
+		mov	al,ds:[di].WTD_Program2nd	;'@'コマンド必要性の確認
+		and	al,ds:[di].WTD_Program3rd	;第2,3パラメータの指定が無かったら、処理は無し。
+		.if	!(al&080h)
+			mov	al,ds:[di].WTD_Program1st	;
+			and	al,07fh				;上位bitのマスク
+			mov	dx,offset CGROUP:I_Table_Voice	;
+			call	I_Table_Jump			;
+		.endif
 
+		;音量Embは処理必要。
+		.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_ExprEmb)
+			mov	cx,WTD_Ctrl_EmbVol		;
+			mov	dx,WTD_ExprEmb			;
+			call	I_Play_KeyOn_Emb		;
+		.else
+			mov	ds:[di].WTD_ExprEmbLevelSet,0ffh
+		.endif
 
-	;音色制御
-	mov	al,ds:[di].WTD_Program2nd	;'@'コマンド必要性の確認
-	and	al,ds:[di].WTD_Program3rd	;第2,3パラメータの指定が無かったら、処理は無し。
-	.if	!(al&080h)
-		mov	al,ds:[di].WTD_Program1st	;
-		and	al,07fh				;上位bitのマスク
-		mov	dx,offset CGROUP:I_Table_Voice	;
-		call	I_Table_Jump			;
-	.endif
+	;	.if	(ds:[di].WTD_FlagControl&0037h)	;音量Emb以外の確認。ソフトウェア処理がなかったら飛ばす。
 
-	;音量Embは処理必要。
-	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_ExprEmb)
-		mov	cx,WTD_Ctrl_EmbVol		;
-		mov	dx,WTD_ExprEmb			;
-		call	I_Play_KeyOn_Emb		;
-	.else
-		mov	ds:[di].WTD_ExprEmbLevelSet,0ffh
-	.endif
+		;音程Emb
+		.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_BendEmb)
+			mov	cx,WTD_Ctrl_EmbFreq		;
+			mov	dx,WTD_BendEmb			;
+			call	I_Play_KeyOn_Emb		;
+		.endif
 
-;	.if	(ds:[di].WTD_FlagControl&0037h)	;音量Emb以外の確認。ソフトウェア処理がなかったら飛ばす。
+		;パンEmb
+		.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_PanEmb)
+			mov	cx,WTD_Ctrl_EmbPan		;
+			mov	dx,WTD_PanEmb			;
+			call	I_Play_KeyOn_Emb		;
+		.endif
 
-	;音程Emb
-	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_BendEmb)
-		mov	cx,WTD_Ctrl_EmbFreq		;
-		mov	dx,WTD_BendEmb			;
-		call	I_Play_KeyOn_Emb		;
-	.endif
+		;音量LFO
+		.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_ExprLFO)
+			mov	dx,WTD_ExprLFO			;
+			call	I_Play_KeyOn_LFO		;
+		.endif
 
-	;パンEmb
-	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_PanEmb)
-		mov	cx,WTD_Ctrl_EmbPan		;
-		mov	dx,WTD_PanEmb			;
-		call	I_Play_KeyOn_Emb		;
-	.endif
+		;音程LFO
+		.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_BendLfo)
+			mov	dx,WTD_BendLFO			;
+			call	I_Play_KeyOn_LFO		;
+		.endif
 
-	;音量LFO
-	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_ExprLFO)
-		mov	dx,WTD_ExprLFO			;
-		call	I_Play_KeyOn_LFO		;
-	.endif
+		;パンLFO
+		.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_PanLFO)
+			mov	dx,WTD_PanLFO			;
+			call	I_Play_KeyOn_LFO		;
+		.endif
 
-	;音程LFO
-	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_BendLfo)
-		mov	dx,WTD_BendLFO			;
-		call	I_Play_KeyOn_LFO		;
-	.endif
-
-	;パンLFO
-	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_PanLFO)
-		mov	dx,WTD_PanLFO			;
-		call	I_Play_KeyOn_LFO		;
-	.endif
-
-;	.endif
+;		.endif
 
 ifndef	hyoka	;--------------------------------廉価版は無し
-	;モジュレーション
-	xor	ax,ax					;
-	.if	(ds:[di].WTD_ModLevelSet!=al)		;
-		mov	ds:[di].WTD_ModLevelSet,al	;
-		mov	cl,MIDI_Ctrl_Mod		;
-		mov	dx,offset CGROUP:I_Table_CtrlChgB
-		call	I_Table_Jump			;モジュレーションを０にする。
-	.endif
+		;モジュレーション
+		xor	ax,ax					;
+		.if	(ds:[di].WTD_ModLevelSet!=al)		;
+			mov	ds:[di].WTD_ModLevelSet,al	;
+			mov	cl,MIDI_Ctrl_Mod		;
+			mov	dx,offset CGROUP:I_Table_CtrlChgB
+			call	I_Table_Jump			;モジュレーションを０にする。
+		.endif
 endif	;----------------------------------------
 
-I_Play_KeyOn_StepEnd:			;
-	popa				;レジスタ復帰
-
-I_Play_KeyOn_End:			;
+	.endif
 	ret				;
+I_Play_KeyOn	endp
 ;===============================================================|
 ;			KeyOff (Hardware,Software)		|
 ;===============================================================|
 	even				;偶数アドレス配置
-I_Play_KeyOff:
-	test	ds:[di].WTD_FlagTai,01h	;タイ？
-	jnz	I_Play_KeyOff_End	;
+I_Play_KeyOff	proc	near	uses	ax cx
 
-I_Play_KeyOff_Start:			;
-	pusha				;レジスタ保存
+	.if	!(ds:[di].WTD_FlagTai & 01h)
 
-	;ハードウェアをKeyOff
-	mov	dx,offset CGROUP:I_Table_KeyOff	;
-	call	I_Table_Jump			;KeyOff
+		;ハードウェアをKeyOff
+		mov	dx,offset CGROUP:I_Table_KeyOff	;
+		call	I_Table_Jump			;KeyOff
 
-	;音色制御
-	.if	!(ds:[di].WTD_Program3rd&80h)	;'@'コマンド	必要性の確認
-		mov	al,ds:[di].WTD_Program3rd	;
-		and	al,07fh				;上位bitのマスク
-		mov	dx,offset CGROUP:I_Table_Voice	;
-		call	I_Table_Jump			;
-	.endif
-
-	;音量Emb
-	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_ExprEmb)
-		mov	cx,WTD_Ctrl_EmbVol		;
-		mov	dx,WTD_ExprEmb			;
-		call	I_Play_KeyOff_Emb		;
-	.else
-		.if	(ds:[di].WTD_Channel&80h)	;MIDIパートの場合は操作しない。
-			mov	ds:[di].WTD_ExprEmbLevelSet,000h
+		;音色制御
+		.if	!(ds:[di].WTD_Program3rd&80h)	;'@'コマンド	必要性の確認
+			mov	al,ds:[di].WTD_Program3rd	;
+			and	al,07fh				;上位bitのマスク
+			mov	dx,offset CGROUP:I_Table_Voice	;
+			call	I_Table_Jump			;
 		.endif
+
+		;音量Emb
+		.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_ExprEmb)
+			mov	cx,WTD_Ctrl_EmbVol		;
+			mov	dx,WTD_ExprEmb			;
+			call	I_Play_KeyOff_Emb		;
+		.else
+			.if	(ds:[di].WTD_Channel&80h)	;MIDIパートの場合は操作しない。
+				mov	ds:[di].WTD_ExprEmbLevelSet,000h
+			.endif
+		.endif
+
+		;音程Emb
+		.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_BendEmb)
+			mov	cx,WTD_Ctrl_EmbFreq		;
+			mov	dx,WTD_BendEmb			;
+			call	I_Play_KeyOff_Emb		;
+		.endif
+
+		;パンEmb
+		.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_PanEmb)
+			mov	cx,WTD_Ctrl_EmbPan		;
+			mov	dx,WTD_PanEmb			;
+			call	I_Play_KeyOff_Emb		;
+		.endif
+
 	.endif
-
-	;音程Emb
-	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_BendEmb)
-		mov	cx,WTD_Ctrl_EmbFreq		;
-		mov	dx,WTD_BendEmb			;
-		call	I_Play_KeyOff_Emb		;
-	.endif
-
-	;パンEmb
-	.if	(ds:[di].WTD_FlagControl&WTD_Ctrl_PanEmb)
-		mov	cx,WTD_Ctrl_EmbPan		;
-		mov	dx,WTD_PanEmb			;
-		call	I_Play_KeyOff_Emb		;
-	.endif
-
-I_Play_KeyOff_StepEnd:				;
-	popa					;レジスタ復帰
-
-I_Play_KeyOff_End:			;
 	ret				;
+I_Play_KeyOff	endp
 ;****************************************************************
 ;*								*
 ;*			割り込みルーチン			*
 ;*				演奏・効果音制御部		*
 ;*				音程・音量制御			*
 ;****************************************************************
-;*	●レジスタ使用						*
-;*		ax	汎用(主に計算)				*
-;*		ds:bx	共有構造体アドレス	引数		*
-;*		cx	汎用					*
-;*		dx	ワークアドレス先頭(個別構造体)		*
-;*		ds:di	個別構造体		引数		*
+;*	●引数							*
 ;*		ds:bp	ワークベースアドレス	引数		*
+;*		ds:bx	共有構造体アドレス	引数		*
+;*		ds:di	個別構造体		引数		*
 ;*		es:si	演奏アドレス		引数		*
+;*	●レジスタ使用						*
+;*		ax	汎用(主に計算)		破壊ok		*
+;*		cx	汎用			破壊ok		*
+;*		dx	汎用			破壊ok		*
 ;****************************************************************
 ;===============================================================|
 ;			音程制御 (Detune,LFO,Emb合成)		|
 ;===============================================================|
 	even				;偶数アドレス配置
-I_Play_Frection:			;
-	pusha				;
+I_Play_Frection	proc	near		;
 
-;モジュレーション制御(MIDI)
 ifndef	hyoka	;--------------------------------廉価版は無し
+	;モジュレーション制御(MIDI)
 	mov	ax,ds:[di].WTD_Leng		;モジュレーション
 	sub	ax,ds:[di].WTD_LengCounter	;
-	cmp	ax,ds:[di].WTD_ModDecay		;
-	jnz	I_Play_Frection_Step4		;
-	mov	al,ds:[di].WTD_ModLevel		;
-;	cmp	ds:[di].WTD_ModLevelSet,al	;
-;	jz	I_Play_Frection_Step4		;同じではないでしょう。
-	mov	ds:[di].WTD_ModLevelSet,al	;
-	mov	cl,MIDI_Ctrl_Mod		;
-	mov	dx,offset CGROUP:I_Table_CtrlChgB
-	call	I_Table_Jump			;モジュレーションをかける。
+	.if	(ax==ds:[di].WTD_ModDecay)
+	  mov	al,ds:[di].WTD_ModLevel		;
+	  mov	ds:[di].WTD_ModLevelSet,al	;
+	  mov	cl,MIDI_Ctrl_Mod		;
+	  mov	dx,offset CGROUP:I_Table_CtrlChgB
+	  call	I_Table_Jump			;モジュレーションをかける。
+	.endif
 endif	;----------------------------------------
-I_Play_Frection_Step4:				;
 
 
-;音程読み込み
+	;音程読み込み
 	mov	ax,ds:[di].WTD_Bend	;
 
-;ディチューンの加算
+	;ディチューンの加算
 	add	ax,ds:[di].WTD_BendDetune
 
-;音程LFO処理
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_BendLFO
-	jz	I_Play_Frection_Step1	;
-	mov	dx,WTD_BendLFO		;
-	call	I_Play_LFO		;
-	add	ax,dx			;
-I_Play_Frection_Step1:			;
+	;音程LFO処理
+	.if	(ds:[di].WTD_FlagControl & WTD_Ctrl_BendLFO)
+		mov	dx,WTD_BendLFO		;
+		call	I_Play_LFO		;
+		add	ax,dx			;
+	.endif
 
-;音量Emb処理
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_BendEmb
-	jz	I_Play_Frection_Step2	;
-	mov	cx,WTD_Ctrl_EmbFreq	;
-	mov	dx,WTD_BendEmb		;
-	call	I_Play_Emb		;
-	sub	dl,80h			
-	jnc	I_Play_Frection_Step3	;
-	mov	dh,0ffh			;dx←dl(符号付)
-I_Play_Frection_Step3:			;
-	shl	dx,6			;×2^6
-	add	ax,dx			;加算
-I_Play_Frection_Step2:			;
+	;音量Emb処理
+	.if	(ds:[di].WTD_FlagControl & WTD_Ctrl_BendEmb)
+		mov	cx,WTD_Ctrl_EmbFreq	;
+		mov	dx,WTD_BendEmb		;
+		call	I_Play_Emb		;
+		sub	dl,80h			
+		.if	(carry?)
+		  mov	dh,0ffh			;dx←dl(符号付)
+		.endif
+		shl	dx,6			;×2^6
+		add	ax,dx			;加算
+	.endif
 
-;音程の出力
+	;音程の出力
 	mov	dx,offset CGROUP:I_Table_Frection
 	call	I_Table_Jump		;音程セット
 
-	popa				;
 	ret				;
+I_Play_Frection	endp
 ;===============================================================|
 ;			音量制御 (Detune,LFO,Emb合成)		|
 ;===============================================================|
 	even				;偶数アドレス配置
-I_Play_Volume:				;
-	pusha				;
+I_Play_Volume	proc	near		;
 
-;音量読み込み＆14bitに変換
+	;音量読み込み＆14bitに変換
 	xor	ax,ax			;
 	mov	al,ds:[di].WTD_Expr	;
 	inc	ax			;
 	shl	ax,7			;128倍にする。
 	dec	ax			;（Range:0～16383）
 
-;ディチューンの加算
+	;ディチューンの加算
 	add	ax,ds:[di].WTD_ExprDetune
 
-;音量LFO処理
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_ExprLFO
-	jz	I_Play_Volume_Step1	;
-	mov	dx,WTD_ExprLFO		;
-	call	I_Play_LFO		;
-	add	ax,dx			;
-I_Play_Volume_Step1:			;
+	;音量LFO処理
+	.if	(ds:[di].WTD_FlagControl & WTD_Ctrl_ExprLFO)
+		mov	dx,WTD_ExprLFO		;
+		call	I_Play_LFO		;
+		add	ax,dx			;
+	.endif
 
-;音量Emb処理
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_ExprEmb
-	jz	I_Play_Volume_Step2	;
-	mov	cx,WTD_Ctrl_EmbVol	;
-	mov	dx,WTD_ExprEmb		;
-	call	I_Play_Emb		;
-;	mov	ds:[di].WTD_ExprEmbLevelSet,dl	;エンベロープ値
-I_Play_Volume_Step2:			;
+	;音量Emb処理
+	.if	(ds:[di].WTD_FlagControl & WTD_Ctrl_ExprEmb)
+		mov	cx,WTD_Ctrl_EmbVol	;
+		mov	dx,WTD_ExprEmb		;
+		call	I_Play_Emb		;
+;		mov	ds:[di].WTD_ExprEmbLevelSet,dl	;エンベロープ値
+	.endif
 
-;音量を、7bitに補正
+	;音量を、7bitに補正
 	inc	ax			;
 	shr	ax,7			;ax←{(ax+1)÷128}-1
 	dec	ax			;（Range:0～127）
-	test	ah,ah			;
-	jnz	I_Play_Volume_Step4	;
-	test	al,080h			;
-	jz	I_Play_Volume_Step5	;
-I_Play_Volume_Step3:			;if (128=>ax>255){
-	mov	al,07fh			;	al = 0x7F;
-	jmp	I_Play_Volume_Step5	;}
-I_Play_Volume_Step4:			;if (ax>255){
-	mov	al,000h			;	al = 0x00;
-I_Play_Volume_Step5:			;}
+	.if	(ah==0)
+		.if	(al>=80h)
+		  mov	ax,07fh		;if (128=>ax>255){ax = 0x7F;};
+		.endif
+	.else
+		xor	ax,ax		;ax = 0x00;
+	.endif
 
-;エンベロープ音量の合成
+	;エンベロープ音量の合成
 	xor	cx,cx			;
 	mov	cl,al			;
 	inc	cx				;cx←音量+1
@@ -798,20 +781,21 @@ I_Play_Volume_Step5:			;}
 	shl	ax,1			;al←((Vol.+1)×(SoftVol.+1)-1)／128
 	mov	al,ah			;(Range:0～255)
 
-;ソフトウェア音量の合成
+	;ソフトウェア音量の合成
 	xor	cx,cx			;
 	mov	cl,al			;
 	inc	cx			;cx←音量+1
 	xor	ax,ax			;ax←0
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
-	jnz	I_Volume_SoftEffect		;効果音？
-	mov	al,ds:[bx].WTD_Sys_VolumeMusic	;ax←音楽音量
-	jmp	I_Volume_SoftEnd		;
-I_Volume_SoftEffect:				;
-	mov	al,ds:[bx].WTD_Sys_VolumeEffect	;ax←効果音音量
-I_Volume_SoftEnd:				;
+	.if	(ds:[di].WTD_FlagControl & WTD_Ctrl_Effect)
+	  mov	al,ds:[bx].WTD_Sys_VolumeEffect	;ax←効果音音量
+	.else
+	  mov	al,ds:[bx].WTD_Sys_VolumeMusic	;ax←音楽音量
+	.endif
+
 
 ;	mov	bx,offset CGROUP:I_Volume_Table	;log演算
+;	xlat
+;	xor	ah,ah
 	mov	si,ax			;
 	and	si,00ffh		;
 	mov	al,byte ptr cs:[CGROUP:I_Volume_Table + si]
@@ -822,82 +806,77 @@ I_Volume_SoftEnd:				;
 	mov	al,ah			;(Range:0～255)
 	shr	al,1			;al÷2 (Range:0～127)
 
-;音量の出力
+	;音量の出力
 	mov	dx,offset CGROUP:I_Table_Volume
 	call	I_Table_Jump		;音量セット
 
-	popa				;
 	ret				;
+I_Play_Volume	endp
 ;===============================================================|
 ;			パンポット制御 (LFO,Emb合成)		|
 ;===============================================================|
 	even				;偶数アドレス配置
-I_Play_Pan:				;
-	pusha				;
+I_Play_Pan	proc	near		;
 
-;パンポット読み込み
+	;パンポット読み込み
 	mov	al,ds:[di].WTD_Pan	;
 	and	ax,0007fh		;
 
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_PanLFO + WTD_Ctrl_PanEmb
-	jz	I_Play_Pan_Output	;ソフトウェア処理がなかったら飛ばす。
+	;ソフトウェア処理がなかったら飛ばす。
+      .if	(ds:[di].WTD_FlagControl & (WTD_Ctrl_PanLFO + WTD_Ctrl_PanEmb))
 
-;128倍にする。
+	;128倍にする。
 	inc	ax			;
 	shl	ax,7			;
 	dec	ax			;（Range:0～16383）
 
-;パンポットLFO処理
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_PanLFO
-	jz	I_Play_Pan_Step1	;
-	mov	dx,WTD_PanLFO		;
-	call	I_Play_LFO		;
-	add	ax,dx			;
-I_Play_Pan_Step1:			;
+	;パンポットLFO処理
+	.if	(ds:[di].WTD_FlagControl & WTD_Ctrl_PanLFO)
+		mov	dx,WTD_PanLFO		;
+		call	I_Play_LFO		;
+		add	ax,dx			;
+	.endif
 
-;パンポットEmb処理
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_PanEmb
-	jz	I_Play_Pan_Step2	;
-	mov	cx,WTD_Ctrl_EmbPan	;
-	mov	dx,WTD_PanEmb		;
-	call	I_Play_Emb		;
-	sub	dl,80h			;
-	jnc	I_Play_Pan_Step3	;
-	mov	dh,0ffh			;dx←dl(符号付)
-I_Play_Pan_Step3:			;
-	shl	dx,6			;×2^6
-	add	ax,dx			;加算
-I_Play_Pan_Step2:			;
+	;パンポットEmb処理
+	.if	(ds:[di].WTD_FlagControl & WTD_Ctrl_PanEmb)
+		mov	cx,WTD_Ctrl_EmbPan	;
+		mov	dx,WTD_PanEmb		;
+		call	I_Play_Emb		;
+		sub	dl,80h			;
+		.if	(carry?)
+		  mov	dh,0ffh			;dx←dl(符号付)
+		.endif
+		shl	dx,6			;×2^6
+		add	ax,dx			;加算
+	.endif
 
-;パンポットを、7bitに補正
+	;パンポットを、7bitに補正
 	inc	ax			;
 	shr	ax,7			;ax←{(ax+1)÷128}-1
 	dec	ax			;（Range:0～127）
-	test	ah,ah			;
-	jnz	I_Play_Pan_Step5	;
-	test	al,080h			;
-	jz	I_Play_Pan_Step6	;
-I_Play_Pan_Step4:			;if (128=>ax>255){
-	mov	al,07fh			;	al = 0x7F;
-	jmp	I_Play_Pan_Step6	;}
-I_Play_Pan_Step5:			;if (ax>255){
-	mov	al,000h			;	al = 0x00;
-I_Play_Pan_Step6:			;}
 
-;パンポットの出力
-I_Play_Pan_Output:
-	cmp	ds:[di].WTD_PanSet,al	;同じならば、要らない。
-	jz	I_Play_Pan_End		;
-	mov	ds:[di].WTD_PanSet,al	;書き込み
+	.if	(ah==0)
+		.if	(al>=80h)
+		  mov	ax,07fh		;if (128=>ax>255){ax = 0x7F;};
+		.endif
+	.else
+		xor	ax,ax		;ax = 0x00;
+	.endif
+
+      .endif
+
+	;パンポットの出力
+	.if	(ds:[di].WTD_PanSet!=al)
+	  mov	ds:[di].WTD_PanSet,al	;書き込み
 ifndef	hyoka	;------------------------廉価版は無し
-	mov	cl,MIDI_Ctrl_Pan	;
-	mov	dx,offset CGROUP:I_Table_CtrlChgB
-	call	I_Table_Jump		;パンポットセット
+	  mov	cl,MIDI_Ctrl_Pan	;
+	  mov	dx,offset CGROUP:I_Table_CtrlChgB
+	  call	I_Table_Jump		;パンポットセット
 endif	;--------------------------------
+	.endif
 
-I_Play_Pan_End:
-	popa				;
 	ret				;
+I_Play_Pan	endp
 ;****************************************************************
 ;*								*
 ;*			割り込みルーチン			*
@@ -906,14 +885,15 @@ I_Play_Pan_End:
 ;*				音程、音量で同一のルーチン	*
 ;*								*
 ;****************************************************************
-;*	●レジスタ使用						*
-;*		ax	汎用(主に計算)				*
-;*		ds:bx	共有構造体アドレス	引数		*
-;*		cx	汎用(主にカウンタ)			*
-;*		dx	ワークアドレス先頭(個別構造体)		*
-;*		ds:di	個別構造体		引数		*
+;*	●引数							*
 ;*		ds:bp	ワークベースアドレス	引数		*
+;*		ds:bx	共有構造体アドレス	引数		*
+;*		ds:di	個別構造体		引数		*
 ;*		es:si	演奏アドレス		引数		*
+;*		dx	ワークアドレス先頭	返り値になる	*
+;*		cx	制御Flag		破壊ok		*
+;*	●レジスタ使用						*
+;*		ax	汎用(主に計算)		破壊NG		*
 ;*	●返り値						*
 ;*		dx	変位(レベル)				*
 ;****************************************************************
@@ -921,241 +901,203 @@ I_Play_Pan_End:
 ;			LFO処理	KeyOn				|
 ;===============================================================|
 	even				;偶数アドレス配置
-I_Play_KeyOn_LFO:				;
-	push	ax				;
-	push	bp				;レジスタ保存
+I_Play_KeyOn_LFO	proc	near	uses	ax di
 
-	mov	bp,dx					;
+;	mov	bp,dx					;
+	add	di,dx
 
 	;カウンター(Rate)の初期化
-	mov	ah,ds:[di + bp].WTD_ChLfo_DecayRate	;DR
-	add	ah,ds:[di + bp].WTD_ChLfo_SpeedRate	;SR
-	mov	ds:[di + bp].WTD_ChLfo_RateCounter,ah	;
+	mov	ah,ds:[di].WTD_ChLfo_DecayRate		;DR
+	add	ah,ds:[di].WTD_ChLfo_SpeedRate		;SR
+	mov	ds:[di].WTD_ChLfo_RateCounter,ah	;
 
 	;カウンター(Count)の初期化
-	mov	ah,ds:[di + bp].WTD_ChLfo_Count		;
-	shr	ah,1					;ah = ah / 2
-	mov	ds:[di + bp].WTD_ChLfo_CountCounter,ah	;
+	mov	ah,ds:[di].WTD_ChLfo_Count		;
+;	shr	ah,1					;ah = ah / 2
+	mov	ds:[di].WTD_ChLfo_CountCounter,ah	;
 
 	;レベルの初期化
 	xor	ax,ax					;
-	mov	ds:[di + bp].WTD_ChLfo_LevelSet,ax	;
+	mov	ds:[di].WTD_ChLfo_LevelSet,ax		;
 
-	pop	bp					;レジスタ復帰
-	pop	ax					;
 	ret						;
+I_Play_KeyOn_LFO	endp
 ;===============================================================|
 ;			Emb処理	KeyOn				|
 ;===============================================================|
 	even				;偶数アドレス配置
-I_Play_KeyOn_Emb:				;
-	pusha					;
+I_Play_KeyOn_Emb	proc	near	uses	ax di si
 
-	xchg	bp,dx				;
+	lea	si,[di]
+	add	di,dx
 
-	mov	al,ds:[di + bp].WTD_ChEmb_Address	;
-	and	al,0f0h					;
-	mov	ds:[di + bp].WTD_ChEmb_Address,al	;位置初期化
+	xor	ax,ax
+	mov	al,ds:[di].WTD_ChEmb_Address	;
+	and	al,0f0h				;
+	mov	ds:[di].WTD_ChEmb_Address,al	;位置初期化
+	.if	(ds:[si].WTD_FlagControl & cx)
+	  mov	ah,01h				;
+	.endif
 
-	mov	ah,00h				;上位アドレスの設定
-	test	ds:[di].WTD_FlagControl,cx	;
-	jz	I_Play_KeyOn_Emb_Step1		;
-	mov	ah,01h				;
-I_Play_KeyOn_Emb_Step1:				;
+	lea	si,[bp + WTD_WorkAdd_Emb]	;エンベロープアドレス
+	add	si,ax				;データアドレス
+	lodsw					;
+	mov	dx,ds:[si]			;
 
-	mov	bx,dx				;bx←ベースアドレス
-	add	bx,WTD_WorkAdd_Emb		;エンベロープアドレス
-	add	bx,ax				;データアドレス
-	mov	ax,ds:[bx]			;読み込み。
-	add	bx,2				;
-	mov	dx,ds:[bx]			;
+	mov	ds:[di].WTD_ChEmb_Rate,al	;
+	.if	(ah&80h)
+	  neg	ah				;
+	.endif
+	mov	ds:[di].WTD_ChEmb_Counter,ah	;
+	mov	ds:[di].WTD_ChEmb_MaxMin,dl	;
+	mov	ds:[di].WTD_ChEmb_LevelSet,dh	;
 
-	mov	ds:[di + bp].WTD_ChEmb_Rate,al		;
-	cmp	ah,80h					;ahは、絶対値をとる。
-	jc	I_Play_KeyOn_Emb_Step9			;
-	neg	ah					;
-I_Play_KeyOn_Emb_Step9:					;
-	mov	ds:[di + bp].WTD_ChEmb_Counter,ah	;
-	mov	ds:[di + bp].WTD_ChEmb_MaxMin,dl	;
-	mov	ds:[di + bp].WTD_ChEmb_LevelSet,dh	;
-
-	popa					;
 	ret					;
+I_Play_KeyOn_Emb	endp
 ;===============================================================|
 ;			Emb処理	KeyOff				|
 ;===============================================================|
 	even				;偶数アドレス配置
-I_Play_KeyOff_Emb:				;
-	pusha					;
+I_Play_KeyOff_Emb	proc	near	uses ax di si
 
-	xchg	bp,dx				;
+	lea	si,[di]
+	add	di,dx
 
-	mov	al,ds:[di + bp].WTD_ChEmb_Address	;
-	and	al,0f0h					;
-	or	al,00cH					;
-	mov	ds:[di + bp].WTD_ChEmb_Address,al	;位置初期化
+	xor	ax,ax
+	mov	al,ds:[di].WTD_ChEmb_Address	;
+	and	al,0f0h				;
+	or	al,00cH				;
+	mov	ds:[di].WTD_ChEmb_Address,al	;位置初期化
+	.if	(ds:[si].WTD_FlagControl & cx)
+	  mov	ah,01h				;
+	.endif
 
-I_Play_KeyOnOff_Emb:					;
+	lea	si,[bp + WTD_WorkAdd_Emb]	;エンベロープアドレス
+	add	si,ax				;データアドレス
+	lodsw					;
+	mov	dx,ds:[si]			;
 
-	mov	ah,00h				;上位アドレスの設定
-	test	ds:[di].WTD_FlagControl,cx	;
-	jz	I_Play_KeyOff_Emb_Step1		;
-	mov	ah,01h				;
-I_Play_KeyOff_Emb_Step1:			;
+	mov	ds:[di].WTD_ChEmb_Rate,al	;
+	.if	(ah&80h)
+	  neg	ah				;
+	.endif
+	mov	ds:[di].WTD_ChEmb_Counter,ah	;
+	mov	ds:[di].WTD_ChEmb_MaxMin,dl	;
 
-	mov	bx,dx				;bx←ベースアドレス
-	add	bx,WTD_WorkAdd_Emb		;エンベロープアドレス
-	add	bx,ax				;データアドレス
-	mov	ax,ds:[bx]			;読み込み。
-	add	bx,2				;
-	mov	dx,ds:[bx]			;
-
-	mov	ds:[di + bp].WTD_ChEmb_Rate,al		;
-	cmp	ah,80h					;ahは、絶対値をとる。
-	jc	I_Play_KeyOff_Emb_Step9			;
-	neg	ah					;
-I_Play_KeyOff_Emb_Step9:				;
-	mov	ds:[di + bp].WTD_ChEmb_Counter,ah	;
-	mov	ds:[di + bp].WTD_ChEmb_MaxMin,dl	;
-
-	popa					;
 	ret					;
+I_Play_KeyOff_Emb	endp
 ;===============================================================|
 ;			Emb処理	メイン				|
 ;===============================================================|
 	even				;偶数アドレス配置
-I_Play_Emb:					;
-	push	bp				;
-	push	bx				;レジスタ保存
-	push	ax				;
+I_Play_Emb	proc	near	uses	ax di si
 
-	xchg	bp,dx				;
+	lea	si,[di]
+	add	di,dx
 
-;●Speed処理
-	sub	ds:[di + bp].WTD_ChEmb_Counter,1
-	jz	I_Play_Emb_Step1		;
-	jmp	I_Play_Emb_End			;
-I_Play_Emb_Step1:				;
+	;●Speed処理
+	dec	ds:[di].WTD_ChEmb_Counter
+	.if	(zero?)
 
-;●アドレスの設定
-	mov	ah,00h				;上位アドレスの設定
-	test	ds:[di].WTD_FlagControl,cx	;
-	jz	I_Play_Emb_Step2		;
-	mov	ah,01h				;
-I_Play_Emb_Step2:				;ax←Address
-	mov	al,ds:[di + bp].WTD_ChEmb_Address
-	mov	bx,dx				;bx←ベースアドレス
-	add	bx,WTD_WorkAdd_Emb		;エンベロープアドレス
-	add	bx,ax				;bx←データアドレス
+		;●アドレスの設定
+		xor	ax,ax
+		mov	al,ds:[di].WTD_ChEmb_Address
+		.if	(ds:[si].WTD_FlagControl & cx)
+			mov	ah,01h			;ax←Address
+		.endif
+		lea	si,[bp + WTD_WorkAdd_Emb]	;エンベロープアドレス
+		add	si,ax				;si←データアドレス
 
-;●Count再設定
-	mov	ah,ds:[bx].WTD_Emb_AS		;
-	cmp	ah,80h				;ahは、絶対値をとる。
-	jc	I_Play_Emb_Step5		;
-	neg	ah				;
-I_Play_Emb_Step5:				;
-	mov	ds:[di + bp].WTD_ChEmb_Counter,ah
+		;●Count再設定
+		mov	ah,ds:[si].WTD_Emb_AS		;
+		.if	(ah & 80h)
+			neg	ah			;
+		.endif
+		mov	ds:[di].WTD_ChEmb_Counter,ah	;
 
-;●Rate処理
-	mov	al,ds:[di + bp].WTD_ChEmb_LevelSet
-	cmp	ds:[bx].WTD_Emb_AS,80h		;比較(正 or 負)
-	jc	I_Play_Emb_Step7		;分岐
-	sub	al,ds:[bx].WTD_Emb_AR		;負
-	jmp	I_Play_Emb_Step8		;
-I_Play_Emb_Step7:				;
-	add	al,ds:[bx].WTD_Emb_AR		;正
-I_Play_Emb_Step8:				;
-	jc	I_Play_Emb_Step3		;
+		;●Rate ＆ Level処理
+		mov	al,ds:[di].WTD_ChEmb_LevelSet
+		.if	(ds:[si].WTD_Emb_AS & 80h)	;比較(正 or 負)
+		  sub	al,ds:[si].WTD_Emb_AR		;負
+		  jc	I_Play_Emb_Step3		;
+		  cmp	al,ds:[si].WTD_Emb_AL		;最小値チェック
+		  jnc	I_Play_Emb_StepEnd		;
+		.else
+		  add	al,ds:[si].WTD_Emb_AR		;正
+		  jc	I_Play_Emb_Step3		;
+		  cmp	al,ds:[si].WTD_Emb_AL		;最大値チェック
+		  jc	I_Play_Emb_StepEnd		;
+		.endif
 
-;●Level処理
-	cmp	ds:[bx].WTD_Emb_AS,80h		;比較(正 or 負)
-	jc	I_Play_Emb_Step4		;分岐
-	cmp	al,ds:[bx].WTD_Emb_AL		;負 最小値チェック
-	jc	I_Play_Emb_Step3		;
-	jmp	I_Play_Emb_StepEnd		;
-I_Play_Emb_Step4:				;正 最大値チェック
-	cmp	al,ds:[bx].WTD_Emb_AL		;
-	jnc	I_Play_Emb_Step3		;
-	jmp	I_Play_Emb_StepEnd		;
-
-;●最大値を超えた場合
+		;●最大値を超えた場合
 I_Play_Emb_Step3:					;
-	mov	al,ds:[bx].WTD_Emb_AL			;
-	mov	ah,ds:[di + bp].WTD_ChEmb_Address	;
-	and	ah,0fh					;
-	cmp	ah,08h					;
-	jnc	I_Play_Emb_StepEnd			;
+		mov	al,ds:[si].WTD_Emb_AL		;
+		mov	ah,ds:[di].WTD_ChEmb_Address	;
+		and	ah,0fh				;
 
-	push	ax					;
-	add	ds:[di + bp].WTD_ChEmb_Address,04h	;
-	add	bx,4					;アドレスの設定
-	mov	ax,ds:[bx]				;読み込み。
-	add	bx,2					;
-	mov	dx,ds:[bx]				;
-	mov	ds:[di + bp].WTD_ChEmb_Rate,al		;
-	cmp	ah,80h					;ahは、絶対値をとる。
-	jc	I_Play_Emb_Step6			;
-	neg	ah					;
-I_Play_Emb_Step6:					;
-	mov	ds:[di + bp].WTD_ChEmb_Counter,ah	;
-	mov	ds:[di + bp].WTD_ChEmb_MaxMin,dl	;
-	pop	ax					;
+		.if	(ah<08h)
+		  push	ax				;
+		  add	ds:[di].WTD_ChEmb_Address,04h	;
+		  add	si,4				;アドレスの設定
+		  lodsw					;
+		  mov	dx,ds:[si]			;
+		  mov	ds:[di].WTD_ChEmb_Rate,al	;
+		  .if	(ah&80h)
+			neg	ah			;
+		  .endif
+		  mov	ds:[di].WTD_ChEmb_Counter,ah	;
+		  mov	ds:[di].WTD_ChEmb_MaxMin,dl	;
+		  pop	ax				;
+		.endif
+I_Play_Emb_StepEnd:					;
 
-I_Play_Emb_StepEnd:				;
-	mov	ds:[di + bp].WTD_ChEmb_LevelSet,al
+		mov	ds:[di].WTD_ChEmb_LevelSet,al	
 
-I_Play_Emb_End:					;
+	.endif
+
 	xor	dx,dx				;
-	mov	dl,ds:[di + bp].WTD_ChEmb_LevelSet
+	mov	dl,ds:[di].WTD_ChEmb_LevelSet	;
 
-	pop	ax				;
-	pop	bx				;
-	pop	bp				;
 	ret					;
+I_Play_Emb	endp
 ;===============================================================|
 ;			LFO処理	メイン				|
 ;===============================================================|
 	even				;偶数アドレス配置
-I_Play_LFO:					;
-	push	ax				;
-	push	bp				;レジスタ保存
+I_Play_LFO	proc	near	uses	ax di
 
-	mov	bp,dx				;
+	add	di,dx
 
-;Rate処理
-	sub	ds:[di + bp].WTD_ChLfo_RateCounter,1	;
-	jnz	I_Play_LFO_End				;
-	mov	al,ds:[di + bp].WTD_ChLfo_SpeedRate	;
-	mov	ds:[di + bp].WTD_ChLfo_RateCounter,al	;
+	;Rate処理
+	dec	ds:[di].WTD_ChLfo_RateCounter		;
+	.if	(zero?)
+		mov	al,ds:[di].WTD_ChLfo_SpeedRate		;
+		mov	ds:[di].WTD_ChLfo_RateCounter,al	;
 
-;Level処理(dx←Level)
-	mov	dx,ds:[di + bp].WTD_ChLfo_LevelSet	;dx←Level
-	mov	al,ds:[di + bp].WTD_ChLfo_CountCounter	;
-	mov	ah,ds:[di + bp].WTD_ChLfo_Count		;加減算の分岐
-	cmp	al,ah					;
-	jz	I_Play_LFO_Add				;
-	jc	I_Play_LFO_Add				;
-I_Play_LFO_Sub:						;
-	sub	dx,ds:[di + bp].WTD_ChLfo_Level		;減算
-	jmp	I_Play_LFO_Step				;
-I_Play_LFO_Add:						;
-	add	dx,ds:[di + bp].WTD_ChLfo_Level		;加算
-I_Play_LFO_Step:					;
-	mov	ds:[di + bp].WTD_ChLfo_LevelSet,dx	;保存
+		;Level処理(dx←Level)
+		mov	dx,ds:[di].WTD_ChLfo_LevelSet		;dx←Level
+		mov	al,ds:[di].WTD_ChLfo_CountCounter	;
+	;	shr	al,1	;※
+		.if	(al>ds:[di].WTD_ChLfo_Count)		;加減算の分岐
+		  sub	dx,ds:[di].WTD_ChLfo_Level		;減算
+		.else
+		  add	dx,ds:[di].WTD_ChLfo_Level		;加算
+		.endif
+		mov	ds:[di].WTD_ChLfo_LevelSet,dx		;保存
 
-;Count処理
-	sub	ds:[di + bp].WTD_ChLfo_CountCounter,1	;
-	jnz	I_Play_LFO_End				;
-	mov	al,ds:[di + bp].WTD_ChLfo_Count		;カウンター初期化
-	shl	al,1					;al = al × 2
-	mov	ds:[di + bp].WTD_ChLfo_CountCounter,al	;
+		;Count処理
+		dec	ds:[di].WTD_ChLfo_CountCounter		;
+		.if	(zero?)
+		  mov	al,ds:[di].WTD_ChLfo_Count		;カウンター初期化
+		  shl	al,1					;al = al × 2	（何故？）
+		  mov	ds:[di].WTD_ChLfo_CountCounter,al	;
+		.endif
+	.endif
 
-I_Play_LFO_End:
-	mov	dx,DS:[di + bp].WTD_ChLfo_LevelSet	;dx←LFOのレベル
+	mov	dx,DS:[di].WTD_ChLfo_LevelSet		;dx←LFOのレベル
 
-	pop	bp				;レジスタ復帰
-	pop	ax				;
 	ret					;
+I_Play_LFO	endp
 ;****************************************************************
 ;*								*
 ;*			効果音終了時の設定復帰			*
@@ -1194,9 +1136,10 @@ I_Effect_Return:				;
 ;パート個別
 
 ;パート検索
-	mov	cl,20				;20回ループ
-	mov	di,bp				;
-	add	di,WTD_WorkAdd_Ch0		;di←構造体アドレス
+	mov	cl,MusicMaxPart			;20回ループ
+;	mov	di,bp				;
+;	add	di,WTD_WorkAdd_Ch0		;di←構造体アドレス
+	lea	di,[bp + WTD_WorkAdd_Ch0]	;
 I_Effect_Return_Loop0:				;
 	cmp	byte ptr ds:[di].WTD_Channel,ch	;
 	jz	I_Effect_Return_Step0		;
@@ -1216,8 +1159,9 @@ I_Effect_Return_Step0:
 	call	SP_Set_Volume			;
 ;音色
 	push	si				;音色の復帰
-	mov	si,bp				;
-	add	si,WTD_WorkAdd_Wave		;
+;	mov	si,bp				;
+;	add	si,WTD_WorkAdd_Wave		;
+	lea	si,[bp + WTD_WorkAdd_Wave]	;
 	xor	ax,ax				;
 	mov	al,ds:[di].WTD_Voice		;
 	shl	ax,4				;

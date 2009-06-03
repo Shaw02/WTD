@@ -131,11 +131,11 @@ WTD_FunctionLoad	proc	near c	uses cx si di ds es,
 	rep	movsw			;IL_Link_Pos, IL_Link_Methodの転送
 
 	mov	cx,word ptr CS:[IL_N_Methods]	;構造体のサイズ計算
+	mov	ax,cs			;
 	.repeat
-		movsw				;
-		mov	es:[di],cs		;関数群の転送
-		add	di,2			;
-		add	si,2			;
+		movsw			;
+		stosw			;
+		add	si,2		;
 	.untilcxz
 
 	ret				;
@@ -183,9 +183,6 @@ _Stay		proc far c	uses bx cx dx di ds es	;
 ;ワークエリアアドレスの取得
 
 ;ワークエリアの取得
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
 	WTD_WorkGet	ds,bx		;ワークエリアアドレス
 
 ;エラーチェック
@@ -195,21 +192,20 @@ _Stay		proc far c	uses bx cx dx di ds es	;
 	jmp	_Stay_End		;
 _Stay_00:
 
+;構造体アドレスの設定
+	lea	si,[bx + WTD_WorkAdd_System]	;ds:si←System
+
+
 ;ワーク全体の初期化(00hで埋める)
 ;メモリ書き込み
 	cld				;インクリメントモード
-	mov	ax,ds			;
-	mov	es,ax			;
-	mov	di,bx			;es:di←ワークファーアドレス
+	push	ds
+	pop	es
+	lea	di,[bx]			;es:di←ワークファーアドレス
 	mov	cx,WTD_WorkSize		;ワークのサイズ分(1000h)
 	xor	ax,ax			;ax←0
 	rep	stosb			;書き込み
 
-;構造体アドレスの設定
-	mov	di,bx				;
-	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
-	mov	si,bx				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
 
 ;---------------------------------------------------------------
 ;共通ワークの初期化
@@ -263,9 +259,10 @@ endif	;--------------------------------
 	mov	al,0fh					;
 	mov	ds:[si].WTD_Sys_VolumePcm,al		;
 
-	mov	ax,bx					;FIFOバッファの設定
-	add	ax,WTD_WorkSize				;ワークエリアの次
-	push	ds					;
+;	mov	ax,bx					;
+;	add	ax,WTD_WorkSize				;
+	lea	ax,[bx + WTD_WorkSize]			;FIFOバッファの設定
+	push	ds					;ワークエリアの次
 	push	ax					;
 	push	4096					;4096[Byte]確保
 	push	cs					;
@@ -328,16 +325,10 @@ endif	;--------------------------------
 ;---------------------------------------------------------------
 ;ワークエリアの取得
 
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
-;構造体アドレスの設定
-	mov	di,bx				;
-	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
-	mov	si,bx				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
+	;構造体アドレスの設定
+	lea	si,[bx + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 ;割り込み設定の復帰
@@ -349,10 +340,10 @@ endif	;--------------------------------
 ;IntVectorの復帰
 	push	bx					;
 
-	mov	ax,0					;
-	mov	al,ds:[si].WTD_Sys_InterruptBase	;al←割り込みベクタ
-	shl	ax,2			;読み込んだ値を4倍
-	mov	bx,ax			;割り込みベクタのアドレス
+	xor	bx,bx					;
+	mov	bl,ds:[si].WTD_Sys_InterruptBase	;bx←割り込みベクタ
+	shl	bx,2					;読み込んだ値を4倍(割り込みベクタのアドレス)
+;	mov	bx,ax					;
 
 	mov	ax,ds:[si].WTD_Sys_OldIntvector+0	;
 	mov	es:[bx+SYS_INT_HBLANK_COUNTUP*4+0],ax	;
@@ -392,19 +383,16 @@ _StayOut	endp			;
 ;	処理							|
 ;		デバイスの初期化				|
 ;===============================================================|
-_Init	proc far c	uses bp ax si ds
+_Init	proc far c	uses ax bx si ds
 
 ;---------------------------------------------------------------
 ;ワークエリアの取得
 
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
-	WTD_WorkGet	ds,bp			;ワークエリアアドレスの取得
+	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
-;構造体アドレスの設定
-	mov	si,bp				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
+	;構造体アドレスの設定
+	lea	si,[bx + WTD_WorkAdd_System]
+
 
 ;---------------------------------------------------------------
 ;演奏・効果音・PCMの停止。個別ワークの初期化
@@ -466,23 +454,14 @@ _MusicPlay	proc far c	uses bx cx dx di si ds es,
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
 
-;ワークアドレスの取得
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	mov	di,bx				;
-	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
-	mov	si,bx				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
+	lea	di,[bx + WTD_WorkAdd_Ch0]
+	lea	si,[bx + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 ;演奏アドレスの設定
-
-;	push	word ptr [bp + 08h]	;引数の取得	Segment
-;	push	word ptr [bp + 06h]	;		Offset
 
 	les	ax,fptMusic
 	push	es
@@ -562,12 +541,9 @@ _MusicPlay_Chk2:
 
 ;チャンネル数の取得
 	mov	ch,es:[bx].WTD_Mus_Part	;チャンネル数の取得
-;	cmp	ch,MusicMaxPart		;パート数チェック
-;	jc	_MusicPlay_Step2	;
-	.if	(ch>MusicMaxPart)	
+	.if	(ch>MusicMaxPart)	;パート数チェック
 		mov	ch,MusicMaxPart		;最大値を越えてたら最大値に。
 	.endif
-;_MusicPlay_Step2:			;
 
 ;演奏パート数保存
 	push	cx			;レジスタ保存
@@ -580,8 +556,10 @@ _MusicPlay_Chk2:
 	push	di			;es:di←ワークファーアドレス
 	push	cx			;
 	push	es			;
-	mov	ax,ds			;
-	mov	es,ax			;
+;	mov	ax,ds			;
+;	mov	es,ax			;
+	push	ds
+	pop	es
 	mov	al,WTD_WorkChSize / 2	;Wordなので、2で割る。
 	mul	ch			;
 	mov	cx,ax			;パート個別構造体(080h * 20 / 2)
@@ -712,7 +690,7 @@ _MusicPlay	endp			;
 ;	処理							|
 ;		演奏の終了					|
 ;===============================================================|
-_MusicStop	proc far c	uses bp ax bx cx dx di si ds
+_MusicStop	proc far c	uses ax bx cx dx di si ds
 
 	in	al,Int_Enable		;
 	and	al,Int_HblankReset	;
@@ -721,18 +699,11 @@ _MusicStop	proc far c	uses bp ax bx cx dx di si ds
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
 
-;ワークアドレスの取得
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bp,ds:[ProcContext_heap]	;ds:bp←ワークエリアアドレス
-	WTD_WorkGet	ds,bp			;ワークエリアアドレスの取得
+	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	mov	di,bp				;
-	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
-	mov	bx,bp				;
-	add	bx,WTD_WorkAdd_System		;ds:bx←System
-	mov	si,bx				;ds:si←ds:bx
+	lea	di,[bx + WTD_WorkAdd_Ch0]
+	lea	si,[bx + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 ;個別構造体設定
@@ -846,22 +817,14 @@ _EffectPlay	proc far c	uses bx cx dx di si ds es,
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
 
-;ワークアドレスの取得
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	mov	di,bx				;
-	add	di,WTD_WorkAdd_ECh0		;ds:di←channel
-	mov	si,bx				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
+	lea	di,[bx + WTD_WorkAdd_ECh0]
+	lea	si,[bx + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 ;演奏アドレスの設定
-;	push	word ptr [bp + 08h]	;引数の取得	Segment
-;	push	word ptr [bp + 06h]	;		Offset
 
 	les	ax,fptEffect
 	push	es
@@ -956,8 +919,10 @@ _EffectPlay_Step2:			;
 	push	di			;es:di←ワークファーアドレス
 	push	cx			;
 	push	es			;
-	mov	ax,ds			;
-	mov	es,ax			;
+;	mov	ax,ds			;
+;	mov	es,ax			;
+	push	ds
+	pop	es
 	mov	al,WTD_WorkChSize / 2	;Wordなので、2で割る。
 	mul	ch			;
 	mov	cx,ax			;パート個別構造体(080h * 20 / 2)
@@ -1085,7 +1050,7 @@ _EffectPlay	endp			;
 ;	処理							|
 ;		効果音の発生終了				|
 ;===============================================================|
-_EffectStop	proc far c	uses bp ax bx cx dx di si ds
+_EffectStop	proc far c	uses ax bx cx dx di si ds
 
 	in	al,Int_Enable		;
 	and	al,Int_HblankReset	;
@@ -1094,18 +1059,11 @@ _EffectStop	proc far c	uses bp ax bx cx dx di si ds
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
 
-;ワークアドレスの取得
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bp,ds:[ProcContext_heap]	;ds:bp←ワークエリアアドレス
-	WTD_WorkGet	ds,bp			;ワークエリアアドレスの取得
+	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	mov	di,bp				;
-	add	di,WTD_WorkAdd_ECh0		;ds:di←channel
-	mov	bx,bp				;
-	add	bx,WTD_WorkAdd_System		;ds:bx←System
-	mov	si,bx				;ds:si←ds:bx
+	lea	di,[bx + WTD_WorkAdd_ECh0]
+	lea	si,[bx + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 ;個別構造体設定
@@ -1191,22 +1149,14 @@ _PcmPlay	proc far c	uses bx cx dx di si ds es,
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
 
-;ワークアドレスの取得
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	mov	di,bx				;
-	add	di,WTD_WorkAdd_PCM		;ds:di←channel
-	mov	si,bx				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
+	lea	di,[bx + WTD_WorkAdd_PCM]
+	lea	si,[bx + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 ;演奏アドレスの設定
-;	push	word ptr [bp + 08h]	;
-;	push	word ptr [bp + 06h]	;引数の取得
 
 	les	ax,fptPCM
 	push	es
@@ -1299,8 +1249,9 @@ _PcmPlay_FileChkEnd2:					;
 	mov	ax,word ptr es:[bx].WaveData_Size+2	;
 	mov	word ptr ds:[di].WTD_PcmSize+2,ax	;
 ;発生アドレス
-	mov	ax,WaveData_Data			;
-	add	ax,bx					;
+;	mov	ax,WaveData_Data			;
+;	add	ax,bx					;
+	lea	ax,[bx + WaveData_Data]			;
 	mov	dx,es					;dx:ax←Data Address
 	mov	word ptr ds:[di].WTD_PcmAddress+0,ax	;
 	mov	word ptr ds:[di].WTD_PcmAddress+2,dx	;
@@ -1366,17 +1317,11 @@ _PcmStop	proc far c	uses bp ax bx cx dx di si ds
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
 
-;ワークアドレスの取得
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	mov	di,bx				;
-	add	di,WTD_WorkAdd_PCM		;ds:di←channel
-	mov	si,bx				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
+	lea	di,[bx + WTD_WorkAdd_PCM]
+	lea	si,[bx + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 ;構造体設定
@@ -1423,17 +1368,12 @@ _PcmVoiceSet	proc far c	uses bx cx dx di si ds es,
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
 
-;ワークアドレスの取得
-;	push	SRAM_Segment			;
-;	pop	es				;ds←SRAMセグメント
-;	mov	bx,es:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 	push	ds
 	pop	es
 
 ;構造体アドレスの設定
-	mov	di,bx				;
-	add	di,WTD_WorkAdd_Wave		;es:di←Wave
+	lea	di,[bx + WTD_WorkAdd_Wave]
 
 ;---------------------------------------------------------------
 ;設定
@@ -1482,17 +1422,12 @@ _SoftEmbSet	proc far c	uses bx cx dx di si ds es,
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
 
-;ワークアドレスの取得
-;	push	SRAM_Segment			;
-;	pop	es				;ds←SRAMセグメント
-;	mov	bx,es:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 	push	ds
 	pop	es
 
 ;構造体アドレスの設定
-	mov	di,bx				;
-	add	di,WTD_WorkAdd_Emb		;ds:si←Wave
+	lea	di,[bx + WTD_WorkAdd_Emb]
 
 ;---------------------------------------------------------------
 ;設定
@@ -1645,16 +1580,11 @@ _SetMusicVolume	proc far c	uses ax bx si ds,
 
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
+
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-;	mov	di,bx				;
-;	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
-	mov	si,bx				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
+	lea	si,[bx + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 ;設定
@@ -1679,16 +1609,11 @@ _GetMusicVolume	proc far c	uses bx si ds
 
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
+
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-;	mov	di,bx				;
-;	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
-	mov	si,bx				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
+	lea	si,[bx + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 ;取得
@@ -1714,16 +1639,11 @@ _SetEffectVolume	proc far c	uses ax bx si ds,
 
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
+
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-;	mov	di,bx				;
-;	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
-	mov	si,bx				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
+	lea	si,[bx + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 ;設定
@@ -1748,16 +1668,11 @@ _GetEffectVolume	proc far c	uses bx si ds
 
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
+
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-;	mov	di,bx				;
-;	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
-	mov	si,bx				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
+	lea	si,[bx + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 ;取得
@@ -1783,16 +1698,11 @@ _SetPcmVolume	proc far c	uses ax bx si ds,
 
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
+
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-;	mov	di,bx				;
-;	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
-	mov	si,bx				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
+	lea	si,[bx + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 ;設定
@@ -1819,16 +1729,11 @@ _GetPcmVolume	proc far c	uses bx si ds
 
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
+
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-;	mov	di,bx				;
-;	add	di,WTD_WorkAdd_Ch0		;ds:di←channel
-	mov	si,bx				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
+	lea	si,[bx + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 ;取得
@@ -1860,15 +1765,10 @@ ifndef	hyoka;-------------------------------
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
 
-;ワークアドレスの取得
-;	push	SRAM_Segment			;
-;	pop	ds				;ds←SRAMセグメント
-;	mov	bx,ds:[ProcContext_heap]	;ds:bx←ワークエリアアドレス
 	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	mov	si,bx				;
-	add	si,WTD_WorkAdd_System		;ds:si←System
+	lea	si,[bx + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 
