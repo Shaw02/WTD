@@ -1,0 +1,22 @@
+
+# 生成するファイル
+PROJ	 = doslib
+
+# 推論規則用
+AFLAGS	= /c /AT /Sa /Fl$*.lst /IC:\WWitch\WTD\SDK\include
+
+# ライブラリに含めるファイル
+
+ERR	= int21err.obj
+MEMORY	= comsmall.obj exesmall.obj mopen.obj mclose.obj
+FILE	= fcreate.obj fopen.obj fclose.obj fload.obj floads.obj fwrite.obj fseek.obj chngedir.obj chngeext.obj
+CNV	= a2h8.obj a2h16.obj h2a8.obj h2a16.obj h2a_f.obj h2a8f.obj fh2a8.obj fh2a16.obj d2h8.obj d2h16.obj
+
+
+# DOS エラー処理
+$(PROJ).lib : $(ERR) $(MEMORY) $(FILE) $(CNV)
+	lib $(PROJ) -+ $(ERR);
+	lib $(PROJ) -+ $(MEMORY);
+	lib $(PROJ) -+ $(FILE);
+	lib $(PROJ) -+ $(CNV);
+	del *.obj

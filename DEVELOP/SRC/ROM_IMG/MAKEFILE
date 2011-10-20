@@ -10,7 +10,7 @@ PROJ = ROM_IMG
 
 INC_FILES =  ..\..\..\SDK\include\wtd.h ..\..\..\SDK\include\ws.h ..\..\..\SDK\include\ws.inc ..\..\..\SDK\include\bank.inc ..\..\..\SDK\include\comm.inc ..\..\..\SDK\include\process.inc ..\..\..\SDK\include\service.inc ..\..\..\SDK\include\sound.inc ..\..\..\SDK\include\timer.inc ..\..\..\SDK\include\wtd_def.inc ..\..\..\SDK\include\wtd_ver.inc
 
-FILES = ROM_BIOS.ASM ROM_MAIN.C ROM_DISP.C ROM_KEY.C ROM_TIME.C debug.c grp.h ASCII_C.ASM ASCII_C.bmp ASCII_M.bmp
+FILES = ROM_BIOS.ASM ROM_MAIN.C ROM_DISP.C ROM_KEY.C ROM_TIME.C debug.c grp.h ASCII_C.bmp ASCII_M.bmp
 
 all: $(PROJ).bin
 	@del *.bak

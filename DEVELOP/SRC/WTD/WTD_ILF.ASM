@@ -115,7 +115,7 @@ ifdef	library				;※　ライブラリ版のみ必要
 
 	public	WTD_FunctionLoad	;外部宣言
 
-WTD_FunctionLoad	proc	near c	uses cx si di ds es,
+WTD_FunctionLoad	proc	near c	uses ax cx si di ds es,
 	Wtd_Function:word
 
 	push	ds			;
@@ -173,7 +173,7 @@ _GetInfo	endp			;
 ;	処理							|
 ;		WTD本体の常駐					|
 ;===============================================================|
-_Stay		proc far c	uses bx cx dx di ds es	;
+_Stay		proc far c	uses bx cx dx si di ds es	;
 
 	pushf				;レジスタ保存
 
@@ -192,9 +192,6 @@ _Stay		proc far c	uses bx cx dx di ds es	;
 	jmp	_Stay_End		;
 _Stay_00:
 
-;構造体アドレスの設定
-	lea	si,[bx + WTD_WorkAdd_System]	;ds:si←System
-
 
 ;ワーク全体の初期化(00hで埋める)
 ;メモリ書き込み
@@ -206,6 +203,8 @@ _Stay_00:
 	xor	ax,ax			;ax←0
 	rep	stosb			;書き込み
 
+;構造体アドレスの設定
+	lea	si,[bx + WTD_WorkAdd_System]	;ds:si←System
 
 ;---------------------------------------------------------------
 ;共通ワークの初期化
@@ -383,15 +382,15 @@ _StayOut	endp			;
 ;	処理							|
 ;		デバイスの初期化				|
 ;===============================================================|
-_Init	proc far c	uses ax bx si ds
+_Init	proc far c	uses bp ax si ds
 
 ;---------------------------------------------------------------
 ;ワークエリアの取得
 
-	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
+	WTD_WorkGet	ds,bp			;ワークエリアアドレスの取得
 
 	;構造体アドレスの設定
-	lea	si,[bx + WTD_WorkAdd_System]
+	lea	si,[bp + WTD_WorkAdd_System]
 
 
 ;---------------------------------------------------------------
@@ -690,7 +689,7 @@ _MusicPlay	endp			;
 ;	処理							|
 ;		演奏の終了					|
 ;===============================================================|
-_MusicStop	proc far c	uses ax bx cx dx di si ds
+_MusicStop	proc far c	uses bp ax cx dx di si ds
 
 	in	al,Int_Enable		;
 	and	al,Int_HblankReset	;
@@ -699,11 +698,11 @@ _MusicStop	proc far c	uses ax bx cx dx di si ds
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
 
-	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
+	WTD_WorkGet	ds,bp			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	lea	di,[bx + WTD_WorkAdd_Ch0]
-	lea	si,[bx + WTD_WorkAdd_System]
+	lea	di,[bp + WTD_WorkAdd_Ch0]
+	lea	si,[bp + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 ;個別構造体設定
@@ -1050,7 +1049,7 @@ _EffectPlay	endp			;
 ;	処理							|
 ;		効果音の発生終了				|
 ;===============================================================|
-_EffectStop	proc far c	uses ax bx cx dx di si ds
+_EffectStop	proc far c	uses bp ax cx dx di si ds
 
 	in	al,Int_Enable		;
 	and	al,Int_HblankReset	;
@@ -1059,11 +1058,11 @@ _EffectStop	proc far c	uses ax bx cx dx di si ds
 ;---------------------------------------------------------------
 ;ワークアドレスの取得
 
-	WTD_WorkGet	ds,bx			;ワークエリアアドレスの取得
+	WTD_WorkGet	ds,bp			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	lea	di,[bx + WTD_WorkAdd_ECh0]
-	lea	si,[bx + WTD_WorkAdd_System]
+	lea	di,[bp + WTD_WorkAdd_ECh0]
+	lea	si,[bp + WTD_WorkAdd_System]
 
 ;---------------------------------------------------------------
 ;個別構造体設定

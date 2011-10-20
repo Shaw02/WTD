@@ -111,157 +111,126 @@ I_Frection_Table:
 	Public	I_Start
 	even					;偶数アドレス配置
 I_Start:
+	push	bp				;
 	push	ax				;
 	push	bx				;
 	push	cx				;
-	push	dx				;
 	push	si				;
 	push	di				;
-	push	bp				;
 	push	ds				;レジスタ保存
 
 ;---------------------------------------------------------------
 ;EOIの発行
-
 	cli					;割り込み不可
-
-;End Of Interrupt
 	mov	al,Int_HblankSet		;
 	out	Int_Eoi,al			;出力
 
 ;	in	al,Int_Enable			;
 ;	and	al,INT_HblankReset		;シリアル送信エンプティー
 ;	out	Int_Enable,al			;割り込み禁止
+
 ;---------------------------------------------------------------
 ;バンクの設定
-ifndef	IRAM		;DGROUP=IRAMの場合、不要
-	in	al,BankSram			;現在のSRAM Bankを得る
-	cmp	al,BANK_USERDS0			;ユーザ領域を示していたら、
-	jz	I_Start_Step1			;この処理は行わない。
-	cmp	al,BANK_USERDS1			;
-	jz	I_Start_Step1			;'/ram0'アクセス中は、
-	jmp	I_Start_End			;処理をしない。
-endif
 
-I_Start_Step1:
+ifndef	IRAM		;DGROUP=IRAMの場合、不要
+	;'/ram0'アクセス中は、処理をしない。
+	in	al,BankSram			;現在のSRAM Bankを得る
+	.if	(al==BANK_USERDS0)||(al==BANK_USERDS1)
+endif
 
 ;---------------------------------------------------------------
 ;ワークエリアアドレスの取得
 
 	WTD_WorkGet	ds,bp			;ワークエリアアドレスの取得
-
 	lea	bx,[bp + WTD_WorkAdd_System]	;ds;bx←共通構造体
 
-;---------------------------------------------------------------
-;	●レジスタ割り振り
-;		di	PCM Voice制御用構造体 のポインタ
-;		si	*.wav のポインタ
-;---------------------------------------------------------------
-;演奏・効果音・PcmVoiceルーチンの呼び出し
+;===============================================================|
+;	PCM Voice の処理（ with CPU Power）			|
+;===============================================================|
+;	●レジスタ使用						|
+;		di	PCM Voice制御用構造体 のポインタ	|
+;		si	*.wav のポインタ			|
+;	※	cx	使用不可				|
+;	※	dx	使用不可				|
+;	※	es	使用不可				|
+;===============================================================|
 
+	;-----------------------------------------------
 	;タイマーをエミュレートするか？
-	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_TimerEmulate
-	jz	I_Start_Step2				;
+	.if	(ds:[bx].WTD_Sys_Flag & WTD_Sys_TimerEmulate)
 
-	;------------------------------------------------
-	;タイマーをエミュレートする時に追加される処理。	;
-	;CALL命令と、ret命令の6clockが勿体ない		;
-	;------------------------------------------------
-	;PCM Voice					;
-	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_Pcm	;PCM Voice鳴らす？
-	jz	I_PcmStep				;
+	    ;------------------------------------------------
+	    ;タイマーをエミュレートする時に追加される処理。	;
+	    ;CALL命令と、ret命令の6clockが勿体ない		;
+	    ;------------------------------------------------
+	    ;PCM Voice をCPUパワーで鳴らす？
+	    .if	(ds:[bx].WTD_Sys_Flag & WTD_Sys_Pcm)
+	;
+	;	to do	Sound-DMA を使わないモードかチェック
+	;
 
-	;レジスタ設定
-;	mov	di,bp					;
-;	add	di,WTD_WorkAdd_PCM			;di←パート個別構造体
-	lea	di,[bp + WTD_WorkAdd_PCM]
+		;レジスタ設定
+	;	mov	di,bp					;
+	;	add	di,WTD_WorkAdd_PCM			;di←パート個別構造体
+		lea	di,[bp + WTD_WorkAdd_PCM]
 
-	;アドレス取得
-	push	ds					;レジスタ保存
-	lds	si,dword ptr ds:[di].WTD_PcmAddress	;es:si←Play Address
-	;データ取得
-;	mov	al,ds:[si]				;(注意：PipeLine)
-;	inc	si					;フラグも変化させる
-	lodsb
-	pop	ds					;レジスタ復帰
-	;データ出力
-	out	PCM_Com_VolumeCh2,al			;出力
+		;アドレス取得
+		push	ds					;レジスタ保存
+		lds	si,dword ptr ds:[di].WTD_PcmAddress	;es:si←Play Address
+		;データ取得
+	;	mov	al,ds:[si]				;(注意：PipeLine)
+	;	inc	si					;フラグも変化させる
+		lodsb
+		pop	ds					;レジスタ復帰
+		;データ出力
+		out	PCM_Com_VolumeCh2,al			;出力
 
-	;アドレス保存
-	mov	word ptr ds:[di].WTD_PcmAddress+0,si	;アドレス保存
-	;ポインタチェック（セグメント境界？）
-	.if	(si==0)
-		add	word ptr ds:[di].WTD_PcmAddress+2,1000h	;(注意：PipeLine)
+		;アドレス保存
+		mov	word ptr ds:[di].WTD_PcmAddress+0,si	;アドレス保存
+		;ポインタチェック（セグメント境界？）
+		.if	(si==0)
+			add	word ptr ds:[di].WTD_PcmAddress+2,1000h
+		.endif
+
+		;終了？
+		sub	word ptr ds:[di].WTD_PcmSize+0,1	;PcmSize ディクリメント
+		sbb	word ptr ds:[di].WTD_PcmSize+2,0	;
+		mov	ax,word ptr ds:[di].WTD_PcmSize+0	;
+		or	ax,word ptr ds:[di].WTD_PcmSize+2	;
+		.if	(zero?)					;
+			;PCM Voice 発音終了
+			and	ds:[bx].WTD_Sys_Flag,WTD_Sys_PcmR
+			and	ds:[bx].WTD_Sys_Flag,WTD_Sys_EffectMask2R
+			mov	ch,81h				;設定復帰ch2
+			call	I_Effect_Return			;
+		.endif
+	    .endif
+
+	    ;---------------				;
+	    ;テンポ用カウンター　ディクリメント		;
+	    dec	ds:[bx].WTD_Sys_TempoCounter		;
+	    jnz	I_MusicEffectStep			;演奏を飛ばす。
+
 	.endif
 
-	;終了？
-	sub	word ptr ds:[di].WTD_PcmSize+0,1	;PcmSize ディクリメント
-	sbb	word ptr ds:[di].WTD_PcmSize+2,0	;
-	mov	ax,word ptr ds:[di].WTD_PcmSize+0	;
-	or	ax,word ptr ds:[di].WTD_PcmSize+2	;
-	jnz	I_PcmVoice_End				;
+	;-----------------------------------------------
+	;PCM Voice を Sound DMA で鳴らしている。
+	.if	(ds:[bx].WTD_Sys_Flag & WTD_Sys_Pcm)
+	;
+	;	to do	Sound-DMA を使うモードかチェック
+	;
+	;   in	al, サウンドDMA
+	   .if	!(al & 80h)				;
+		and	ds:[bx].WTD_Sys_Flag,WTD_Sys_PcmR
+		and	ds:[bx].WTD_Sys_Flag,WTD_Sys_EffectMask2R
+		mov	ch,81h				;設定復帰ch2
+		call	I_Effect_Return			;
+	   .endif
+	.endif
 
-	;終了処理
-	and	ds:[bx].WTD_Sys_Flag,WTD_Sys_PcmR	;処理終了
-
-I_PcmVoice_End:						;
-I_PcmStep:						;
-	;PCM Voice終わり				;
-	;---------------				;
-	;テンポ用カウンター　ディクリメント		;
-	dec	ds:[bx].WTD_Sys_TempoCounter		;
-	jnz	I_MusicEffectStep			;演奏を飛ばす。
-	;------------------------------------------------
-	;タイマーエミュレート時の処理ここまで。		;
-	;------------------------------------------------
-
-I_Start_Step2:						;Music & Effect	
-	call	I_MusicEffect				;
-I_MusicEffectStep:					;
-
-;	in	ax,TIMER_CounterH		;
-;	test	ax,ax				;たいまーカウンターが０
-;	jz	I_Start_Step1			;だったら、もう一回。
-;
-;---------------------------------------------------------------
-;バンクの復帰
-ifndef	IRAM		;DGROUP=IRAMの場合、不要
-;
-;	pop	ax				;復帰
-;	out	BankSram,al			;設定する。
-;
-endif
-;---------------------------------------------------------------
-;割り込みの終了
-;
-I_Start_End:
-;	cli				;割り込み禁止
-;
-;	in	al,Int_Enable		;
-;	or	al,INT_HblankSet	;タイマー
-;	out	Int_Enable,al		;割り込み許可
-
-	pop	ds				;レジスタ復帰
-	pop	bp				;
-	pop	di				;
-	pop	si				;
-	pop	dx				;
-	pop	cx				;
-	pop	bx				;
-	pop	ax				;
-	iret					;
-;****************************************************************
-;*								*
-;*			割り込みルーチン			*
-;*				演奏・効果音制御部		*
-;*								*
-;****************************************************************
 ;===============================================================|
-;		Music Main					|
+;	演奏 ＆ 効果音処理					|
 ;===============================================================|
-;	●引数							|
-;		ds:bp	ワークベースアドレス			|
-;		ds:bx	共有構造体アドレス			|
 ;	●レジスタ使用						|
 ;		ds:di	個別構造体		破壊ok		|
 ;	（	es:si	演奏アドレス		破壊ok	）	|
@@ -269,14 +238,12 @@ I_Start_End:
 ;		cx	汎用(主にカウンタ)	破壊ok		|
 ;		dx	汎用(主に計算)		破壊ok		|
 ;===============================================================|
-	even					;偶数アドレス配置
-I_MusicEffect	proc	near	uses	es	;
-
-;---------------------------------------------------------------
 ;演奏ルーチン
+	push	dx				;
+	push	es
 
 	;演奏あるか？
-	.if	(ds:[bx].WTD_Sys_Flag&WTD_Sys_Music)
+	.if	(ds:[bx].WTD_Sys_Flag & WTD_Sys_Music)
 
 		;レジスタ設定
 		lea	di,[bp + WTD_WorkAdd_Ch0]
@@ -297,7 +264,7 @@ I_MusicEffect	proc	near	uses	es	;
 ;効果音ルーチン
 
 	;効果音あるか？
-	.if	(ds:[bx].WTD_Sys_Flag&WTD_Sys_Effect)
+	.if	(ds:[bx].WTD_Sys_Flag & WTD_Sys_Effect)
 
 		;レジスタ設定
 		lea	di,[bp + WTD_WorkAdd_Ech0]
@@ -318,53 +285,70 @@ I_MusicEffect	proc	near	uses	es	;
 ;PCM Vioce効果音が発生しており、尚かつ終了であるならば、
 ;タイマーを戻す。
 
-;タイマーエミュレート中であるか？
-	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_TimerEmulate
-	jz	I_MusicEffect_PcmCheck_End		;
+	;タイマーエミュレート中であるか？
+	.if	(ds:[bx].WTD_Sys_Flag & WTD_Sys_TimerEmulate)
 
-;PcmVioce処理終了？
-	test	ds:[bx].WTD_Sys_Flag,WTD_Sys_Pcm	;
-	jnz	I_MusicEffect_PcmCheck_Step1		;
+	    ;PcmVioce処理終了？
+	    .if	(ds:[bx].WTD_Sys_Flag & WTD_Sys_Pcm)
 
-;●PcmVioce処理終了の場合。
-;フラグ初期化
-	mov	ax,ds:[bx].WTD_Sys_Flag		;
-;	and	ax,WTD_Sys_PcmR			;PCM効果音ディセーブル
-;	and	ax,WTD_Sys_PcmEndR		;このフラグは廃止
-	and	ax,WTD_Sys_EffectMask2R		;ch2 効果音マスクRes
-	and	ax,WTD_Sys_TimerEmulateR	;タイマーエミュレートRes
-	mov	ds:[bx].WTD_Sys_Flag,ax		;
-;タイマー設定
-	mov	ax,ds:[bx].WTD_Sys_Tempo	;タイマーの設定
-	call	T_Set_Frection			;
-;タイマーカウンタ設定
-	xor	ax,ax				;ax←0
-	mov	ds:[bx].WTD_Sys_TempoCounter,ax	;TempoCounter = 0
-;channel 2  設定復帰
-	mov	ch,81h				;設定復帰ch2
-	call	I_Effect_Return			;
-;終了
-	jmp	I_MusicEffect_PcmCheck_End	;
+		;●PcmVioce処理継続の場合
+		;タイマー設定
+		mov	ax,1				;割り込み周期は最速
+		call	T_Set_Frection			;(12KHz)
+		;タイマーカウンタ設定
+		mov	ax,ds:[bx].WTD_Sys_Tempo	;
+		mov	ds:[bx].WTD_Sys_TempoCounter,ax	;TempoCounter
 
-;●PcmVioce処理継続の場合
-I_MusicEffect_PcmCheck_Step1:			;
-;タイマー設定
-	mov	ax,1				;割り込み周期は最速
-	call	T_Set_Frection			;(12KHz)
-;タイマーカウンタ設定
-	mov	ax,ds:[bx].WTD_Sys_Tempo	;
-	mov	ds:[bx].WTD_Sys_TempoCounter,ax	;TempoCounter
-;終了
-;	jmp	I_MusicEffect_PcmCheck_End	;
+	    .else
 
-;処理終わり
-I_MusicEffect_PcmCheck_End:			;
+		;●PcmVioce処理終了の場合。
+		;タイマー設定
+		mov	ax,ds:[bx].WTD_Sys_Tempo	;タイマーの設定
+		call	T_Set_Frection			;
+		;タイマーカウンタ設定
+	;	xor	ax,ax				;ax←0
+		mov	ds:[bx].WTD_Sys_TempoCounter,0	;TempoCounter = 0
+		;フラグ初期化
+	;	and	ds:[bx].WTD_Sys_Flag,WTD_Sys_PcmR		;PCM効果音ディセーブル
+	;	and	ds:[bx].WTD_Sys_Flag,WTD_Sys_PcmEndR		;このフラグは廃止
+	;	and	ds:[bx].WTD_Sys_Flag,WTD_Sys_EffectMask2R	;ch2 効果音マスクRes
+		and	ds:[bx].WTD_Sys_Flag,WTD_Sys_TimerEmulateR	;タイマーエミュレートRes
+	;	mov	ch,81h				;設定復帰ch2
+	;	call	I_Effect_Return			;
 
+	    .endif
+	.endif
+
+	pop	es
+	pop	dx				;
+
+;===============================================================|
+I_MusicEffectStep:					;
+
+;
 ;---------------------------------------------------------------
-;終わり
+;バンクの復帰
+ifndef	IRAM		;DGROUP=IRAMの場合、不要
+;
+	.endif
 
-	ret					;
-I_MusicEffect	endp
+endif
+;---------------------------------------------------------------
+;割り込みの終了
+
+;	cli				;割り込み禁止
+;	in	al,Int_Enable		;
+;	or	al,INT_HblankSet	;タイマー
+;	out	Int_Enable,al		;割り込み許可
+
+	pop	ds				;レジスタ復帰
+	pop	di				;
+	pop	si				;
+	pop	cx				;
+	pop	bx				;
+	pop	ax				;
+	pop	bp				;
+	iret					;
 ;===============================================================|
 ;		Music Control Main				|
 ;===============================================================|
@@ -913,7 +897,10 @@ I_Play_KeyOn_LFO	proc	near	uses	ax di
 
 	;カウンター(Count)の初期化
 	mov	ah,ds:[di].WTD_ChLfo_Count		;
-;	shr	ah,1					;ah = ah / 2
+	shr	ah,1					;ah = ah / 2	←ミスだけど
+;	.if	(ah==1)
+;	  xor	ah,ah					;互換性の為、これを入れる。
+;	.endif
 	mov	ds:[di].WTD_ChLfo_CountCounter,ah	;
 
 	;レベルの初期化

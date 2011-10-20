@@ -64,13 +64,10 @@ C_Open	endp				;
 	even				;偶数アドレス配置
 C_Close	proc near	uses ax		;
 
-C_Close_2:				;
-	in	al,COMM_Status		;ステータス読み込み
-	test	al,COMM_Enable		;通信機能はイネーブル？
-	jz	C_Close_1		;
-	test	al,COMM_SendEmpty	;送信データ空？
-	jz	C_Close_2		;空でなければ、空になるまで待つ。
-C_Close_1:				;
+	.repeat
+	  in	al,COMM_Status			;ステータス読み込み
+	  .break  .if	!(al&COMM_Enable)	;通信機能はイネーブル？
+	.until		 (al&COMM_SendEmpty)	;送信データ空？
 	and	al,COMM_Disable		;通信ディセーブル設定。
 	out	COMM_Status,al		;出力
 
@@ -89,98 +86,92 @@ C_Close	endp				;
 ;		無し						|
 ;	処理							|
 ;		回線にデータを出力する。			|
+;		送信中だったら、FIFOへ書き込み			|
 ;===============================================================|
 	even				;偶数アドレス配置
-C_Send	proc near			;
+C_Send	proc near	uses ax bx cx di si es
+
 	pushf				;
-	push	es			;
-	push	di			;
-	push	bx			;
-	push	ax			;レジスタ保存
 	cli
+
+	mov	cx,ax
 
 	in	al,Int_Enable		;
 	and	al,INT_CommSendReset	;シリアル送信エンプティー
 	out	Int_Enable,al		;割り込み禁止
 
-	mov	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
-	cmp	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr
-	jnz	C_Send_0		;FIFOバッファある？
-
+	;ハードウェア送信バッファ ＆ ソフトウェアFIFOバッファ が両方とも空であるかチェック。
+	mov	bx,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
+	lea	si,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr
 	in	al,COMM_Status		;ステータス読み込み
-	test	al,COMM_SendEmpty	;送信バッファ空？
-	jz	C_send_0		;
+	.if	((!(al & COMM_SendEmpty))||(bx != word ptr ds:[si]))
+		;空ではなかった。（まだ送信中）
+		mov	di,bx			;di ← 現在の書き込みポインタ
+		inc	bx			
+		.if	(bx >= word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Size)
+			xor	bx,bx		;
+		.endif				;bx ← 次の書き込みポインタ
+		.while	(bx == word ptr ds:[si])
+			call	IC_Send		;FIFOの送信を試みる。
+		.endw				;FIFOに空きが出来るまで繰り返す。
+		mov	word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt,bx
 
-	pop	ax			;
-	out	COMM_DATA,al		;送信
-	pop	bx			;
-	pop	di			;
-	pop	es			;
+		les	bx,dword ptr ds:[bp].(WTD_WorkAdd_System+WTD_Sys_ComFIFO_Offset)
+		mov	ax,cx			;al←送信データ
+		mov	byte ptr es:[di+bx],al	;FIFOバッファに書き込み
+
+		in	al,Int_Enable		;バッファにデータが来たので、
+		or	al,INT_CommSendSet	;シリアル送信エンプティー
+		out	Int_Enable,al		;割り込み許可
+
+	.else
+		;どっちも空だったら、FIFO割り込み使わないで直接出力する。
+		mov	ax,cx			;al←送信データ
+		out	COMM_DATA,al		;送信
+	.endif
+
 	popf				;
 	ret				;
 ;----------------------------------------------------------------
-C_Send_0:
-	mov	di,ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
-;	mov	di,ax			;ax←FIFOポインタCnt
-
-	mov	bx,ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
-
-	inc	word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
-	mov	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
-	cmp	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Size
-	jnz	C_Send_1		;
-	mov	word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt,0
-C_Send_1:				;
-	mov	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
-	cmp	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr
-	jnz	C_Send_3		;FIFOバッファはいっぱい？
-	mov	word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt,bx
-	call	IC_Send			;FIFOの送信を試みて、
-	jmp	C_Send_1		;やり直し。
-
-C_Send_3:				;
-;	mov	bx,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Offset
-;	mov	es,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Segment
-	les	bx,dword ptr ds:[bp].(WTD_WorkAdd_System+WTD_Sys_ComFIFO_Offset)
-	pop	ax			;FIFOバッファに書き込み
-	push	ax			;
-	mov	byte ptr es:[di+bx],al	;
-
-C_Send_e:
-	in	al,Int_Enable		;バッファにデータが来たので、
-	or	al,INT_CommSendSet	;シリアル送信エンプティー
-	out	Int_Enable,al		;割り込み許可
-
-	pop	ax			;
-	pop	bx			;
-	pop	di			;レジスタ復帰
-	pop	es			;
-	popf				;
-	ret				;
-C_Send	endp				;
-;===============================================================|
-;	even				;偶数アドレス配置
-;C_Send	proc near			;
-;	push	cx			;
-;	push	ax			;レジスタ保存
+;C_Send_0:
+;	mov	di,ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
+;;	mov	di,ax			;ax←FIFOポインタCnt
 ;
-;	mov	cx,COMM_TimeOut		;count
-;	xchg	al,ah			;
-;C_send_1:				
-;	dec	cx			;time count
-;	jz	C_send_e		;無限ループ対策
-;	in	al,COMM_Status		;ステータス読み込み
-;	test	al,COMM_SendEmpty	;送信バッファ空？
-;	jz	C_send_1		;
-;	xchg	al,ah			;
-;	out	COMM_DATA,al		;送信
-;	or	ax,ax			;Cy flag reset
+;	mov	bx,ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
+;
+;	inc	word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
+;	mov	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
+;	cmp	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Size
+;	jnz	C_Send_1		;
+;	mov	word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt,0
+;C_Send_1:				;
+;	mov	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
+;	cmp	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr
+;	jnz	C_Send_3		;FIFOバッファはいっぱい？
+;	mov	word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt,bx
+;	call	IC_Send			;FIFOの送信を試みて、
+;	jmp	C_Send_1		;やり直し。
+;
+;C_Send_3:				;
+;;	mov	bx,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Offset
+;;	mov	es,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Segment
+;	les	bx,dword ptr ds:[bp].(WTD_WorkAdd_System+WTD_Sys_ComFIFO_Offset)
+;	pop	ax			;FIFOバッファに書き込み
+;	push	ax			;
+;	mov	byte ptr es:[di+bx],al	;
 ;
 ;C_Send_e:
-;	pop	ax			;レジスタ復帰
-;	pop	cx			;
+;	in	al,Int_Enable		;バッファにデータが来たので、
+;	or	al,INT_CommSendSet	;シリアル送信エンプティー
+;	out	Int_Enable,al		;割り込み許可
+;
+;	pop	ax			;
+;	pop	bx			;
+;	pop	di			;レジスタ復帰
+;	pop	es			;
+;	popf				;
 ;	ret				;
-;C_Send	endp				;
+C_Send	endp				;
 ;===============================================================|
 ;			2 byte送信				|
 ;===============================================================|
@@ -213,11 +204,11 @@ C_Send_Word	endp			;
 	even				;偶数アドレス配置
 C_Send_Block	proc near	uses ax cx si
 
-C_Send_Block_1:
-	lodsb
-	call	C_Send			;送信
-	loop	C_Send_Block_1		;
-	
+	.repeat
+		lodsb			;
+		call	C_Send		;送信
+	.untilcxz
+
 	ret				;
 C_Send_Block	endp			;
 ;===============================================================|
@@ -228,14 +219,10 @@ C_Send_Block	endp			;
 ;	返り値							|
 ;		無し						|
 ;	処理							|
-;		回線にデータを出力する。			|
+;		FIFOから回線にデータを出力する。		|
 ;===============================================================|
 	even				;偶数アドレス配置
-IC_Send	proc	near
-	push	es			;
-	push	di			;
-	push	bx			;
-	push	ax			;
+IC_Send	proc	near	uses ax bx dx di es
 	pushf				;
 	cli				;
 
@@ -244,39 +231,33 @@ IC_Send	proc	near
 	and	al,INT_CommSendReset	;シリアル送信エンプティー
 	out	Int_Enable,al		;割り込み禁止
 
-	mov	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
-	cmp	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr
-	jz	IC_Send_e		;FIFOバッファある？
+	mov	dx,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Cnt
+	mov	bx,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr
+	.if	(dx != bx)			;空だったら処理しない。
 
-	in	al,COMM_Status		;ステータス読み込み
-	test	al,COMM_SendEmpty	;送信バッファ空？
-	jz	IC_send_e0		;Ze←'H'
+	   ;まだハードウェアで送信中だったら、FIFO送信はしない。
+	   in	al,COMM_Status			;ステータス読み込み
+	   .if	(al & COMM_SendEmpty)		;送信バッファ空？
+		mov	di,bx			;di ← 現在の読み込みポインタ
+		inc	bx			;
+		.if	(bx >= word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Size)
+			xor	bx,bx		;
+		.endif				;bx ← 次の読み込みポインタ
+		mov	word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr,bx
+		push	bx			;
+		les	bx,dword ptr ds:[bp].(WTD_WorkAdd_System+WTD_Sys_ComFIFO_Offset)
+		mov	al,byte ptr es:[di+bx]	;
+		out	COMM_DATA,al		;送信
+		pop	bx			;
+	   .endif				;
+	   .if	(dx != bx)			;空だったら処理しない。（送信後の再check）
+		in	al,Int_Enable		;
+		or	al,INT_CommSendSet	;シリアル送信エンプティー
+		out	Int_Enable,al		;割り込み許可
+	   .endif
+	.endif
 
-	mov	di,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr
-;	mov	di,ax			;FIFOポインタの取得
-
-	inc	word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr
-	mov	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr
-	cmp	ax,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Size
-	jnz	IC_Send_1		;
-	mov	word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Adr,0
-IC_Send_1:				;
-	les	bx,dword ptr ds:[bp].(WTD_WorkAdd_System+WTD_Sys_ComFIFO_Offset)
-;	mov	es,word ptr ds:[bp].WTD_WorkAdd_System+WTD_Sys_ComFIFO_Segment
-	mov	al,byte ptr es:[di+bx]	;
-	out	COMM_DATA,al		;送信
-
-IC_Send_e0:
-	in	al,Int_Enable		;
-	or	al,INT_CommSendSet	;シリアル送信エンプティー
-	out	Int_Enable,al		;割り込み許可
-
-IC_Send_e:
 	popf				;
-	pop	ax			;
-	pop	bx			;
-	pop	di			;
-	pop	es			;
 	ret				;
 IC_Send	endp
 ;===============================================================|

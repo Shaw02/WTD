@@ -8,9 +8,9 @@ include ..\..\..\SDK\include\wtdsdk.mak
 
 PROJ = WSMAKE
 
-INC_FILES =  ..\..\..\SDK\include\wtd.h ..\..\..\SDK\include\bank.inc ..\..\..\SDK\include\comm.inc ..\..\..\SDK\include\process.inc ..\..\..\SDK\include\service.inc ..\..\..\SDK\include\sound.inc ..\..\..\SDK\include\timer.inc ..\..\..\SDK\include\wtd_def.inc ..\..\..\SDK\include\wtd_ver.inc ..\..\..\SDK\include\wtc_def.inc ..\..\..\SDK\include\WSMAKE.INC
+INC_FILES =  ..\..\..\SDK\include\bank.inc ..\..\..\SDK\include\comm.inc ..\..\..\SDK\include\process.inc ..\..\..\SDK\include\service.inc ..\..\..\SDK\include\sound.inc ..\..\..\SDK\include\timer.inc ..\..\..\SDK\include\wtd_def.inc ..\..\..\SDK\include\wtd_ver.inc
 
-FILES = WSMAKE.ASM WM_SUB.ASM Wm_main.asm
+FILES = WSMAKE.ASM
 
 all: $(PROJ).com
 	@del *.bak
@@ -19,5 +19,5 @@ all: $(PROJ).com
 	@del *.bin
 
 $(PROJ).com : $(FILES) $(INC_FILES)
-	@$(ASM) $(AFLAG) $(PROJ);>wtcerr.txt
-	@$(LINKER) $(LFLAG) $(PROJ),,,$(LIBS);
+	@$(ASM) $(AFLAG) /la $(PROJ);>wtcerr.txt
+	@$(LINKER) $(LFLAG) $(PROJ),,,$(LIBFILES);

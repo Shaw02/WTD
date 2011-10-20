@@ -12,6 +12,31 @@
 
 
 
+[ Piano   .wtv ]========================
+0	piano  o0a
+1	piano  o1a
+2	piano  o2a
+3	piano  o3a
+4	piano  o4a
+5	piano  o5a
+6	piano  o6a
+7	piano  o7a
+
+	ピアノの各オクターブのＡ（ラ）の波形です。
+	音色番号が低いほど、倍音成分が多くなります。
+	発音が強く or オクターブが低いほど、低い音色番号
+	発音が弱く or オクターブが高いほど、高い音色番号を使うと効果的です。
+
+
+[ Strings .wtv ]========================
+0	Violin Section
+1	Viola Section
+2	Cello Section
+3	Contrabass Section
+4	Cello + Contrabass Section
+
+
+
 [ Sin     .wtv ]========================
 0	Sin Wave
 

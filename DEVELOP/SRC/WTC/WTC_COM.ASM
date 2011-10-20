@@ -9,8 +9,111 @@
 ;									|
 ;=======================================================================|
 ;===============================================================|
+;		構造体定義　（コンパイル制御用）		|
+;===============================================================|
+cMCD		struc
+cMCD_ChannelWTD	db	?		;現在コンパイル中のチャンネル。
+cMCD_ChannelMML	db	?		;現在コンパイル中のチャンネル。
+cMCD_DefLength	dw	?		;デフォルト音長記憶
+cMCD_LoopL	dw	?		;無限ループアドレス
+cMCD_LoopCount	dw	?		;リピート(スタック)
+cMCD_LoopEnd	dw	8	dup(?)	;リピート(終了点記憶用)
+cMCD_LoopJump	dw	8	dup(?)	;リピート()
+cMCD_MacroCount	dw	?		;マクロのスタックポインタ
+cMCD_MacroAdr	dw	8	dup(?)	;マクロのスタックエリア
+cMCD		ends
+
+;===============================================================|
 ;		命令定義　（コンパイル情報）			|
 ;===============================================================|
+;コマンド・データのアドレス。
+.const
+c_Command_Adrs		dw	((offset c_Command_Adrs_E)-(offset c_Command_Adrs_S))/2 + 1
+c_Command_Adrs_S	dw	offset cMCD_0		;<CR+LF>+"C"
+			dw	offset cMCD_1		;<CR+LF>+"!"
+			dw	offset cMCD_2		;<CR+LF>
+			dw	offset cMCD_3		;a	ラ
+			dw	offset cMCD_4		;b	シ
+			dw	offset cMCD_5		;c	ド
+			dw	offset cMCD_6		;d	レ
+			dw	offset cMCD_7		;e	ミ
+			dw	offset cMCD_8		;f	ファ
+			dw	offset cMCD_9		;g	ソ
+			dw	offset cMCD_10		;h	
+			dw	offset cMCD_11		;i	
+			dw	offset cMCD_12		;j	
+			dw	offset cMCD_13		;k	
+			dw	offset cMCD_14		;l	
+			dw	offset cMCD_15		;n	
+			dw	offset cMCD_16		;m	
+			dw	offset cMCD_17		;o	
+			dw	offset cMCD_18		;p	
+			dw	offset cMCD_19		;q	
+			dw	offset cMCD_20		;r	
+			dw	offset cMCD_21		;s	
+			dw	offset cMCD_22		;t	
+			dw	offset cMCD_23		;u	
+			dw	offset cMCD_24		;v	
+			dw	offset cMCD_25		;w	
+			dw	offset cMCD_26		;x	
+			dw	offset cMCD_27		;y	
+			dw	offset cMCD_28		;z	
+			dw	offset cMCD_29		;A	
+			dw	offset cMCD_30		;B	
+			dw	offset cMCD_31		;C	
+			dw	offset cMCD_32		;D	
+			dw	offset cMCD_33		;E	
+			dw	offset cMCD_34		;F	
+			dw	offset cMCD_35		;G	
+			dw	offset cMCD_36		;H	
+			dw	offset cMCD_37		;I	
+			dw	offset cMCD_38		;J	
+			dw	offset cMCD_39		;K	
+			dw	offset cMCD_40		;L	
+			dw	offset cMCD_41		;N	
+			dw	offset cMCD_42		;M	
+			dw	offset cMCD_43		;O	
+			dw	offset cMCD_44		;P	
+			dw	offset cMCD_45		;Q	
+			dw	offset cMCD_46		;R	
+			dw	offset cMCD_47		;S	
+			dw	offset cMCD_48		;T	
+			dw	offset cMCD_49		;U	
+			dw	offset cMCD_50		;V	
+			dw	offset cMCD_51		;W	
+			dw	offset cMCD_52		;X	
+			dw	offset cMCD_53		;Y	
+			dw	offset cMCD_54		;Z	
+			dw	offset cMCD_55		;!	
+			dw	offset cMCD_56		;"	
+			dw	offset cMCD_57		;'	
+			dw	offset cMCD_58		;(	
+			dw	offset cMCD_59		;)	
+			dw	offset cMCD_60		;0	
+			dw	offset cMCD_61		;1	
+			dw	offset cMCD_62		;2	
+			dw	offset cMCD_63		;3	
+			dw	offset cMCD_64		;4	
+			dw	offset cMCD_65		;5	
+			dw	offset cMCD_66		;6	
+			dw	offset cMCD_67		;7	
+			dw	offset cMCD_68		;8	
+			dw	offset cMCD_69		;9	
+			dw	offset cMCD_70		;*	
+			dw	offset cMCD_71		;/	
+			dw	offset cMCD_72		;:	
+			dw	offset cMCD_73		;	
+			dw	offset cMCD_74		;[	
+			dw	offset cMCD_75		;]	
+			dw	offset cMCD_76		;<	
+			dw	offset cMCD_77		;>	
+			dw	offset cMCD_78		;@F	
+			dw	offset cMCD_79		;@S	
+			dw	offset cMCD_80		;@R	
+			dw	offset cMCD_81		;@	
+			dw	offset cMCD_82		;_	
+c_Command_Adrs_E	dw	offset cMCD_83		;{	
+;c_Command_Adrs_E:
 ;---------------------------------------------------------------|
 ;	①コマンド文字列					|
 ;		最後は00hで終わる				|
@@ -35,8 +138,8 @@
 ;		(次に、数値があるかチェック。→'20h'と同じ処理)	|
 ;	    F0h	プログラム					|
 ;		nnnn	Offset Address				|
-;---------------------------------------------------------------
-c_Command_Data:
+;---------------------------------------------------------------|
+;		MML		WTD	Output	param
 ;		Strings		Version	Strings	Command
 cMCD_0	db	0dh,0ah,'C',0,	0,1,	0,	0f0h	;<CR+LF>+'C'
 	dw		offset cMCD_CH			;
@@ -152,117 +255,24 @@ cMCD_82	db	'_',0,		0,1,	'_',0,	11h,0	;_
 cMCD_83	db	'{',0,		0,8,	'{',0,	0f0h	;{
 	dw		offset cMCD_trance		;
 	db		0				;
-;===============================================================
-c_Command_Adrs:				;コマンド・データのアドレス。
-	dw	84			;数量
-	dw	offset cMCD_0		;<CR+LF>+"C"
-	dw	offset cMCD_1		;<CR+LF>+"!"
-	dw	offset cMCD_2		;<CR+LF>
-	dw	offset cMCD_3		;a	ラ
-	dw	offset cMCD_4		;b	シ
-	dw	offset cMCD_5		;c	ド
-	dw	offset cMCD_6		;d	レ
-	dw	offset cMCD_7		;e	ミ
-	dw	offset cMCD_8		;f	ファ
-	dw	offset cMCD_9		;g	ソ
-	dw	offset cMCD_10		;h	
-	dw	offset cMCD_11		;i	
-	dw	offset cMCD_12		;j	
-	dw	offset cMCD_13		;k	
-	dw	offset cMCD_14		;l	
-	dw	offset cMCD_15		;n	
-	dw	offset cMCD_16		;m	
-	dw	offset cMCD_17		;o	
-	dw	offset cMCD_18		;p	
-	dw	offset cMCD_19		;q	
-	dw	offset cMCD_20		;r	
-	dw	offset cMCD_21		;s	
-	dw	offset cMCD_22		;t	
-	dw	offset cMCD_23		;u	
-	dw	offset cMCD_24		;v	
-	dw	offset cMCD_25		;w	
-	dw	offset cMCD_26		;x	
-	dw	offset cMCD_27		;y	
-	dw	offset cMCD_28		;z	
-	dw	offset cMCD_29		;A	
-	dw	offset cMCD_30		;B	
-	dw	offset cMCD_31		;C	
-	dw	offset cMCD_32		;D	
-	dw	offset cMCD_33		;E	
-	dw	offset cMCD_34		;F	
-	dw	offset cMCD_35		;G	
-	dw	offset cMCD_36		;H	
-	dw	offset cMCD_37		;I	
-	dw	offset cMCD_38		;J	
-	dw	offset cMCD_39		;K	
-	dw	offset cMCD_40		;L	
-	dw	offset cMCD_41		;N	
-	dw	offset cMCD_42		;M	
-	dw	offset cMCD_43		;O	
-	dw	offset cMCD_44		;P	
-	dw	offset cMCD_45		;Q	
-	dw	offset cMCD_46		;R	
-	dw	offset cMCD_47		;S	
-	dw	offset cMCD_48		;T	
-	dw	offset cMCD_49		;U	
-	dw	offset cMCD_50		;V	
-	dw	offset cMCD_51		;W	
-	dw	offset cMCD_52		;X	
-	dw	offset cMCD_53		;Y	
-	dw	offset cMCD_54		;Z	
-	dw	offset cMCD_55		;!	
-	dw	offset cMCD_56		;"	
-	dw	offset cMCD_57		;'	
-	dw	offset cMCD_58		;(	
-	dw	offset cMCD_59		;)	
-	dw	offset cMCD_60		;0	
-	dw	offset cMCD_61		;1	
-	dw	offset cMCD_62		;2	
-	dw	offset cMCD_63		;3	
-	dw	offset cMCD_64		;4	
-	dw	offset cMCD_65		;5	
-	dw	offset cMCD_66		;6	
-	dw	offset cMCD_67		;7	
-	dw	offset cMCD_68		;8	
-	dw	offset cMCD_69		;9	
-	dw	offset cMCD_70		;*	
-	dw	offset cMCD_71		;/	
-	dw	offset cMCD_72		;:	
-	dw	offset cMCD_73		;	
-	dw	offset cMCD_74		;[	
-	dw	offset cMCD_75		;]	
-	dw	offset cMCD_76		;<	
-	dw	offset cMCD_77		;>	
-	dw	offset cMCD_78		;@F	
-	dw	offset cMCD_79		;@S	
-	dw	offset cMCD_80		;@R	
-	dw	offset cMCD_81		;@	
-	dw	offset cMCD_82		;_	
-	dw	offset cMCD_83		;{	
-;===============================================================
-;現在コンパイル中のチャンネル。
-cMCD_ChannelWTD	db	?		;コンパイル中の。
-cMCD_ChannelMML	db	?		;ＭＭＬ中の。
-cMCD_MacroCount	dw	-2		;マクロのスタックポインタ
-cMCD_MacroAdr	dw	8	dup(0)	;マクロのスタックエリア
-;無限ループアドレス
-cMCD_LoopL	dw	0000h		;
-;音長'l'
-dMCD_lengs	dw	48		;
-;ループ
-cMCD_LoopCount	dw	-2		;
-cMCD_LoopEnd	dw	8	dup(0)	;
-cMCD_LoopJump	dw	8	dup(0)	;
-
-;===============================================================
+.code
 
 ;---------------------------------------------------------------
-;改行の直前までポインタを進める
+;	改行の直前までポインタを進める
 ;---------------------------------------------------------------
-cMCD_CRS:				;Serach
-	pusha				;改行検査から実行する。
-	jmp	cMCD_CR_Loop		;
+cMCD_CRS	proc	near	uses ax	;Serach
 
+	.repeat
+	   call	CREAD_L			;ファイル終了だったら、終わり。
+	   jc	cMCD_CRS_END		;（このとき、ポインタは改行の次。）
+	.until	(al == 0dh)		;改行があった。
+
+	;ポインタを改行直前に戻す。
+	dec	cs:[pMML_File]		;
+
+cMCD_CRS_END:
+	ret				;
+cMCD_CRS	endp
 ;---------------------------------------------------------------
 ;	改行があった場合の処理
 ;---------------------------------------------------------------
@@ -273,145 +283,105 @@ cMCD_CRS:				;Serach
 ;		行先頭がスペース or 制御コードかチェックし、
 ;		それ以外であれば、改行の直前までポインタを進める。
 ;---------------------------------------------------------------
-cMCD_CR:
+cMCD_CR		proc	near	uses ax
 	call	cMCD_MacroEndChk	;マクロ中かチェック＆マクロ終了。
-	jc	cMCD_CR_EndM		;マクロ中だったら、cy='H'
-
-	;-------
-	;マクロ中じゃなかった場合	;スペース or 制御文字であるかチェックし、
-	pusha				;そうでなかったら、改行検査を行う。
-	call	CREAD			;
-	cmp	ah,21h			;制御文字であるか？
-	jc	cMCD_CR_Step		;それ以外だったら、改行検査から。
-
-cMCD_CR_Loop:				;改行検査
-	call	CREAD			;
-	jc	cMCD_CR_End		;ファイル終了だったら、終わり。
-	cmp	ah,0dh			;（このとき、ポインタは改行の次。）
-	jnz	cMCD_CR_Loop		;改行があった。
-
-;ポインタを改行直前に戻す。
-cMCD_CR_Step:				;
-	dec	cs:[pMML_File]		;
-;終了
-cMCD_CR_End:				;
-	popa				;レジスタ復帰
-
-cMCD_CR_EndM:				;
+	.if	(!carry?)
+	   ;-------
+	   ;マクロ中じゃなかった場合	;スペース or 制御文字であるかチェックし、
+	   call	CREAD_L			;そうでなかったら、改行検査を行う。
+	   .if	(al >= 21h)		;制御文字以外だったら、改行検査から。
+		call	cMCD_CRS	;次の改行まで進める。
+	   .else
+		dec	cs:[pMML_File]	;
+	   .endif
+	.endif
 	ret				;
+cMCD_CR		endp
 ;---------------------------------------------------------------
-;
+;	改行＋"C"があった場合の処理	チャンネル設定
 ;---------------------------------------------------------------
-cMCD_CH:				;チャンネル設定
+cMCD_CH		proc	near	uses ax
 	call	cMCD_MacroEndChk	;マクロの終了かどうかをチェック
-	jc	cMCD_CH_EndM		;
-	pusha				;
+	.if	(!carry?)
+		mov	ss:[di].cMCD_ChannelMML,0ffh	;ダミーの設定
 
-	mov	ah,0ffh			;ダミーの設定
-	mov	cs:[cMCD_ChannelMML],ah	;保存
-cMCD_CH_Loop:				;
-	call	A2H8R			;読み込み
-
-	cmp	ah,cs:[cMCD_ChannelWTD]	;比較
-	jnz	cMCD_CH_Step		;
-	call	cMCD_CH_Set		;同じだったら設定。
-cMCD_CH_Step:				;
-
-	call	CREAD			;カンマがあったら、
-	cmp	ah,','			;トラックの複数指定。
-	jz	cMCD_CH_Loop		;
-
-;終了
-cMCD_CH_End:
-	popa				;レジスタ復帰
-cMCD_CH_EndM:				;
+		.repeat
+		   call	A2H8R		;読み込み
+		   .if	(ah == ss:[di].cMCD_ChannelWTD)
+			mov	ss:[di].cMCD_ChannelMML,ah
+		   .endif
+		   call	CREAD_L		;カンマがあったら、
+		.until	(al != ',')	;トラックの複数指定。
+	.endif
 	ret				;
-cMCD_CH_Set:
-	mov	cs:[cMCD_ChannelMML],ah	;保存
-	ret
-
+cMCD_CH		endp
 ;---------------------------------------------------------------
 ;	マクロ呼び出し
 ;---------------------------------------------------------------
-cMCD_Macro	proc	near		;マクロ
+.const
+cMCD_Macro_Err	db	'マクロが定義されていません。',0DH,0AH,'$'
+cMCD_Macro_Err2	db	'マクロのネストが８回を超えました。',0DH,0AH,'$'
+.code
+cMCD_Macro	proc	near	uses ax bx cx dx	;マクロ
 
-	local	ptMacroSearch:word	;ポインタ
+	local	ptMacroSearch:word		;ポインタ
 
-;	call	cMCD_MacroEndChk	;マクロの終了かどうかをチェック
-;	jc	cMCD_Macro_EndM		;
+	;●マクロ名の取得
+	xor	bx,bx				;
+	call	CREAD_L				;
+	mov	bl,al				;bl ← マクロ文字
+	push	cs:[pMML_File]			;
+	call	CREAD_L				;
+	pop	cs:[pMML_File]			;ah ← 引数先頭文字
+	.if	((al >= 30h) && (al < 3Ah))
+		call	A2H8R			;
+		mov	bh,ah			;bh ← マクロ引数
+	.endif					;bx ← マクロ番号（文字と番号）
 
-;●レジスタの保存
-	pusha				;
+	;●マクロの検索
+	mov	dx,cs:[pMML_File]		;dx←MMLのポインタ（保存）
+	mov	ptMacroSearch,0			;ポインタを先頭に
+	.repeat
+		xor	cx,cx			;cx←マクロ番号
 
-;●マクロ名の取得
-	xor	bx,bx			;
-	call	CREAD			;
-	mov	bl,ah			;bl←マクロ文字
-	push	cs:[pMML_File]		;
-	call	CREAD			;
-	pop	cs:[pMML_File]		;ah←引数先頭文字
-	cmp	ah,30h			;
-	jc	cMCD_Macro_Step0	;
-	cmp	ah,3Ah			;
-	jnc	cMCD_Macro_Step0	;数字じゃなかったら、0固定！
-	call	A2H8R			;
-	mov	bh,ah			;bh←マクロ引数
-					;bxで、マクロ番号（文字と番号）
+		mov	ax,ptMacroSearch	;今のポインタ
+		mov	cs:[pMML_File],ax	;
+		inc	ptMacroSearch		;サーチポインタをインクリメント
 
-;●マクロの検索
-cMCD_Macro_Step0:			;
-	mov	dx,cs:[pMML_File]	;dx←MMLのポインタ（保存）
-	mov	ptMacroSearch,0		;ポインタを先頭に
-cMCD_Macro_Loop0:			;
-	mov	ax,ptMacroSearch	;今のポインタ
-	mov	cs:[pMML_File],ax	;
-	call	cread			;
-	jnc	cMCD_Macro_Step1	;EOFになったら、
-	jmp	MACRO_ERROR		;存在しないマクロの呼び出し
+		;CR+LF+'$'があるかを、先ずチェック
+		call	cread_l			;
+		.if	(carry?)		;EOFになったら、
+			mov	dx,offset cMCD_Macro_Err
+			jmp	PRINT_ERR
+		.endif
+		.continue	.if	(al != 0dh)
+		call	cread_l			;
+		.continue	.if	(al != 0ah)
+		call	cread_l			;
+		.continue	.if	(al != '$')
 
-cMCD_Macro_Step1:			;
-	inc	ptMacroSearch		;サーチポインタをインクリメント
+		;同一名のマクロかチェック
+		call	CREAD_L			;
+		mov	cl,al			;cl←マクロ文字
+		push	cs:[pMML_File]		;ポインタ復帰
+		call	CREAD_L			;
+		pop	cs:[pMML_File]		;ポインタ復帰
+		.if	((al >= 30h) && (al < 3Ah))
+			call	A2H8R		;
+			mov	ch,ah		;ch←番号
+		.endif
+	.until	(cx == bx)
 
-	cmp	ah,0dh			;
-	jnz	cMCD_Macro_Loop0	;
+	;●マクロ
+	add	ss:[di].cMCD_MacroCount,2	;
+	mov	bx,ss:[di].cMCD_MacroCount	;マクロのポインタ
+	.if	(bx >= 16)
+		mov	dx,offset cMCD_Macro_Err2
+		jmp	PRINT_ERR
+	.endif
+	mov	ss:[di].cMCD_MacroAdr[bx],dx	;復帰時のポインタ
 
-	call	cread			;
-	cmp	ah,0ah			;
-	jnz	cMCD_Macro_Loop0	;
-
-	call	cread			;
-	cmp	ah,'$'			;CR+LF+'$'があるかを、先ずチェック
-	jnz	cMCD_Macro_Loop0	;
-
-	call	CREAD			;
-	mov	cl,ah			;cl←マクロ文字
-	push	cs:[pMML_File]		;ポインタ復帰
-	mov	ch,0			;
-	call	CREAD			;
-	pop	cs:[pMML_File]		;ポインタ復帰
-	cmp	ah,30h			;
-	jc	cMCD_Macro_Step2	;
-	cmp	ah,3Ah			;
-	jnc	cMCD_Macro_Step2	;
-	call	A2H8R			;
-	mov	ch,ah			;ch←番号
-cMCD_Macro_Step2:			;
-	cmp	bx,cx			;
-	jnz	cMCD_Macro_Loop0	;
-
-;●マクロ
-	add	cs:[cMCD_MacroCount],2	;
-	mov	bx,cs:[cMCD_MacroCount]	;マクロのポインタ
-	cmp	bx,16			;
-	jc	cMCD_Macro_Step3	;マクロを呼びすぎ。
-	jmp	MACRO_ERROR2		;
-cMCD_Macro_Step3:			;
-	mov	cs:[cMCD_MacroAdr + bx],dx	;復帰時のポインタ
-
-;●レジスタの復帰
-	popa				;レジスタ復帰
-cMCD_Macro_EndM:			;
-	ret				;
+	ret					;
 cMCD_Macro	endp
 ;---------------------------------------------------------------
 ;	マクロ中かチェック＆マクロの終了
@@ -421,430 +391,337 @@ cMCD_Macro	endp
 ;		cy='H'	マクロを終了した。
 ;			cs:[pMML_File]	元のポインタ
 ;---------------------------------------------------------------
-cMCD_MacroEndChk	proc	near
-	pusha				;
+cMCD_MacroEndChk	proc	near	uses ax bx
 
-	cmp	cs:[cMCD_MacroCount],-2	;マクロのスタックは空？
-	jz	cMCD_MacroEndChk_End	;空だったら、終了
+	mov	bx,ss:[di].cMCD_MacroCount		;マクロのポインタ
+	.if	(bx != -2)
+		sub	ss:[di].cMCD_MacroCount,2	;
+		mov	ax,ss:[di].cMCD_MacroAdr[bx]	;
+		mov	cs:[pMML_File],ax		;
+		stc					;Cy←'h'
+	.endif
 
-	mov	bx,cs:[cMCD_MacroCount]	;マクロのポインタ
-	sub	cs:[cMCD_MacroCount],2	;
-	mov	ax,cs:[cMCD_MacroAdr + bx]
-	mov	cs:[pMML_File],ax	;
-
-	stc				;Cy←'h'
-cMCD_MacroEndChk_End:			;
-	popa				;レジスタ復帰
 	ret				;
-
 cMCD_MacroEndChk	endp
 ;---------------------------------------------------------------
 ;	パンポット
 ;---------------------------------------------------------------
-cMCD_sp:				;
-	pusha				;
+cMCD_sp		proc	near	uses ax	bx
 
 	push	cs:[pMML_File]		;
-	call	CREAD			;%があったら、
+	call	CREAD_L			;%があったら、
 	pop	cs:[pMML_File]		;
-	cmp	ah,'%'			;
-	jz	cMCD_sp_2		;
-
-cMCD_sp_1:				;------------------
-	call	A2H8R			;%が無かった場合
+	call	A2H8R	
+	.if	(al == '%')
+	   .if	(ah < 32)		;%があった場合
+		shl	ah,2		;それ以外は４倍にする。
+	   .else
+		mov	ah,127		;もし32以上だったら127
+	   .endif
+	.endif
 	call	CSET			;
-	jmp	cMCD_sp_3		;
 
-cMCD_sp_2:				;------------------
-	call	A2H8R			;%があった場合
-	cmp	ah,32			;
-	jc	cMCD_sp_21		;
-	mov	ah,127			;もし32以上だったら127
-	jmp	cMCD_sp_22		;
-cMCD_sp_21:				;
-	mov	al,ah			;
-	mov	ah,4			;
-	mul	ah			;それ以外は４倍にする。
-	mov	ah,al			;
-cMCD_sp_22:				;
-	call	CSET			;
-;	jmp	cMCD_sp_3		;
-
-cMCD_sp_3:				;------------------
 	push	cs:[pMML_File]		;
-	call	CREAD			;カンマがあったら、
+	call	CREAD_L			;カンマがあったら、
 	pop	cs:[pMML_File]		;
-	cmp	ah,','			;
-	jnz	cMCD_sp_end		;
-
+	.if	(al == ',')
 	call	A2H8R			;引数を読む
-	cmp	ah,1			;
-	jc	cMCD_sp_end		;
+	   .if	(ah >= 1)
+		mov	bx,CS:[pWTD_File]	;
+		dec	bx			;
+		or	byte ptr ds:[bx],80h	;
+	   .endif
+	.endif
 
-	push	bx			;ビットセット
-	mov	bx,CS:[pWTD_File]	;
-	dec	bx			;
-	or	byte ptr ds:[bx],80h	;
-	pop	bx			;
-
-cMCD_sp_end:				;------------------
-	popa				;終了
 	ret				;
-
+cMCD_sp		endp
 ;---------------------------------------------------------------
 ;	音量
 ;---------------------------------------------------------------
-cMCD_sv:				;
-	pusha				;
+cMCD_sv		proc	near	uses ax	;
 
 	push	cs:[pMML_File]		;
-	call	CREAD			;%があったら、
+	call	CREAD_L			;%があったら、
 	pop	cs:[pMML_File]		;
-	cmp	ah,'%'			;
-	jz	cMCD_sv_2		;
-
-cMCD_sv_1:				;------------------
-	call	A2H8R			;%が無かった場合
+	call	A2H8R	
+	.if	(al == '%')
+	   .if	(ah < 16)		;%があった場合
+		shl	ah,3		;それ以外は8倍にする。
+	   .else
+		mov	ah,127		;もし16以上だったら127
+	   .endif
+	.endif
 	call	CSET			;
-	jmp	cMCD_sv_3		;
 
-cMCD_sv_2:				;------------------
-	call	A2H8R			;%があった場合
-	cmp	ah,16			;
-	jc	cMCD_sv_21		;
-	mov	ah,127			;もし16以上だったら127
-	jmp	cMCD_sv_22		;
-cMCD_sv_21:				;
-	mov	al,ah			;
-	mov	ah,8			;
-	mul	ah			;それ以外は8倍にする。
-	mov	ah,al			;
-cMCD_sv_22:				;
-	call	CSET			;
-;	jmp	cMCD_sv_3		;
-
-cMCD_sv_3:				;------------------
-	popa				;
 	ret				;
-
+cMCD_sv		endp
 ;---------------------------------------------------------------
 ;	テンポ
 ;---------------------------------------------------------------
-cMCD_st:
-	pusha				;
-
+cMCD_st		proc	near	uses ax bx cx dx
 	push	cs:[pMML_File]		;
-	call	CREAD			;%があったら、
+	call	CREAD_L			;
 	pop	cs:[pMML_File]		;
-	cmp	ah,'%'			;
-	jnz	cMCD_st_2		;
+	mov	cl,al			;
+	call	A2H16R			;
+	.if	(cl != '%')		;%が無かったら
+		;数値読み込み		;
+		mov	cx,ax		;cx ← 読み込んだ値
+		xor	bx,bx		;bx ← TimeBase
+		mov	bl,ds:[0].WTD_Mus_TimeBase
+		;演算
+		mov	dx,0000ah	;
+		mov	ax,0fc80h	;
+		div	bx		;
+		xor	dx,dx		;
+		div	cx		;ax←12000 * 60 / (Tempo * TimeBase)
+	.endif
+	call	CSET16			;書き込み
 
-cMCD_st_1:				;------------------
-	call	A2H16R			;cx←Tempo
-	jmp	cMCD_st_3		;
-
-cMCD_st_2:				;------------------
-;数値読み込み				;■従来
-	call	A2H16R			;cx←Tempo
-	mov	cx,ax			;
-	xor	bx,bx			;bx←TimeBase
-	mov	bl,ds:[0].WTD_Mus_TimeBase
-
-;演算
-	mov	dx,0000ah		;
-	mov	ax,0fc80h		;
-	div	bx			;
-	xor	dx,dx			;
-	div	cx			;ax←12000 * 60 / (Tempo * TimeBase)
-;	jmp	cMCD_st_3		;
-
-cMCD_st_3:				;------------------
-;書き込み
-	call	CSET16			;
-
-;終了
-	popa				;
+	;終了
 	ret				;
-
+cMCD_st		endp
 ;---------------------------------------------------------------
 ;	ピッチベンド
 ;---------------------------------------------------------------
-cMCD_lB:				;'B'コマンド
-	push	ax			;
+cMCD_lB		proc	near	uses ax bx	;'B'コマンド
 	
-	call	A2H16R			;
-	call	CSET16			;
+	call	A2H16R				;
+	call	CSET16				;
 
-	push	cs:[pMML_File]		;
-	call	CREAD			;カンマがあったら、
-	pop	cs:[pMML_File]		;
-	cmp	ah,','			;ベンドレンジ
-	jnz	cMCD_lB_End		;
+	push	cs:[pMML_File]			;
+	call	CREAD_L				;
+	pop	cs:[pMML_File]			;
+	.if	(al == ',')			;カンマがあったら、ベンドレンジ
+		push	bx			;ビットセット
+		mov	bx,CS:[pWTD_File]	;
+		dec	bx			;
+		dec	bx			;
+		or	word ptr ds:[bx],8000h	;
+		pop	bx			;
+		call	A2H8R			;
+		call	CSET			;
+	.endif
 
-	push	bx			;ビットセット
-	mov	bx,CS:[pWTD_File]	;
-	dec	bx			;
-	dec	bx			;
-	or	word ptr ds:[bx],8000h	;
-	pop	bx			;
-
-	call	A2H8R			;
-	call	CSET			;
-
-
-cMCD_lB_End:				;
-	pop	ax			;
 	ret				;
-
+cMCD_lB		endp
 ;---------------------------------------------------------------
 ;	無限ループのポインタセット
 ;---------------------------------------------------------------
-cMCD_lL:				;'L'コマンド
-	push	ax			;
+cMCD_lL		proc	near	uses ax	;'L'コマンド
 	
 	mov	ax,cs:[pWTD_File]	;
-	mov	cs:[cMCD_LoopL],ax	;
+	mov	ss:[di].cMCD_LoopL,ax	;
 	
-	pop	ax			;アドレスの保存
 	ret				;
-
+cMCD_lL		endp
 ;---------------------------------------------------------------
 ;	エクスクルーシブ
 ;---------------------------------------------------------------
-cMCD_lX_CRC	db	?		;
-cMCD_lX_Flag	db	?		;
-cMCD_lX:				;'X'コマンド
-	pusha				;
+cMCD_lX		proc	near	uses ax	;'X'コマンド
 
-	mov	cs:[cMCD_lX_CRC],0	;CRCを0x00にする。
-	mov	cs:[cMCD_lX_Flag],0	;Flagを0x00にする。
+	local	cCRC:BYTE		;Roland GS音源のチェックサム計算用
+	local	cFlag:BYTE		;チェックサム計算中か？
+
+	mov	cCRC,0			;CRCを0x00にする。
+	mov	cFlag,0			;Flagを0x00にする。
 
 	mov	ah,0f0h			;エクスクルーシブ開始
 	call	cset			;
+	.repeat
+		push	cs:[pMML_File]		;
+		call	CREAD_L			;
+		pop	cs:[pMML_File]		;
+		.break	.if	(al == '}')	;
+		.if		(al == '(')	;
+			mov	cFlag,1		;Flagを0x01にする。
+		.elseif		(al == ')')	;
+			mov	cFlag,0		;Flagを0x00にする。
+			mov	al,cCRC		;
+			and	al,07fh		;
+			mov	ah,128		;
+			sub	ah,al		;
+			call	CSET		;CRCの出力
+		.elseif	((al >= 30h) && (al < 3Ah))
+			call	A2H8R		;読み込み
+			call	CSET		;
+			.if	(cFlag == 1)	;
+			   add	cCRC,ah		;
+			.endif
+			.continue
+		.endif
+		inc	cs:[pMML_File]		;
+	.until	0
 
-cMCD_lX_Loop:				;
-	push	cs:[pMML_File]		;
-	call	CREAD			;
-	pop	cs:[pMML_File]		;
-	cmp	ah,'}'			;
-	jz	cMCD_lX_StepEnd		;
-	cmp	ah,'('			;
-	jnz	cMCD_lX_Step0		;
-	mov	cs:[cMCD_lX_Flag],1	;Flagを0x01にする。
-cMCD_lX_Step0:				;
-	cmp	ah,')'			;
-	jnz	cMCD_lX_Step1		;
-	mov	cs:[cMCD_lX_Flag],0	;Flagを0x00にする。
-	push	ax			;
-	mov	cl,cs:[cMCD_lX_CRC]	;
-	and	cl,07fh			;
-	mov	al,128			;
-	sub	al,cl			;
-	mov	ah,al			;
-	call	CSET			;CRCの出力
-	pop	ax			;
-cMCD_lX_Step1:				;
-	cmp	ah,030h			;
-	jc	cMCD_lX_Step9		;
-	cmp	ah,03ah			;
-	jnc	cMCD_lX_Step9		;
-	call	A2H8R			;読み込み
-	call	CSET			;
-	cmp	cs:[cMCD_lX_Flag],1	;
-	jnz	cMCD_lX_Step2		;
-	add	cs:[cMCD_lX_CRC],ah	;
-cMCD_lX_Step2:				;
-	jmp	cMCD_lX_Loop		;
-cMCD_lX_Step9:				;
-	inc	cs:[pMML_File]		;
-	jmp	cMCD_lX_Loop		;
+	mov	al,0f7h			;エクスクルーシブ終了
+	call	cset_l			;
 
-cMCD_lX_StepEnd:			;
-	mov	ah,0f7h			;エクスクルーシブ終了
-	call	cset			;
-
-	popa				;
 	ret				;
-
+cMCD_lX		endp
 ;---------------------------------------------------------------
 ;	MIDIイベント直書き込み
 ;---------------------------------------------------------------
-cMCD_lZ:				;'Z'コマンド
-	pusha				;
+cMCD_lZ		proc	near	uses ax bx cx	;'Z'コマンド
 
-	mov	dx,cs:[pWTD_File]	;
+	mov	bx,cs:[pWTD_File]	;一時保存
 	xor	cx,cx			;
 	call	CSET			;ポインタ移動
 
-cMCD_lZ_Loop:				;
-	inc	cx			;
-	call	A2H8R			;読み込み
-	call	CSET			;
+	.repeat
+		inc	cx		;
+		call	A2H8R		;読み込み
+		call	CSET		;
 
-	push	cs:[pMML_File]		;
-	call	CREAD			;
-	pop	cs:[pMML_File]		;
-	cmp	ah,'}'			;
-	jnz	cMCD_lZ_Loop		;
+		push	cs:[pMML_File]	;
+		call	CREAD_L		;
+		pop	cs:[pMML_File]	;
+	.until	(al == '}')
 
 	push	cs:[pWTD_File]		;
-	mov	cs:[pWTD_File],dx	;
-	mov	ah,cl			;
-	call	CSET			;
+	mov	cs:[pWTD_File],bx	;
+	mov	al,cl			;
+	call	CSET_L			;
 	pop	cs:[pWTD_File]		;
 
-	popa				;
 	ret				;
-
+cMCD_lZ		endp
 ;---------------------------------------------------------------
 ;	ループ開始点
 ;---------------------------------------------------------------
-cMCD_Loop_Start:			;
-	push	ax			;
-	push	bx			;
+.const
+cMCD_Loop_Err1	db	"リピート[]のネストが８回を超えました。",0DH,0AH,24h
+cMCD_Loop_Err2	db	"リピート開始'['がありません。",0DH,0AH,24h
+cMCD_Loop_Err3	db	"リピート終了']'がありません。",0DH,0AH,24h
 
-	add	cs:[cMCD_LoopCount],2	;ポインタ・インクリメント
+cMCD_Err_00	db	0DH,0AH,24h
+cMCD_Err_01	db	"チャンネル＝",24h
+cMCD_Err_02	db	"ポインタ　＝",24h
+.code
+cMCD_Loop_Start	proc	near	uses ax bx	;
 
-	cmp	cs:[cMCD_LoopCount],18	;ネスト８回超えた？
-	jc	cMCD_Loop_Start_Step1	;
-	jmp	LOOP_ERROR		;そしたら、エラー。
-cMCD_Loop_Start_Step1:			;
-	mov	ax,cs:[pWTD_File]	;ポインタ読み込み。
-	mov	bx,cs:[cMCD_LoopCount]	;
+	add	ss:[di].cMCD_LoopCount,2	;ポインタ・インクリメント
+	mov	bx,ss:[di].cMCD_LoopCount	
+	.if	(bx >= 16)			;ネスト８回超えた？
+		mov	dx,offset cMCD_Loop_Err1
+		jmp	PRINT_ERR
+	.endif
+	mov	ax,cs:[pWTD_File]		;ポインタ読み込み。
+	mov	ss:[di].cMCD_LoopEnd[bx],ax
+	mov	ah,2				;とりあえず、２を書き込み。
+	call	cset				;
 
-	mov	cs:[cMCD_LoopEnd + bx],ax
-
-	mov	ah,2			;とりあえず、２を書き込み。
-	call	cset			;
-
-	pop	bx			;
-	pop	ax			;
-	ret				;
-
+	ret					;
+cMCD_Loop_Start	endp
 ;---------------------------------------------------------------
 ;	ループ終了点
 ;---------------------------------------------------------------
-cMCD_Loop_End:				;
-	push	ax			;
-	push	bx			;
+cMCD_Loop_End	proc	near	uses ax bx
 
-	mov	bx,cs:[cMCD_LoopCount]	;ポインタ読み込み。
+	mov	bx,ss:[di].cMCD_LoopCount	;bx ← ポインタ読み込み。
+	.if	(bx == -2)
+		mov	dx,offset cMCD_Loop_Err2
+		jmp	PRINT_ERR
+	.endif
+	mov	ax,ss:[di].cMCD_LoopEnd[bx]	;ax ← 戻り先アドレス
+	inc	ax				;1つ進んだ場所を書き込み。
+	call	cset16				;戻りアドレスの書き込み。
+	dec	ax				;
 
-	mov	ax,cs:[cMCD_LoopEnd + bx]
-	inc	ax			;1つ進んだ場所を書き込み。
-	call	cset16			;戻りアドレスの書き込み。
-	dec	ax			;
+	push	cs:[pWTD_File]			;
+	mov	cs:[pWTD_File],ax		;
+	call	A2H8R				;
+	call	CSET				;ループ回数
+	pop	cs:[pWTD_File]			;
 
-	push	cs:[pWTD_File]		;
-	mov	cs:[pWTD_File],ax	;
-	call	A2H8R			;
-	call	CSET			;ループ回数
-	pop	cs:[pWTD_File]		;
+	mov	ax,ss:[di].cMCD_LoopJump[bx]
+	.if	(ax != 0)			;ループアドレス
+		push	cs:[pWTD_File]		;
+		xchg	ax,cs:[pWTD_File]	;ax ← Loop Break先のアドレス
+		call	cset16			;
+		pop	cs:[pWTD_File]		;
+	.endif
+	xor	ax,ax				;ax←0
+	mov	ss:[di].cMCD_LoopJump[bx],ax	;
+	mov	ss:[di].cMCD_LoopEnd[bx],ax	;
+	sub	bx,2				;
+	mov	ss:[di].cMCD_LoopCount,bx	;ポインタ書き込み
 
-	mov	ax,cs:[cMCD_LoopJump + bx]
-	cmp	ax,0			;ループアドレス
-	jz	cMCD_Loop_End_End	;
-; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-	mov	cx,cs:[pWTD_File]	;Loop Jump
-
-	push	cs:[pWTD_File]		;
-	mov	cs:[pWTD_File],ax	;
-	mov	ax,cx			;
-	call	cset16			;
-	pop	cs:[pWTD_File]		;
-; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-cMCD_Loop_End_End:			;
-	xor	ax,ax			;ax←0
-	mov	cs:[cMCD_LoopJump + bx],ax
-	mov	cs:[cMCD_LoopEnd + bx],ax
-	sub	bx,2			;
-	mov	cs:[cMCD_LoopCount],bx	;ポインタ書き込み
-
-	pop	bx			;
-	pop	ax			;
 	ret				;
-
+cMCD_Loop_End	endp
 ;---------------------------------------------------------------
 ;	ループ抜け点
 ;---------------------------------------------------------------
-cMCD_Loop_Jump:				;
-	push	ax			;
-	push	bx			;
+cMCD_Loop_Jump	proc	near	uses ax bx	;
 
-	mov	ax,cs:[pWTD_File]	;ポインタ読み込み。
-	mov	bx,cs:[cMCD_LoopCount]	;
+	mov	bx,ss:[di].cMCD_LoopCount	;
+	.if	(bx == -2)
+		mov	dx,offset cMCD_Loop_Err2
+		jmp	PRINT_ERR
+	.endif
+	mov	ax,cs:[pWTD_File]		;ポインタ読み込み。
+	mov	ss:[di].cMCD_LoopJump[bx],ax	;
+	call	cset16				;
 
-	mov	cs:[cMCD_LoopJump + bx],ax
-
-	call	cset16			;
-
-	pop	bx			;
-	pop	ax			;
 	ret				;
-
+cMCD_Loop_Jump	endp
 ;---------------------------------------------------------------
 ;	転調
 ;---------------------------------------------------------------
-cMCD_tranceFlag	db	00h
-cMCD_trance:
-	pusha				;レジスタ保存
+.const
+cMCD_trance_Err		db	'{コマンドにて不正な半音記号が指定されました。',0dh,0ah,24h
+.code
+cMCD_trance	proc	near	uses ax cx
 
-	mov	bx,offset cMCD_tranceFlag
-	call	CREAD			;読み込み
-	cmp	ah,'='			;
-	jz	cMCD_tranceNatu		;
-	cmp	ah,'+'			;
-	jz	cMCD_tranceSharp	;
-	cmp	ah,'#'			;
-	jz	cMCD_tranceSharp	;
-	cmp	ah,'-'			;
-	jz	cMCD_tranceFlat		;
-	cmp	ah,'b'			;
-	jz	cMCD_tranceFlat		;
-cMCD_tranceLoop:
-	call	CREAD			;
-	cmp	ah,'}'			;
-	jz	cMCD_tranceEnd		;
-	sub	ah,'c'			;
-	jnc	cMCD_tranceStep0	;
-	add	ah,7			;
-cMCD_tranceStep0:			;
-	mov	cl,ah			;
-	mov	al,01h			;
-	cmp	cl,0			;
-	jz	cMCD_tranceStep1	;
-	shl	al,cl			;
-cMCD_tranceStep1:			;
-	or	cs:[cMCD_tranceFlag],al	;
-	jmp	cMCD_tranceLoop		;
+	local	cPara:BYTE
 
-cMCD_tranceSharp:				;
-	mov	cs:[cMCD_tranceFlag],000h	;初期化
-	jmp	cMCD_tranceLoop			;
+	mov	cPara,000h			;初期化
 
-cMCD_tranceFlat:				;
-	mov	cs:[cMCD_tranceFlag],080h	;初期化
-	jmp	cMCD_tranceLoop			;
+	call	CREAD_L				;読み込み
+	.if	(al == '=')			;■ハ長調 or イ短調 の場合
+	   .repeat				;
+		call	CREAD_L			;
+	   .until	(al == '}')		;}まで進む。
 
-cMCD_tranceNatu:				;
-	mov	cs:[cMCD_tranceFlag],000h	;初期化
-cMCD_tranceNatuLoop:
-	call	CREAD			;
-	cmp	ah,'}'			;}まで進む。
-	jnz	cMCD_tranceNatuLoop	;
-;	jmp	cMCD_tranceEnd		;
+	.else					;■ハ長調 and イ短調 以外の場合
+	   .if		((al == '-')||(al == 'b'))
+		mov	cPara,080h		;
+	   .elseif	((al == '+')||(al == '#'))
+	   .else				;
+		mov	dx,offset cMCD_trance_Err
+		jmp	PRINT_ERR		;
+	   .endif				;
+	   .repeat				;
+		call	CREAD_L			;
+		.break	.if	(al == '}')	;
+		sub	al,'c'			;
+		.if	(carry?)		;
+		   add	al,7			;
+		.endif				;
+		mov	cl,al			;
+		mov	al,01h			;
+		.if	(cl != 0)		;
+		   shl	al,cl			;
+		.endif				;
+		or	cPara,al		;
+	   .until	0			;
+	.endif					;
 
-cMCD_tranceEnd:
-	mov	ah,cs:[cMCD_tranceFlag]	;
-	call	CSET			;
+	mov	al,cPara		;
+	call	CSET_L			;
 
-	popa				;レジスタ復帰
 	ret
-
+cMCD_trance	endp
 ;===============================================================|
 ;			コマンド・コンパイル			|
 ;===============================================================|
-c_Command:				;パートコンパイル
+.code
+c_Command	proc	near		;パートコンパイル
+
+	local	cMCDinfo:cMCD		;コンパイル情報
+
+	local	iLength:WORD		;音長計算用
+	local	cOpcode:BYTE		;Op-Code計算用
+
 	pusha				;レジスタ保存
 
 ;パート数読み込み
@@ -853,335 +730,262 @@ c_Command:				;パートコンパイル
 
 ;-----------------------------------------------------------------------
 ;トラックコンパイル開始
-c_Command_Loop0:
+
+    .repeat				;トラック数繰り返す。
 
 	push	cx			;レジスタ保存
 
-;初期設定
-;コンパイル中のチャンネル関連
-	mov	byte ptr cs:[cMCD_ChannelMML],0ffh
-	mov	byte ptr cs:[cMCD_ChannelWTD],ch
-;無限ループアドレス
-	mov	word ptr cs:[cMCD_LoopL],0000h
-;音長
-	mov	word ptr cs:[dMCD_lengs],48
-;ループ
-	mov	word ptr cs:[cMCD_LoopCount],0
-	mov	bx,14			;
-c_Command_Loop6:
-	mov	word ptr cs:[cMCD_LoopEnd+bx],0
-	mov	word ptr cs:[cMCD_LoopJump+bx],0
-	sub	bx,2			;
-	jnc	c_Command_Loop6		;
+	;---------------
+	;メンバー変数・初期設定
+	;コンパイル中のチャンネル関連
+	xor	ax,ax
 
-;MMLファイルの先頭にいく。
-	xor	bx,bx			;
-	mov	cs:[pMML_File],bx	;bx
-;トラック先頭アドレス保存
+	;MMLファイルのポインタを先頭に設定。
+	mov	cs:[pMML_File],ax	;
+	;チャンネル情報
+	mov	cMCDinfo.cMCD_ChannelWTD,ch
+	mov	cMCDinfo.cMCD_ChannelMML,0ffh
+	;デフォルト音長
+	mov	cMCDinfo.cMCD_DefLength,48
+	;無限ループアドレス
+	mov	cMCDinfo.cMCD_LoopL,ax
+	;ループ・マクロ
+	mov	cMCDinfo.cMCD_LoopCount,-2
+	mov	cMCDinfo.cMCD_MacroCount,-2
+	xor	di,di			;
+	mov	cx,8
+	.repeat
+	   mov	cMCDinfo.cMCD_LoopEnd[di],ax
+	   mov	cMCDinfo.cMCD_LoopJump[di],ax
+	   mov	cMCDinfo.cMCD_MacroAdr[di],ax
+	   add	di,2		;
+	.untilcxz
+
+	;---------------
+	;トラック先頭アドレス保存
 	mov	ax,cs:[pWTD_File]	;
-	mov	bl,byte ptr cs:[cMCD_ChannelWTD]
+	xor	bx,bx			;
+	mov	bl,cMCDinfo.cMCD_ChannelWTD
 	shl	bx,1			;
 	add	bx,WTD_Mus_PartAdr	;
 	mov	ds:[bx],ax		;
 
-;コマンド検索
-;コマンド数量の読み込み
-c_Command_Loop1:			;
+	;---------------
+	;コマンド検索
+	;コマンド数量の読み込み
+	;EOFまで繰り返す。
+	.repeat
 
-;チャンネルが一致しなかったら、改行を探す。
-	mov	ah,cs:[cMCD_ChannelMML]	;
-	mov	al,cs:[cMCD_ChannelWTD]	;
-	cmp	al,ah			;比較
-	jz	c_Command_Step0		;チャンネルが一致しなかったら、
-	call	cMCD_CRS		;改行を探す。
-c_Command_Step0:			;
+		mov	ah,cMCDinfo.cMCD_ChannelMML
+		mov	al,cMCDinfo.cMCD_ChannelWTD
+		.if	(al != ah)		;チャンネルが一致しなかったら、
+		  call	cMCD_CRS		;改行を探す。
+		.endif
 
-	xor	di,di			;di←変換定義アドレスのポインタ
-	mov	cx,cs:[offset c_Command_Adrs + di]
-					;文字列チェックのカウンタ
-;ポインタ読み込み
-c_Command_Loop2:			;
-	push	cs:[pMML_File]		;ポインタ保存
-	add	di,2			;ポインタインクリメント(Word)
-	mov	si,cs:[offset c_Command_Adrs + di]	;si←変換定義アドレス
-;１文字読み込み
-c_Command_Loop3:			;
-	call	cread			;MMLファイルから１文字読み込み
-	jnc	c_Command_Step1		;
-	pop	cs:[pMML_File]		;ポインタ復帰
-	jmp	c_Command_End		;MMLファイルが[EOF]ならば終了
-c_Command_Step1:			;
-;１文字チェック（00h含む）
-	mov	al,cs:[si]		;
-	inc	si			;
-	cmp	al,00h			;文字終了？
-	jz	c_Command_Step2		;ならば、文字列一致で処理実行。
-	cmp	ah,al			;文字一致？
-	jz	c_Command_Loop3		;ならば、次もチェック。
-;文字チェックで一致しなかった場合。
-	pop	cs:[pMML_File]		;ポインタ復帰
-	sub	cx,1			;カウンター・ディクリメント
-	jnz	c_Command_Loop2		;次のコマンドで比較
-	inc	CS:[pMML_File]		;ポインタ・インクリメント
-	mov	ax,CS:[szMML_File]	;
-	cmp	ax,CS:[pMML_File]	;MMLファイルの終了チェック
-	jnc	c_Command_Loop1		;文字列比較開始。
-	jmp	c_Command_End		;MMLファイルが[EOF]ならば終了
-;-----------------------------------------------------------------------
-;コマンド処理。
-c_Command_Step2:			;
-	pop	ax			;'pMML_File'ポインタの復帰(値は戻さず)
-	push	ds			;セグメントの保存
+		xor	di,di			;di←変換定義アドレスのポインタ
+		mov	cx,cs:[offset c_Command_Adrs + di]
 
-;バージョン比較
-	mov	ax,cs:[si]		;
-	add	si,2			;バージョン読み込み
-	mov	cx,ds:[0].WTD_Mus_Version
-	xchg	ah,al			;逆に入っている。
-	xchg	ch,cl			;(80形式ではないWord)
-	cmp	cx,ax			;比較。
-	jnc	c_Command_Step10	;
-	xchg	ah,al			;このコマンドのバージョンの方が
-	mov	ds:[0].WTD_Mus_Version,ax
-c_Command_Step10:			;高ければ、数値セット。
+		;コマンドの数だけ繰り返す。
+		.repeat
+		   push	cs:[pMML_File]			;ポインタ保存
+		   add	di,2				;ポインタインクリメント(Word)
+		   mov	si,cs:[offset c_Command_Adrs + di]	;si←変換定義アドレス
+		   ;１文字読み込み
+		   .repeat
+			call	cread			;MMLファイルから１文字読み込み
+			lodsb	cs:[si]			;１文字チェック（00h含む）
+		   .until	(al != ah)		;文字一致ならば、次もチェック。
+		   .if		(al == 00h)		;文字終了？
+			;コマンド処理。
+			pop	ax			;'pMML_File'ポインタの復帰(値は戻さず)
+			dec	cs:[pMML_File]		;ポインタを元に戻す。
 
-;コマンド出力
-c_Command_Loop5:			;
-	mov	ah,cs:[si]		;al←コマンド
-	inc	si			;
-	cmp	ah,0			;０ならば終了。
-	jz	c_Command_Step11	;
-	call	CSET			;
-	jmp	c_Command_Loop5		;
-c_Command_Step11:
+			;バージョン比較
+			lodsw	cs:[si]			;
+			mov	cx,ds:[0].WTD_Mus_Version
+			xchg	ah,al			;逆に入っている。
+			xchg	ch,cl			;(80形式ではないWord)
+			.if	(cx < ax)		;比較。
+			  xchg	ah,al			;このコマンドのバージョンの方が
+			  mov	ds:[0].WTD_Mus_Version,ax
+			.endif				;高ければ、数値セット。
 
-;ポインタを元に戻す。
-	dec	cs:[pMML_File]		;ポインタ・ディクリメント
+			;コマンド出力
+			.repeat
+			  lodsb	cs:[si]			;al←コマンド
+			  .break  .if	(al == 0)	;０ならば終了。
+			  mov	ah,al			;
+			  call	CSET			;
+			.until	0			;
 
-;コマンド処理
-c_Command_Loop4:			;
-	mov	al,cs:[si]		;al←コマンド
-	inc	si			;
-	cmp	al,00h			;終了
-	jnz	c_Command_Step3		;
-	jmp	c_Command_Step99	;
-c_Command_Step3:			;
-	cmp	al,010h			;4bit × 2
-	jnz	c_Command_Step4		;
-	call	A2H8R			;
-	and	ah,0fh			;
-	mov	al,ah			;
-	call	A2H8R			;
-	and	ah,0fh			;
-	shl	ah,4			;
-	or	ah,al			;
-	call	cset			;
-	jmp	c_Command_Loop4		;
-c_Command_Step4:			;
-	cmp	al,011h			;Byte
-	jnz	c_Command_Step5		;
-	call	A2H8R			;
-	call	CSET			;
-	jmp	c_Command_Loop4		;
-c_Command_Step5:			;
-	cmp	al,012h			;Word
-	jnz	c_Command_Step6		;
-	call	A2H16R			;
-	call	CSET16			;
-	jmp	c_Command_Loop4		;
-c_Command_Step6:			;
-	cmp	al,020h			;Step
-	jnz	c_Command_Step7		;
-	call	cread			;1文字読み込み。
-	dec	cs:[pMML_File]		;(ポインタは、ずらさない。)
-	xchg	ax,cx			;
-	call	A2H16R			;cx←音長
-	xchg	ax,cx			;
-	cmp	ah,'%'			;数値の前に'%'が書いてある？
-	mov	ax,cx			;ax←数値を保存。
-	jz	c_Command_Step6_Step1	;
-	xor	ax,ax			;
-	mov	al,ds:[0].WTD_Mus_TimeBase
-	shl	ax,2			;dx:ax←４部音符の分割数。
-	xor	dx,dx			;
-	div	cx			;ax←Step数。
-c_Command_Step6_Step1:			;
-	mov	cl,cs:[si]		;al←コマンド
-	inc	si			;
-	cmp	cl,01h			;
-	jnz	c_Command_Step6_Step3	;
-	mov	cs:[dMCD_lengs],ax	;
-c_Command_Step6_Step3:			;
-	cmp	ax,00FFh		;
-	jnc	c_Command_Step6_Step2	;
-	mov	ah,al			;
-	call	cset			;
-	jmp	c_Command_Loop4		;
-c_Command_Step6_Step2:			;
-	push	ax			;
-	mov	ah,0ffh			;
-	call	cset			;
-	pop	ax			;
-	call	cset16			;
-	jmp	c_Command_Loop4		;
-c_Command_Step7:			;
-	cmp	al,080h			;Key
-	jc	c_Command_Step8		;
-	cmp	al,088h			;al←Command
-	jnc	c_Command_Step8		;
-	call	c_Command_KeyCode	;
-	jmp	c_Command_Loop4		;
-c_Command_Step8:			;
-	cmp	al,0F0h			;Call (Other Program)
-	jnz	c_Command_Step9		;
-	mov	dx,cs:[si]		;
-	add	si,2			;
-	call	dx			;
-	jmp	c_Command_Loop4		;
-c_Command_Step9:			;
+			;コマンド処理
+			.repeat
+			    lodsb	cs:[si]			;al←コマンド
+			   ;------------------------------------
+			   .break .if	(al == 000h)		;０ならば終了。
+			   ;------------------------------------
+			   .if		(al == 010h)		;4bit × 2
+				call	A2H8R			;
+				and	ah,0fh			;
+				mov	al,ah			;
+				call	A2H8R			;
+				and	ah,0fh			;
+				shl	ah,4			;
+				or	ah,al			;
+				call	cset			;
+			   ;------------------------------------
+			   .elseif	(al == 011h)		;Byte
+				call	A2H8R			;
+				call	CSET			;
+			   ;------------------------------------
+			   .elseif	(al == 012h)		;Word
+				call	A2H16R			;
+				call	CSET16			;
+			   ;------------------------------------
+			   .elseif	(al == 020h)		;Step 書き込み
+				call	cread			;
+				mov	cl,ah			;cl ← 1文字読み込み。
+				dec	cs:[pMML_File]		;(ポインタは、ずらさない。)
+				call	A2H16R			;
+				xchg	ax,cx			;cx←音長を保存。
+				.if	(al != '%')		;数値の前に'%'が書いてある？
+				  xor	dx,dx			;
+				  xor	ax,ax			;
+				  mov	al,ds:[0].WTD_Mus_TimeBase
+				  shl	ax,2			;dx:ax←４部音符の分割数。
+				  div	cx			;
+				  mov	cx,ax			;cx←Step数。
+				.endif				;
+				lodsb	cs:[si]			;al←コマンド
+				.if	(al == 01h)		;
+				  mov	cMCDinfo.cMCD_DefLength,cx
+				.endif				;
+				.if	(cx < 0FFh)		;
+				  mov	ah,cl			;
+				  call	cset			;
+				.else				;
+				  mov	ah,0ffh			;
+				  call	cset			;
+				  mov	ax,cx			;
+				  call	cset16			;
+				.endif				;
+			   ;------------------------------------
+			   .elseif	((al >= 080h) && (al < 88h))
+				mov	cOpcode,al		;コマンドの保存。
+				mov	dx,cMCDinfo.cMCD_DefLength
+				mov	iLength,dx		;iLength←デフォルト音長。
+				;-------
+				;臨時記号の処理
+				call	CREAD_L			;読み込み。
+				.if	((al == '#')||(al == '+'))
+					or	cOpcode,008h	;
+					call	CREAD_L		;読み込み。
+				.elseif	(al == '-')
+					or	cOpcode,010h	;
+					call	CREAD_L		;読み込み。
+				.elseif	(al == '=')
+					or	cOpcode,018h	;
+					call	CREAD_L		;読み込み。
+				.endif
 
-;コンパイル処理ループ
-	jmp	c_Command_Loop4		;
+				;-------
+				;音長（数字）の処理
+				.if	((al == '%') || ((al >= '0')&&(al <= '9')))
+				  mov	cx,ax			;cl ← 文字読み込み結果
+				  dec	cs:[pMML_File]		;(ポインタを戻す)
+				  call	A2H16R			;ax ← 音長
+				  .if	((ax != 0) && (cl != '%'))
+					mov	cx,ax		;cx ← 音長
+					xor	dx,dx		;
+					xor	ax,ax		;dx:ax = WTD_Mus_TimeBase
+					mov	al,ds:[0].WTD_Mus_TimeBase
+					shl	ax,2		;dx:ax←４部音符の分割数。
+					div	cx		;ax←Step数。
+				  .endif
+				  mov	iLength,ax		;
+				  mov	dx,ax			;dx←音長
+				  call	CREAD_L			;読み込み。
+				.endif
 
-;命令コンパイル処理終了
-c_Command_Step99:			;
-	pop	ds			;セグメントの復帰
-	jmp	c_Command_Loop1		;文字列比較開始。
+				;-------
+				;音長（付点）の処理
+				.while	(al == '.')
+					shr	iLength,1	;
+					add	dx,iLength	;
+					call	CREAD_L		;読み込み。
+				.endw
+				dec	cs:[pMML_File]		;(ポインタは、ずらさない。)
+
+				;-------
+				;タイ・スラーの処理
+				.if	(al == '&')
+					or	cOpcode,020h	;
+				.endif
+
+				;-------
+				;音長は、lコマンドの指定値と同じ？
+				.if	(dx != cMCDinfo.cMCD_DefLength)
+					or	cOpcode,040h	;
+				.endif
+
+				;-------
+				;コマンドを書き込み
+				mov	al,cOpcode		;
+				call	CSET_L			;書き込み。
+				.if	(cOpcode & 040h)
+				   .if	(dx < 00FFh)
+					mov	al,dl		;
+					call	cset_L		;
+				   .else
+					mov	al,0ffh		;
+					call	cset_l		;
+					mov	ax,dx		;
+					call	cset16		;
+				   .endif
+				.endif
+			   ;------------------------------------
+			   .elseif	(al == 0F0h)		;Call (Other Program)
+				push	di			;引数（レジスタ渡し）として、
+				lea	di,cMCDinfo		;ss:di ← "cMCDinfo"のポインタ
+				lodsw	cs:[si]			;
+				call	ax			;関数呼び出し
+				pop	di			;
+			   .endif
+			   ;------------------------------------
+			.until	0			;コンパイル処理ループ
+			dec	cs:[pMML_File]		;命令コンパイル処理終了
+			.break				;命令デコード終了
+		   .else
+			;文字チェックで一致しなかった場合。
+			pop	cs:[pMML_File]	;ポインタ復帰
+		   .endif
+		   dec	cx
+		.until	(zero?)			;次のコマンドで比較
+		inc	CS:[pMML_File]		;ポインタ・インクリメント
+		mov	ax,CS:[szMML_File]	;
+	.until	(ax < CS:[pMML_File])		;MMLファイルが[EOF]ならば終了
 ;-----------------------------------------------------------------------
 ;トラック終了
-c_Command_End:
 
-;トラック終了の書き込み
+	;エラーチェック
+	.if	(cMCDinfo.cMCD_LoopCount != -2)		;
+		mov	dx,offset cMCD_Loop_Err3	;
+		jmp	PRINT_ERR			;リピート命令 '[' を ']' で閉じてるか？
+	.endif
+
+	;トラック終了の書き込み
 	mov	ah,'L'			;
 	call	cset			;
-	mov	ax,word ptr cs:[cMCD_LoopL]
+	mov	ax,cMCDinfo.cMCD_LoopL	;
 	call	cset16			;
 
 	pop	cx			;
-
 	inc	ch			;
-	sub	cl,1			;
-	jz	c_Command_End99		;
-	jmp	c_Command_Loop0		;
+	dec	cl			;
+    .until	(zero?)
 
 ;-----------------------------------------------------------------------
 ;終了
-c_Command_End99:			;
 	popa				;レジスタ復帰
 	ret				;
-;=======================================================================
-;音階
-;	al←Command Code
-;	dx←
-cCKD_Key	db	?		;Key
-cCKD_lengs	dw	?		;lengs
-c_Command_KeyCode:
-	pusha				;
-
-	mov	dx,cs:[dMCD_lengs]	;dx←初期の音階。
-	mov	cs:[cCKD_lengs],dx	;
-	mov	byte ptr cs:[cCKD_Key],al	;コマンドの保存。
-	call	CREAD			;読み込み。
-	dec	cs:[pMML_File]		;(ポインタはずらさず。)
-
-	cmp	ah,'#'			;
-	jnz	c_Command_KeyCode_Step1	;
-	or	byte ptr cs:[cCKD_Key],008h	;
-	inc	cs:[pMML_File]		;
-	call	CREAD			;読み込み。
-	dec	cs:[pMML_File]		;(ポインタはずらさず。)
-	jmp	c_Command_KeyCode_Step7	;
-c_Command_KeyCode_Step1:		;
-	cmp	ah,'+'			;
-	jnz	c_Command_KeyCode_Step2	;
-	or	byte ptr cs:[cCKD_Key],008h	;
-	inc	cs:[pMML_File]		;
-	call	CREAD			;読み込み。
-	dec	cs:[pMML_File]		;(ポインタはずらさず。)
-	jmp	c_Command_KeyCode_Step7	;
-c_Command_KeyCode_Step2:		;
-	cmp	ah,'-'			;
-	jnz	c_Command_KeyCode_Step3	;
-	or	byte ptr cs:[cCKD_Key],010h	;
-	inc	cs:[pMML_File]		;
-	call	CREAD			;読み込み。
-	dec	cs:[pMML_File]		;(ポインタはずらさず。)
-	jmp	c_Command_KeyCode_Step7	;
-c_Command_KeyCode_Step3:
-	cmp	ah,'='			;
-	jnz	c_Command_KeyCode_Step7	;
-	or	byte ptr cs:[cCKD_Key],018h	;
-	inc	cs:[pMML_File]		;
-	call	CREAD			;読み込み。
-	dec	cs:[pMML_File]		;(ポインタはずらさず。)
-;	jmp	c_Command_KeyCode_Step7	;
-c_Command_KeyCode_Step7:		;
-	cmp	ah,'%'			;
-	jz	c_Command_KeyCode_Step7_Step1
-	cmp	ah,30h			;
-	jc	c_Command_KeyCode_Step4	;
-	cmp	ah,3Ah			;
-	jnc	c_Command_KeyCode_Step4	;
-c_Command_KeyCode_Step7_Step1:		;
-	call	cread			;1文字読み込み。
-	dec	cs:[pMML_File]		;(ポインタは、ずらさない。)
-	xchg	ax,cx			;
-	call	A2H16R			;cx←音長
-	dec	cs:[pMML_File]		;(ポインタは、ずらさない。)
-	or	ax,ax			;音長が0だったら、演算なし。
-	jz	c_Command_KeyCode_Step7_Step2
-	xchg	ax,cx			;
-	cmp	ah,'%'			;数値の前に'%'が書いてある？
-	mov	ax,cx			;ax←数値を保存。
-	jz	c_Command_KeyCode_Step7_Step2
-	xor	ax,ax			;
-	mov	al,ds:[0].WTD_Mus_TimeBase
-	shl	ax,2			;dx:ax←４部音符の分割数。
-	xor	dx,dx			;
-	div	cx			;ax←Step数。
-c_Command_KeyCode_Step7_Step2:		;
-	mov	dx,ax			;
-	mov	cs:[cCKD_lengs],dx	;
-	inc	cs:[pMML_File]		;
-	call	CREAD			;読み込み。
-	dec	cs:[pMML_File]		;
-c_Command_KeyCode_Step4:		;
-	cmp	ah,'.'			;
-	jnz	c_Command_KeyCode_Step5	;
-	shr	word ptr cs:[cCKD_lengs],1
-	add	dx,word ptr cs:[cCKD_lengs]
-	inc	cs:[pMML_File]		;
-	call	CREAD			;読み込み。
-	dec	cs:[pMML_File]		;(ポインタはずらさず。)
-	jmp	c_Command_KeyCode_Step4	;
-c_Command_KeyCode_Step5:		;
-	cmp	ah,'&'			;
-	jnz	c_Command_KeyCode_Step6	;
-	or	byte ptr cs:[cCKD_Key],020h	;
-c_Command_KeyCode_Step6:		;
-	cmp	dx,cs:[dMCD_lengs]	;
-	jz	c_Command_KeyCode_Step8	;
-	or	byte ptr cs:[cCKD_Key],040h	;
-c_Command_KeyCode_Step8:		;
-	mov	ah,cs:[cCKD_Key]	;
-	call	CSET			;書き込み。
-	test	byte ptr cs:[cCKD_Key],040h	;
-	jz	c_Command_KeyCode_End	;
-
-	mov	ax,dx			;
-
-	cmp	ax,00FFh		;
-	jnc	c_Command_KeyCode_Step9	;
-	mov	ah,al			;
-	call	cset			;
-	jmp	c_Command_KeyCode_End	;
-c_Command_KeyCode_Step9:
-	push	ax			;
-	mov	ah,0ffh			;
-	call	cset			;
-	pop	ax			;
-	call	cset16			;
-
-c_Command_KeyCode_End:			;
-	popa				;
-	ret				;
+c_Command	endp

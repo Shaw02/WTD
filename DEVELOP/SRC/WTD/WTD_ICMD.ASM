@@ -548,7 +548,7 @@ I_Com2f:				;
 
 	.if	(cl!=0)
 		shl	ax,cl		;al = 02h,08h,20h
-		shl	bx,cl		;
+		rol	bx,cl		;
 	.endif
 
 	and	ax,02Ah			;Bit Mask
@@ -1056,7 +1056,8 @@ I_Com4c:				;
 	;無限ループ	（こっちの方が、高頻度）
 	.if	(ax==0)
 		or	ds:[di].WTD_FlagControl,WTD_Ctrl_PlayEnd
-		.if	((ds:[di].WTD_FlagControl&WTD_Ctrl_Effect) && (byte ptr ds:[di].WTD_Channel>=80h))
+		mov	ch,byte ptr ds:[di].WTD_Channel
+		.if	((ds:[di].WTD_FlagControl&WTD_Ctrl_Effect) && (ch>=80h))
 			jmp	I_Effect_Return	;効果音からの復帰	※call → jmp
 		.endif
 	;演奏終了
@@ -1064,6 +1065,7 @@ I_Com4c:				;
 		mov	si,ax		;ループ
 	.endif
 	ret				;
+
 ;===============================================================|
 ;		Modration(MIDI ctrl:0x??)			|
 ;===============================================================|
@@ -1454,17 +1456,26 @@ I_Com6d:				;
 	ret				;
 ;===============================================================|
 ;		Noise mode					|
+;---------------------------------------------------------------|
+;	0x00～0x07	Set the noise mode 			|
+;	(0～7)		bit 0-2 : Noise mode (0～7)		|
+;			bit 7   : Low				|
+;	0x80～0xFF	PUTI noise				|
+;	(128～255)	bit 0-1 : Right  Volume			|
+;			bit 2-3 : Left   Volume			|
+;			bit 4-5 : Master Volume	(WSC only)	|
+;			bit 7   : High				|
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com6e:				;
-	call	I_Read8			;
-	mov	ds:[di].WTD_NoiseMode,al
+	call	I_Read8			;al ← 引数
 
+	mov	ds:[di].WTD_NoiseMode,al
 	or	al,18h			;
 	mov	ah,1fh			;
 	jmp	SP_Set_Noise		;※call → jmp
 
-;	ret				;
+	ret				;
 ;===============================================================|
 ;		Octave						|
 ;===============================================================|

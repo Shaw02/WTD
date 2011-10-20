@@ -43,7 +43,7 @@ static	WTD_Mus *WtdMus;
 /*	外部宣言							*/
 /*--------------------------------------*/
 //	外部.objファイルにあるグローバル変数
-extern	char	WTD_Work[4096];
+extern	char	WTD_Work[WTD_WorkSize_H];
 
 //	外部.objファイルにある関数
 extern	void	WTD_FunctionLoad(WtdIL	near	*Wtd_Function);

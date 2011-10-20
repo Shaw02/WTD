@@ -35,6 +35,7 @@ PCM_Com_Channel		equ	090h			;Channel mode
 PCM_Com_Output		equ	091h			;Output mode
 PCM_Com_Random		equ	092h			;Random get
 PCM_Com_VolumePCM	equ	094h			;PCM Voice Volume
+PCM_Com_VoiceCtrl	equ	095h			;PCM Voice Control
 ;===============================================================|
 ;			Work Address				|
 ;===============================================================|
@@ -50,7 +51,7 @@ PcmVoiceMode_Reset	equ	2000h	;Channel Mode  PCM Voice Mode Reset
 ;		サウンドの初期化				|
 ;===============================================================|
 ;	引き数							|
-;		無し						|
+;		ds:[si]	共通構造体				|
 ;	返り値							|
 ;		無し						|
 ;	処理							|
@@ -63,8 +64,7 @@ SP_init	proc near			;
 	push	di			;
 	push	es			;レジスタ保存
 
-;	mov	ax,PCM_Wrok_VoiceTable	;
-	mov	ax,ds:[bp].WTD_WorkAdd_System+WTD_Sys_VoiceTableOffset
+	mov	ax,ds:[si].WTD_Sys_VoiceTableOffset
 	call	SP_Set_VoiceAdd		;音色テーブルの設定
 
 	push	IRAM_Segment		;
@@ -91,6 +91,10 @@ SP_init	proc near			;
 	mov	al,00fh			;
 	out	PCM_Com_Output,al	;
 	out	PCM_Com_VolumePCM,al	;
+
+;		to do	WSC check
+;	mov	al,0FFh			;
+;	out	PCM_Com_VoiceCtrl,al	;
 
 	pop	es			;レジスタ復帰
 	pop	di			;
@@ -239,39 +243,6 @@ SP_Set_Noise_End:			;
 	ret				;レジスタの復帰
 SP_Set_Noise	endp			;
 ;===============================================================|
-;			音色テーブルのアドレス			|
-;===============================================================|
-;	引き数							|
-;		AX	Address					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		音色テーブルのアドレス設定			|
-;===============================================================|
-	even				;偶数アドレス配置
-SP_Set_VoiceAdd	proc near		;
-	push	ax			;レジスタの保存
-	push	dx			;
-
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
-	jnz	SP_Set_VoiceAdd_Step	;効果音パート？
-	mov	cl,ch			;
-	inc	cl			;
-	mov	dx,00800h		;
-	shl	dx,cl			;
-	test	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Flag,dx
-	jnz	SP_Set_VoiceAdd_End	;効果音鳴っているか？
-
-SP_Set_VoiceAdd_Step:			;
-	shr	ax,6			;64Byte単位。64で割る。
-	out	PCM_Com_VoiceAddress,al	;出力
-
-SP_Set_VoiceAdd_End:			;
-	pop	dx			;
-	pop	ax			;レジスタの復帰
-	ret				;
-SP_Set_VoiceAdd	endp			;
-;===============================================================|
 ;			Channel modeの設定			|
 ;===============================================================|
 ;	引き数							|
@@ -303,133 +274,6 @@ SP_Set_Channel_End:			;
 	pop	dx			;
 	ret				;レジスタの復帰
 SP_Set_Channel	endp			;
-;===============================================================|
-;			Channel modeの取得			|
-;===============================================================|
-;	引き数							|
-;		無し						|
-;	返り値							|
-;		AX	Channel mode(ah = 00h)			|
-;	処理							|
-;		チャンネルモードの取得				|
-;===============================================================|
-	even				;偶数アドレス配置
-SP_Get_Channel	proc near		;
-	xor	ax,ax			;
-	in	al,PCM_Com_Channel	;入力
-	ret				;
-SP_Get_Channel	endp			;
-;===============================================================|
-;			Output modeの設定			|
-;===============================================================|
-;	引き数							|
-;		AL	Output mode				|
-;		AH	Set bit					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		出力モードの設定				|
-;===============================================================|
-	even				;偶数アドレス配置
-SP_Set_Output	proc near		;
-	push	dx			;レジスタの保存
-
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
-	jnz	SP_Set_Output_Step	;効果音パート？
-	mov	cl,ch			;
-	inc	cl			;
-	mov	dx,00800h		;
-	shl	dx,cl			;
-	test	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Flag,dx
-	jnz	SP_Set_Output_End	;効果音鳴っているか？
-
-SP_Set_Output_Step:			;
-	mov	dx,PCM_Com_Output	;dx←I/O Address
-	call	SP_Set_with_mask	;
-
-SP_Set_Output_End:			;
-	pop	dx			;
-	ret				;レジスタの復帰
-SP_Set_Output	endp			;
-;===============================================================|
-;			Output modeの取得			|
-;===============================================================|
-;	引き数							|
-;		無し						|
-;	返り値							|
-;		AX	Output mode (AH = 0)			|
-;	処理							|
-;		出力モードの取得				|
-;===============================================================|
-	even				;偶数アドレス配置
-SP_Get_Output	proc near		;
-	xor	ax,ax			;
-	in	al,PCM_Com_Output	;入力
-	ret				;
-SP_Get_Output	endp			;
-;===============================================================|
-;			疑似乱数の取得				|
-;===============================================================|
-;	引き数							|
-;		無し						|
-;	返り値							|
-;		AX	疑似乱数				|
-;	処理							|
-;		疑似乱数の取得					|
-;===============================================================|
-	even				;偶数アドレス配置
-SP_Get_Random	proc near		;
-	in	ax,PCM_Com_Random	;入力
-	ret				;
-SP_Get_Random	endp			;
-;===============================================================|
-;			PCM Volume Volumeの設定			|
-;===============================================================|
-;	引き数							|
-;		AL	PCM Voice Volume			|
-;		AH	Set bit					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		出力モードの設定				|
-;===============================================================|
-	even				;偶数アドレス配置
-SP_Set_VolumePCM	proc near	;
-	push	dx			;レジスタの保存
-
-	test	ds:[di].WTD_FlagControl,WTD_Ctrl_Effect
-	jnz	SP_Set_VolumePCM_Step	;効果音パート？
-	mov	cl,ch			;
-	inc	cl			;
-	mov	dx,00800h		;
-	shl	dx,cl			;
-	test	ds:[bp].WTD_WorkAdd_System+WTD_Sys_Flag,dx
-	jnz	SP_Set_VolumePCM_End	;効果音鳴っているか？
-
-SP_Set_VolumePCM_Step:			;
-	mov	dx,PCM_Com_VolumePCM	;dx←I/O Address
-	call	SP_Set_with_mask	;
-
-SP_Set_VolumePCM_End:			;
-	pop	dx			;
-	ret				;レジスタの復帰
-SP_Set_VolumePCM	endp		;
-;===============================================================|
-;			PCM Volume Volumeの設定			|
-;===============================================================|
-;	引き数							|
-;		AL	PCM Voice Volume			|
-;		AH	Set bit					|
-;	返り値							|
-;		無し						|
-;	処理							|
-;		出力モードの設定				|
-;===============================================================|
-	even				;偶数アドレス配置
-SP_Get_VolumePCM	proc near	;
-	in	al,PCM_Com_VolumePCM	;入力
-	ret				;
-SP_Get_VolumePCM	endp		;
 ;===============================================================|
 ;			音色の設定				|
 ;===============================================================|
@@ -480,6 +324,157 @@ SP_Set_Voice_End:			;
 	pop	cx			;
 	ret				;
 SP_Set_Voice	endp			;
+;***************************************************************
+;*			システム				*
+;***************************************************************
+;===============================================================|
+;			音色テーブルのアドレス			|
+;===============================================================|
+;	引き数							|
+;		AX	Address					|
+;	返り値							|
+;		無し						|
+;	処理							|
+;		音色テーブルのアドレス設定			|
+;===============================================================|
+	even				;偶数アドレス配置
+SP_Set_VoiceAdd	proc near	uses ax	;
+	shr	ax,6			;64Byte単位。64で割る。
+	out	PCM_Com_VoiceAddress,al	;出力
+	ret				;
+SP_Set_VoiceAdd	endp			;
+;===============================================================|
+;			Channel modeの取得			|
+;===============================================================|
+;	引き数							|
+;		無し						|
+;	返り値							|
+;		AX	Channel mode(ah = 00h)			|
+;	処理							|
+;		チャンネルモードの取得				|
+;===============================================================|
+	even				;偶数アドレス配置
+SP_Get_Channel	proc near		;
+	xor	ax,ax			;
+	in	al,PCM_Com_Channel	;入力
+	ret				;
+SP_Get_Channel	endp			;
+;===============================================================|
+;			Output modeの設定			|
+;===============================================================|
+;	引き数							|
+;		AL	Output mode				|
+;		AH	Set bit					|
+;	返り値							|
+;		無し						|
+;	処理							|
+;		出力モードの設定				|
+;===============================================================|
+	even				;偶数アドレス配置
+SP_Set_Output	proc near	uses dx	;
+	mov	dx,PCM_Com_Output	;dx←I/O Address
+	call	SP_Set_with_mask	;
+	ret				;レジスタの復帰
+SP_Set_Output	endp			;
+;===============================================================|
+;			Output modeの取得			|
+;===============================================================|
+;	引き数							|
+;		無し						|
+;	返り値							|
+;		AX	Output mode (AH = 0)			|
+;	処理							|
+;		出力モードの取得				|
+;===============================================================|
+	even				;偶数アドレス配置
+SP_Get_Output	proc near		;
+	xor	ax,ax			;
+	in	al,PCM_Com_Output	;入力
+	ret				;
+SP_Get_Output	endp			;
+;===============================================================|
+;			疑似乱数の取得				|
+;===============================================================|
+;	引き数							|
+;		無し						|
+;	返り値							|
+;		AX	疑似乱数				|
+;	処理							|
+;		疑似乱数の取得					|
+;===============================================================|
+	even				;偶数アドレス配置
+SP_Get_Random	proc near		;
+	in	ax,PCM_Com_Random	;入力
+	ret				;
+SP_Get_Random	endp			;
+;===============================================================|
+;			PCM Volume Volumeの設定			|
+;===============================================================|
+;	引き数							|
+;		AL	PCM Voice Volume			|
+;		AH	Set bit					|
+;	返り値							|
+;		無し						|
+;	処理							|
+;		出力モードの設定				|
+;===============================================================|
+	even				;偶数アドレス配置
+SP_Set_VolumePCM	proc near	uses dx
+	mov	dx,PCM_Com_VolumePCM	;dx←I/O Address
+	call	SP_Set_with_mask	;
+	ret				;レジスタの復帰
+SP_Set_VolumePCM	endp		;
+;===============================================================|
+;			PCM Volume Volumeの設定			|
+;===============================================================|
+;	引き数							|
+;		AL	PCM Voice Volume			|
+;		AH	Set bit					|
+;	返り値							|
+;		無し						|
+;	処理							|
+;		出力モードの設定				|
+;===============================================================|
+	even				;偶数アドレス配置
+SP_Get_VolumePCM	proc near	;
+	in	al,PCM_Com_VolumePCM	;入力
+	ret				;
+SP_Get_VolumePCM	endp		;
+
+;===============================================================|
+;			PCM Volume Volumeの設定			|
+;===============================================================|
+;	引き数							|
+;		AL	PCM Voice Volume			|
+;		AH	Set bit					|
+;	返り値							|
+;		無し						|
+;	処理							|
+;		出力モードの設定				|
+;===============================================================|
+	even				;偶数アドレス配置
+SP_Set_PCMVoice		proc near	uses dx
+	mov	dx,PCM_Com_VoiceCtrl	;dx←I/O Address
+	call	SP_Set_with_mask	;
+	ret				;レジスタの復帰
+SP_Set_PCMVoice		endp		;
+;===============================================================|
+;			PCM Volume Volumeの設定			|
+;===============================================================|
+;	引き数							|
+;		AL	PCM Voice Volume			|
+;		AH	Set bit					|
+;	返り値							|
+;		無し						|
+;	処理							|
+;		出力モードの設定				|
+;===============================================================|
+	even				;偶数アドレス配置
+SP_Get_PCMVoice	proc near		;
+	in	al,PCM_Com_VoiceCtrl	;入力
+	ret				;
+SP_Get_PCMVoice	endp			;
+
 ;---------------------------------------------------------------|
 ;		マスクを利用して一部出力			|
 ;---------------------------------------------------------------|
@@ -488,9 +483,7 @@ SP_Set_Voice	endp			;
 ;	ah		set bit					|
 ;---------------------------------------------------------------|
 	even				;偶数アドレス配置
-SP_Set_with_mask:			;
-	push	ax			;
-	push	cx			;レジスタ保存
+SP_Set_with_mask	proc	near	uses ax cx
 
 	and	al,ah			;マスク
 	mov	cl,al			;ch←Set Data
@@ -500,9 +493,8 @@ SP_Set_with_mask:			;
 	or	al,cl			;論理和
 	out	dx,al			;出力
 
-	pop	cx			;レジスタ復帰
-	pop	ax			;
 	ret				;
+SP_Set_with_mask	endp
 ;****************************************************************
 ;*								*
 ;*			ＭＩＤＩ制御				*
@@ -618,7 +610,7 @@ SM_init	proc near			;
 	call	C_Send_Block		;ブロック送信
 
 	;ランニングステータスの初期化
-	mov	ds:[bp].WTD_WorkAdd_System+WTD_Sys_RunningStatus,0
+	mov	ds:[si].WTD_Sys_RunningStatus,0
 
 	pop	es			;レジスタ復帰
 	pop	si			;

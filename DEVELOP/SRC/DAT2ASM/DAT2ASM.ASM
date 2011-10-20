@@ -8,43 +8,83 @@
 ;									|
 ;=======================================================================|
 
-assume	cs:code,ds:code,es:code,ss:code
-
-code	segment
-
 .186
+.model	tiny,stdcall
 
-	org	0100h
-
-Dat2Asm_End_:
-;=======================================================================|
-;				Start Up				|
-;=======================================================================|
-	jmp	_main			;メインルーチンへ
 ;=======================================================================|
 ;				define					|
 ;=======================================================================|
-WtdIL_Name		equ	'WTD',0
-MusicMaxPart		equ	20	;製品版は20パート
-EffectMaxPart		equ	3	;効果音は3 パート
-;
-;		コンパイル情報
-;
-D_ZEN	DB	128		;１分音符分割数	初期値
+
+include	lib_dos.inc
+
+.dosseg
+
+.stack	1000h
+
+.data
+
+OP_FLAG_LEN	DB	4			;オプションフラグ－分割数指定
+
+.data?
+
+segWtd_File	dw	?
+szWtd_File	dw	?
+
+;=======================================================================|
+;				Start Up				|
+;=======================================================================|
+.code
+	.startup
+	mov	ax,cs
+	mov	ss,ax
+	mov	sp,offset DGROUP:STACK
+	invoke	ComSmole,	sp	;メモリの最小化
+
+	cld
+
+	call	_main
+
+	.exit	0
+
+;---------------------------------------------------------------|
+;		エラー処理					|
+;---------------------------------------------------------------|
+;引数								|
+;	dx	表示文字列（エラー内容）			|
+;---------------------------------------------------------------|
+PRINT_ERR:
+	push	cs			;
+	pop	ds			;
+	MOV	AH,09H			;
+	INT	21H			;
+	.exit	255			;
+
 ;=======================================================================|
 ;				Start					|
 ;=======================================================================|
 include	wtd_ver.inc	;WTD Version infomation
 include	wtd_def.inc	;WTD Define infomation
-include	WSMAKE.INC	;
-include	D2A_SUB.ASM	;sub routine
+;include	DAT2ASM.INC	;
 include	D2A_CNV.ASM	;convert routine
+;===============================================================|
+;								|
+;		オプション処理					|
+;								|
+;===============================================================|
 ;****************************************************************
-;*		オプション処理					*
+;*		オプションフラグ立て				*
 ;****************************************************************
-OP_FLAG_LEN	DB	4			;オプションフラグ－分割数指定
-OP_FLAG_HELP	DB	0			;オプションフラグ－ヘルプ表示
-OP_FLAG_FILE	DB	081H	DUP(00H)	;ファイル名（１２８文字分）
+.const
+OPTION_ERROR_MSG	db	'オプションが不正です。',0dh,0ah,24h
+.code
+OPTION_ERROR	proc	near
+	lea	dx,[OPTION_ERROR_MSG]
+	jmp	PRINT_ERR
+OPTION_ERROR	endp
+;****************************************************************
+;*		オプションフラグ立て				*
+;****************************************************************
+.const
 OP_HELP	DB	0DH,0AH
 	DB	"	Converter from a binary to a DB command",0DH,0AH
 	DB	"			Programmed by  A.Watanabe",0DH,0AH
@@ -58,233 +98,176 @@ OP_HELP	DB	0DH,0AH
 	DB	"	/D : DD命令出力（Double Word）",0DH,0AH
 	DB	"	/? :ヘルプの表示",0DH,0AH
 	DB	024H
-;****************************************************************
-;*		オプションフラグ立て				*
-;****************************************************************
-;	使用レジスタ						*
-;	BX	オプション文字列アドレス			*
-;	CX	オプション文字列最終アドレス＋１		*
-;****************************************************************
-OPTION_FLAG:				;
-	MOV	AX,CS			;
-	MOV	DS,AX			;DS←CS
-
-	MOV	AX,0000H		;
-	MOV	BX,0080H		;BX←オプション文字列先頭アドレス－１
-	MOV	AL,CS:[BX]		;AL←オプション文字数
-	ADD	AX,BX			;
-	MOV	CX,AX			;CX←オープション文字列最終番地
-OP_LOOP:
-	INC	BX			;
-	CMP	CX,BX			;オプション終了
-	JNC	OP_LP0			;だったらフラグ立て処理正常終了
-	RET				;
-OP_LP0:
-	MOV	AL,CS:[BX]		;文字列読み込み
-	CMP	AL,21H			;
-	JC	OP_LOOP			;
-	CMP	AL,"/"			;'/'or'-'であったら、オプション
-	JZ	OP_SW			;
-	CMP	AL,"-"			;
-	JZ	OP_SW			;
-	JMP	OP_FILE_SET		;それ以外はファイル指定
-OP_SW:
-	INC	BX			;アドレスインクリメント
-	CMP	CX,BX			;オプション終了？
-	JNC	OP_S00			;
-	JMP	OPTION_ERROR		;だったらエラー
-OP_S00:	
-	MOV	AH,0FFH			;フラグ立て用。
-	MOV	DX,OFFSET OP_FLAG_HELP	;フラグアドレス
-	MOV	AL,CS:[BX]		;
-	CMP	AL,"?"			;Help表示
-	JNZ	OP_S01			;
-	JMP	OP_FLAG_SET		;
-OP_S01:	CMP	AL,"h"			;
-	JNZ	OP_S02			;
-	JMP	OP_FLAG_SET		;
-OP_S02:	CMP	AL,"H"			;
-	JNZ	OP_S03			;
-	JMP	OP_FLAG_SET		;
-OP_S03:	
-
-	MOV	DX,OFFSET OP_FLAG_LEN	;DB命令指定
-	mov	ah,1			;
-	CMP	AL,"b"			;
-	JNZ	OP_S04			;
-	JMP	OP_FLAG_SET		;
-OP_S04:	CMP	AL,"B"			;
-	JNZ	OP_S05			;
-	JMP	OP_FLAG_SET		;
-OP_S05:	
-
-	mov	ah,2			;DW命令指定
-	CMP	AL,"w"			;
-	JNZ	OP_S06			;
-	JMP	OP_FLAG_SET		;
-OP_S06:	CMP	AL,"W"			;
-	JNZ	OP_S07			;
-	JMP	OP_FLAG_SET		;
-OP_S07:	
-
-	mov	ah,4			;DD命令指定
-	CMP	AL,"d"			;
-	JNZ	OP_S08			;
-	JMP	OP_FLAG_SET		;
-OP_S08:	CMP	AL,"D"			;
-	JNZ	OP_S09			;
-	JMP	OP_FLAG_SET		;
-OP_S09:	
-
-OP_SEE:	JMP	OPTION_ERROR		;無かったらエラー
-;****************************************************************
-OP_FLAG_SET:
-	XCHG	BX,DX			;
-	MOV	CS:[BX],AH		;フラグセット
-	XCHG	BX,DX			;
-	JMP	OP_LOOP			;ループに戻る
-;****************************************************************
-OP_FILE_SET:
-	MOV	DX,OFFSET OP_FLAG_FILE	;ファイルだべ。
-	XCHG	BX,DX			;
-	MOV	AH,CS:[BX]		;
-	XCHG	BX,DX			;
-	CMP	AH,0			;フラグが０以外？
-	JZ	OP_FILE_SET_1		;
-	JMP	OPTION_ERROR		;ファイル名が２つ書いてあるよぉ～
-OP_FILE_SET_1:
-	DEC	BX			;オプションポインタ一つ戻す
-	PUSH	CX			;レジスタ保存
-	MOV	CX,080H			;ファイル名（拡張子含）最大サイズ
-OP_FILE_SET_2:
-	INC	BX			;
-	MOV	AL,CS:[BX]		;AL←文字列読み込み
-	CMP	AL,21H			;最後？
-	JC	OP_FILE_SET_3		;
-	XCHG	BX,DX			;
-	MOV	CS:[BX],AL		;文字列セット
-	XCHG	BX,DX			;
-	INC	DX			;インクリメント
-	DEC	CX			;１２８文字超えた？
-	JNZ	OP_FILE_SET_2		;
-OP_FILE_SET_3:
-	MOV	AL,0			;
-	XCHG	BX,DX			;
-	MOV	CS:[BX],AL		;'0' をセット
-	XCHG	BX,DX			;
-	POP	CX			;レジスタ復帰
-	JMP	OP_LOOP			;ループに戻る
-;=======================================================================|
-;		型設定							|
-;=======================================================================|
-OPTION_LEN:				;
-;	PUSH	AX			;
-;	MOV	AL,CS:[OP_FLAG_LEN]	;
-;	MOV	CS:[D_ZEN],AL		;設定
-;	POP	AX			;
-	RET				;RETURN
-;=======================================================================|
-;		ヘルプ							|
-;=======================================================================|
-OPTION_HELP:				;
-	MOV	DX,OFFSET OP_HELP	;表示
+.code
+OPTION_HELP	proc	near
+	push	cs
+	pop	ds
+	lea	DX,[OP_HELP]		;表示
 	MOV	AH,09H			;
 	INT	21H			;
-	JMP	COMEND			;プログラム終了
-;=======================================================================|
-;		ファイル名設定						|
-;=======================================================================|
-OPTION_FILE:				;
-	pusha				;
+	.exit	0
+OPTION_HELP	endp			;
+;****************************************************************
+;*		オプション処理					*
+;****************************************************************
+;●引数								*
+;	ptFilename	ファイル名を入れるポインタ		*
+;●返り値							*
+;	ptFilename[]	オプション文字列で指定されたファイル名	*
+;●使用レジスタ							*
+;	ds:si		オプション文字列アドレス		*
+;	es:di		ptFilename				*
+;	ax		汎用					*
+;	cx		オプション文字列最終アドレス＋１	*
+;****************************************************************
+.code
+Op_	proc	near	uses ds es,
+		ptFilename:DWORD	;ファイル名を入れるポインタ
 
-	;hWtd_File = file_open(0,OP_FLAG_FILE);
+	local	cDebug:BYTE		;デバッグの設定有無
+	local	cHelp:BYTE		;ヘルプ表示の有無
+	local	dotFlag:BYTE		;ファイル名の拡張子の有無
+
+	pusha
+
+	;-----------------------
+	;フラグ立て
+	xor	ax,ax			;ax ← 0
+	les	di,ptFilename		;
+	stosb				;先頭にだけ、0を入れておく。
+	mov	cDebug,al		;
+	mov	cHelp,al		;
+	mov	dotFlag,al		;
+
 	push	cs			;
-	pop	ds			;
-	mov	dx,offset OP_FLAG_FILE	;DS:DX←ファイル名アドレス
-	mov	ax,0			;AX←Read属性
-	call	File_Open		;
-	mov	word ptr cs:[hWtd_File],ax
+	pop	ds			;DS←CS
+	MOV	si,0080H		;BX←オプション文字列先頭アドレス－１
+	lodsb				;AL←オプション文字数
+	ADD	ax,si			;
+	MOV	cx,ax			;CX←オープション文字列最終番地
 
-;●ファイルのロード
-	;szWtd_File = file_close(hWtd_File,segWtd_File);
-	push	ds			;
-	mov	ax,word ptr cs:[segWtd_File]
-	mov	ds,ax			;
-	mov	dx,0			;ds:dx←バッファ
-	mov	ax,word ptr cs:[hWtd_File]
-	call	File_Load		;
-	mov	word ptr cs:[szWtd_File],ax
-	pop	ds			;
+    .while	(cx>=si)
 
-;●ファイルのクローズ
-	;file_close(hWtd_File);
-	mov	ax,word ptr cs:[hWtd_File]
-	call	File_Close		;
+	lodsb
 
-	popa				;
+	.if	(al<21h)
+		.continue
+
+	.elseif	((al=='/')||(al=='-'))
+		.if	(cx<si)
+			JMP	OPTION_ERROR	;だったらエラー
+		.endif
+
+		lodsb
+		.if	((al=='h')||(al=='H')||(al=='?'))
+			mov	cHelp,0FFh
+		.elseif	((al=='b')||(al=='B'))
+			mov	OP_FLAG_LEN, 1
+		.elseif	((al=='w')||(al=='W'))
+			mov	OP_FLAG_LEN, 2
+		.elseif	((al=='d')||(al=='D'))
+			mov	OP_FLAG_LEN, 4
+		.else
+			JMP	OPTION_ERROR	;無かったらエラー
+		.endif
+
+	.else
+		les	di,ptFilename		;ファイル名を入れるポインタ
+		.if	(byte ptr es:[di] != 0)
+			JMP	OPTION_ERROR	;ファイル名が２つ書いてあるよぉ～
+		.endif
+
+		dec	si			;ポインタ一つ戻す
+		mov	dotFlag,0
+		.while	(cx>=si)
+			lodsb
+			.if	(al == '.')
+				mov	dotFlag,1
+			.elseif	(al < 21h)
+				dec	si
+				.break		;21h未満だったら終わり。
+			.endif
+			stosb			;ファイル名セット
+		.endw
+
+		.if	(dotFlag==0)		;拡張子が定義されなかったら定義
+			mov	al,'.'
+			stosb
+			mov	al,'W'		;".WTD"にする。一応、大文字で。
+			stosb
+			mov	al,'T'
+			stosb
+			mov	al,'D'
+			stosb
+		.endif
+
+		mov	al,0			;
+		stosb
+		mov	al,24h			;
+		stosb
+	.endif
+
+    .endw
+
+	;-----------------------
+	;フラグに応じた処理
+	;●ヘルプ
+	.if	(cHelp != 0)
+		jmp	OPTION_HELP		;
+	.endif
+
+	;●ファイル処理
+	les	di,ptFilename			;ファイル名があるポインタ
+	.if	(byte ptr es:[di] != 0)
+		invoke	Change_Current_Directory,	addr es:[di]
+
+		;オープン
+		invoke	File_Open,			addr es:[di],	0
+		push	ax
+
+		;ロード
+		mov	ds,word ptr CS:[segWtd_File]
+		invoke	File_Load,	ax,addr ds:0
+		mov	word ptr CS:[szWtd_File],ax
+
+		;クローズ
+		pop	ax
+		invoke	File_Close,	ax
+	.else
+		jmp	OPTION_HELP	;ファイル名の指定が無ければ、
+	.endif
+
+	popa
 	RET				;RETURN
-;=======================================================================|
-;		オプション処理						|
-;=======================================================================|
-operr_msg	db	'オプションが不正です。',0ah,0dh,24h
-OPTION_ERROR:
-	push	cs			;エラー時
-	pop	ds			;
-	mov	dx,offset operr_msg	;
-	mov	ah,09h			;
-	int	21h			;
-	jmp	COMEND			;
-;=======================================================================|
-;		オプション処理						|
-;=======================================================================|
-Op_:
-	CALL	OPTION_FLAG		;フラグ立て
-	MOV	AL,0			;チェック用
-OP_L00:	CMP	CS:[OP_FLAG_LEN],AL	;出力書式
-	JZ	OP_L01			;
-	CALL	OPTION_LEN		;
-OP_L01:	CMP	CS:[OP_FLAG_HELP],AL	;ヘルプ表示
-	JZ	OP_L02			;
-	CALL	OPTION_HELP		;
-OP_L02:	CMP	CS:[OP_FLAG_FILE],AL	;ファイル読み込み
-	JZ	OP_L03			;
-	CALL	OPTION_FILE		;
-	jmp	OP_LEE			;
-OP_L03:	jmp	COMEND			;ファイル名の指定が無ければ、
-OP_LEE:	RET				;RETURN
+Op_	endp
 ;=======================================================================|
 ;				main					|
 ;=======================================================================|
-_main:
-	MOV	AX,OFFSET Dat2Asm_End + BSTACK	;
-	MOV	SP,AX			;
+_main	proc	near
 
-	MOV	AX,CS			;
-	MOV	DS,AX			;
-	MOV	ES,AX			;セグメントがえへへへ。
-	MOV	SS,AX			;
+	local	cFilename[134]:BYTE		;ファイル名
 
-	call	ComSmole		;メモリの最小化
-
-	mov	ax,01000h		;
-	call	Memory_Open		;
+	;-------------------------------
+	;■メモリオープン
+	invoke	Memory_Open,	01000h	;
 	mov	word ptr cs:[segWtd_File],ax
+	mov	es,ax				;DS←WTD SEGMENT
 
-	call	Op_			;オプション処理
+	;-------------------------------
+	;■オプション処理
+	invoke	Op_,	addr ss:cFilename	;オプションに記述されたファイル名を取得する。
 
-	call	convert			;逆ＭＭＬコンパイル部
+	;-------------------------------
+	;■コンパイル
+	invoke	convert				;
 
-	mov	ax,word ptr cs:[segWtd_File]
-	call	Memory_Close		;メモリの解放
+	;-------------------------------
+	;■メモリの解放
+	invoke	Memory_Close,	es
 
-_main_End:
-COMEND:
-	STI				;割り込み許可
-	MOV	AX,04C00H		;
-	INT	21H			;MS-DOS RET
+	ret
+_main	endp
 ;=======================================================================|
 ;				End					|
 ;=======================================================================|
-Dat2Asm_End:
-CODE	ENDS
-	END	Dat2Asm_End_
+	END

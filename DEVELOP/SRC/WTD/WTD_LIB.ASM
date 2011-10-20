@@ -22,6 +22,12 @@
 ;-------------------------------
 ;制御用ワーク
 ;-------------------------------
-;static	cahr		WTD_Work[0x1000]
+
+ifdef	hyoka	;------------------------
+;static	cahr		WTD_Work[0x0800]	;MIDI無し版は、2kByte要
+_WTD_Work:		db	0800h	dup	(?)
+else	;--------------------------------
+;static	cahr		WTD_Work[0x1000]	;MIDI有り版は、4kByte要
 _WTD_Work:		db	1000h	dup	(?)
+endif	;--------------------------------
 

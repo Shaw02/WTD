@@ -1,0 +1,186 @@
+Microsoft (R) Macro Assembler Version 6.11		    10/20/11 12:12:33
+h2a8.asm						     Page 1 - 1
+
+
+
+					.186
+					.model	tiny,stdcall
+
+
+				;****************************************************************
+				;*		外部宣言					*
+				;****************************************************************
+				include	lib_dos.inc
+			      C 
+			      C 
+			      C ComSmole	proto	near,	sizeCOM:WORD
+			      C ExeSmole	proto	near,	szDGROUP:WORD
+			      C Memory_Open	proto	near,	ParaSize:word
+			      C Memory_Close	proto	near,	CloseSegment:word
+			      C 
+			      C File_Create	proto	near,	cFilename:dword,iAttr:word
+			      C File_Open	proto	near,	cFilename:dword,cMode:byte
+			      C File_Close	proto	near,	hFile:word
+			      C File_Load	proto	near,	hFile:word,	cBuff:dword
+			      C File_Load_S	proto	near,	hFile:word,	iSize:word,	cBuff:dword
+			      C File_Write	proto	near,	hFile:word,	iSize:word,	cBuff:dword
+			      C File_Seek	proto	near,	hFile:word,	iControl:BYTE,	dOffset	:dword
+			      C 
+			      C ChangeExt			proto	near,	cFilename:dword,cExt:dword
+			      C Change_Current_Directory	proto	near,	cDirname:dword
+			      C 
+			      C File_Err	proto	near
+			      C 
+			      C 
+			      C 
+			      C ASC2HEX8	proto	near
+			      C ASC2HEX16	proto	near
+			      C HEX2ASC8	proto	near
+			      C HEX2ASC16	proto	near
+			      C FH2A8		proto	near
+			      C FH2A16		proto	near
+			      C H2A_F		proto	near,	iValue	:WORD,	iForm	:WORD
+			      C H2A8		proto	near
+			      C dat2hex8	proto	near
+			      C dat2hex16	proto	near
+			      C 
+			      C 
+			      C 
+
+
+				;****************************************************************
+				;*		コード						*
+				;****************************************************************
+				;---------------------------------------------------------------|
+				;		１６進数コード～ASCII CODE(255)			|
+				;---------------------------------------------------------------|
+				;	処理							|
+				;		１６進コードを１０進のアスキーコードに変換	|
+				;	引数							|
+				;		AH←変換したい数値				|
+				;	返り値							|
+				;		DX←変換した文字列の先頭アドレス		|
+				;---------------------------------------------------------------|
+				;.data
+				;	DB	'-'			;符号
+				;ASC_8	DB	'$$$$$'			;
+ 0000				.code
+ 0000				HEX2ASC8	proc	near	uses ax
+
+ 0000  50		   *	    push   ax
+ 0001  8A C4				mov	al,ah
+ 0003  25 00FF				and	ax,00FFh
+					invoke	HEX2ASC16
+ 0006  E8 0000 E	   *	    call   HEX2ASC16
+					ret
+ 0009  58		   *	    pop    ax
+ 000A  C3		   *	    ret    00000h
+
+				;	MOV	BX,OFFSET ASC_8		
+				;	MOV	AL,'$'			
+				;	MOV	CS:[BX],AL		
+				;	INC	BX			
+				;	MOV	CS:[BX],AL		
+				;	INC	BX			
+				;	MOV	CS:[BX],AL		
+				;	INC	BX			
+				;	MOV	CS:[BX],AL		
+				;	INC	BX			
+				;	MOV	CS:[BX],AL		
+				;
+				;	MOV	BX,OFFSET ASC_8		
+				;	MOV	AL,' '			;
+				;	CMP	AH,100			;
+				;	JC	H2A8L3			;１００の位ある？
+				;	
+				;	MOV	AL,AH			
+				;	XOR	AH,AH			
+				;	MOV	CH,100			
+				;	DIV	CH			
+				;	ADD	AL,30H			
+				;	MOV	CS:[BX],AL		
+				;	INC	BX			
+				;H2A8L3:	
+				;	CMP	AL,' '			;AL=" "だったら１００の位は無かった
+				;	JNZ	H2A8E2			
+				;	CMP	AH,10			;１０の位ある？
+				;	JC	H2A8L2			
+				;	
+				;H2A8E2:	MOV	AL,AH			
+				;	XOR	AH,AH			
+				;	MOV	CH,10			
+				;	DIV	CH			
+				;	ADD	AL,30H			
+				;	MOV	CS:[BX],AL		
+				;	INC	BX			
+				;H2A8L2:	
+				;	ADD	AH,30H			;一の位は必ず書く
+				;	MOV	CS:[BX],AH		;
+				;	
+				;	MOV	DX,OFFSET ASC_8		;アドレス
+				;
+				;	RET				
+ 000B				HEX2ASC8	endp
+				;****************************************************************
+					end
+Microsoft (R) Macro Assembler Version 6.11		    10/20/11 12:12:33
+h2a8.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_TEXT  . . . . . . . . . . . . .	16 Bit	 000B	  Word	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+ASC2HEX16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ASC2HEX8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ChangeExt  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Change_Current_Directory . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ComSmole . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ExeSmole . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+FH2A16 . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+FH2A8  . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Close . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Create  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Err . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Load_S  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Load  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Open  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Seek  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Write . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+H2A8 . . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+H2A_F  . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+HEX2ASC16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+HEX2ASC8 . . . . . . . . . . . .	P Near	 0000	  _TEXT	Length= 000B Public STDCALL
+Memory_Close . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Memory_Open  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+dat2hex16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+dat2hex8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0003h	 
+@Model . . . . . . . . . . . . .	Number	 0001h	 
+@code  . . . . . . . . . . . . .	Text   	 DGROUP
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+
+	   0 Warnings
+	   0 Errors

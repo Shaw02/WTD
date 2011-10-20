@@ -12,44 +12,6 @@
 ;		コンバート　メインルーチン			|
 ;---------------------------------------------------------------|
 ;	●引数							|
-;		al	データ					|
-;	●返り値						|
-;		ds:dx	文字列のアドレス			|
-;---------------------------------------------------------------|
-dat2hex8_Print:	db	'00$'
-dat2hex8	proc	near		;
-		push	ax		;
-		push	bx		;レジスター保存
-
-		mov	ah,al		;
-		shr	al,4		;ah←下位4bit
-		and	ax,0f0fh	;al←上位4bit
-
-		cmp	al,0ah		;
-		jc	dat2hex8_Low	;下位4bitは0x0A以下？
-		add	al,7		;
-dat2hex8_Low:				;
-		cmp	ah,0ah		;
-		jc	dat2hex8_Hi	;上位4bitは0x0A以下？
-		add	ah,7		;
-dat2hex8_Hi:				;
-		add	ax,3030h	;
-
-		push	cs		;
-		pop	ds		;ds:dx←far &(dat2hex8_Print)
-		mov	dx,offset dat2hex8_Print
-
-		mov	bx,dx		;文字列書込み
-		mov	word ptr cs:[bx],ax
-
-		pop	bx		;レジスター復帰
-		pop	ax		;
-		ret			;
-dat2hex8	endp			;
-;---------------------------------------------------------------|
-;		コンバート　メインルーチン			|
-;---------------------------------------------------------------|
-;	●引数							|
 ;			無し					|
 ;	●返り値						|
 ;			無し					|
@@ -58,6 +20,7 @@ dat2hex8	endp			;
 ;		cx	サイズ用カウンタ			|
 ;		ds:dx	文字列表示用				|
 ;---------------------------------------------------------------|
+.const
 convert_ptStr	dw	offset convert_strDB
 		dw	offset convert_strDW
 		dw	offset convert_strDW	;Dummy
@@ -67,6 +30,7 @@ convert_strDW	db	'	DW	0$'
 convert_strDD	db	'	DD	0$'
 convert_strh	db	'h',0dh,0ah,24h
 convert_strCR	db	0dh,0ah,24h
+.code
 convert		proc	near		;
 		pusha			;
 		push	si		;

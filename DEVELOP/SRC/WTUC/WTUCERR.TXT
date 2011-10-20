@@ -4,3 +4,5 @@ Copyright (C) Microsoft Corp 1993.  All rights reserved.
  Invoking: ML.EXE /I. /Zm /c /IC:\WWitch\WTD\SDK\include /Cp /Cx WTUC.asm 
 
  Assembling: WTUC.asm
+wtuc_sub.asm(532): error A2006: undefined symbol : BSTACK
+WTUC.asm(240): error A2006: undefined symbol : BSTACK

@@ -8,16 +8,14 @@
 ;						A.Watanabe		|
 ;									|
 ;=======================================================================|
-c_Voice:
-	pusha				;レジスタ保存
+c_Voice	proc	near
 
-;コンパイル作業
+	;コンパイル作業
 	call	c_Voice_Pcm_first	;
 	call	c_Voice_Emb_first	;
 
-;終了
-	popa				;レジスタ復帰
 	ret				;終了
+c_Voice	endp
 ;---------------------------------------------------------------|
 ;		音色コンパイル					|
 ;---------------------------------------------------------------|
@@ -30,11 +28,29 @@ c_Voice:
 ;		di	c_Voice_Pcm_Adrsポインタ		|
 ;		si	c_Voice_Pcm_Dataポインタ		|
 ;---------------------------------------------------------------|
-c_Voice_Pcm_first:				;
+c_Voice_Pcm_first	proc	near		;
 	pusha				;レジスタ保存
 
 ;ヘッダー初期設定
-	call	c_Voice_Pcm_first_Start	;
+	;ポインターの設定及び、トラックアドレスの初期化をする。
+	xor	bx,bx				;
+	mov	cs:[pMML_File],bx		;MMLファイルのポインタを先頭にする。
+	mov	cl,ds:[bx].WTD_Mus_Part		;パート数を読み込み。
+	.if	(cl > MusicMaxPart)		;パート数チェック
+		mov	cl,MusicMaxPart		;
+		mov	ds:[bx].WTD_Mus_Part,cl	;パート数を書き込み。
+	.endif					;
+	mov	bx,0010h			;
+	.repeat					;
+		sub	cl,1			;カウンタ・ディクリメント
+		.break	.if	(carry?)	;
+		mov	word ptr ds:[bx],0000h	;トラックのアドレスの初期化
+		add	bx,2			;ポインタ・インクリメント
+	.until	0				;
+	mov	cs:[pWTD_File],bx		;WTDファイルのポインタを設定する。
+
+	;アドレス設定
+	mov	word ptr ds:[0].WTD_Mus_DataAdr,bx
 
 ;コマンド検索
 ;コマンド数量の読み込み
@@ -146,50 +162,15 @@ c_Voice_Pcm_first_Step99:		;
 c_Voice_Pcm_first_End:			;
 	popa				;レジスタ復帰
 	ret				;
-;---------------------------------------------------------------|
-;		初期設定					|
-;---------------------------------------------------------------|
-;	引数							|
-;		無し						|
-;	返り値							|
-;		無し						|
-;---------------------------------------------------------------|
-c_Voice_Pcm_first_Start:
-	pusha				;レジスタ保存
-
-;ポインターの設定及び、トラックアドレスの初期化をする。
-	xor	bx,bx			;
-	mov	cs:[pMML_File],bx	;MMLファイルのポインタを先頭にする。
-	mov	cl,ds:[bx].WTD_Mus_Part	;パート数を読み込み。
-	cmp	cl,MusicMaxPart			;パート数チェック
-	jc	c_Voice_Pcm_first_Start_Step0	;
-	mov	cl,MusicMaxPart			;
-	mov	ds:[bx].WTD_Mus_Part,cl	;パート数を書き込み。
-c_Voice_Pcm_first_Start_Step0:		;
-	mov	bx,0010h		;
-c_Voice_Pcm_first_Start_Loop1:		;パート数だけループする。
-	sub	cl,1			;カウンタ・ディクリメント
-	jc	c_Voice_Pcm_first_Start_Step1
-	mov	word ptr ds:[bx],0000h	;トラックのアドレスの初期化
-	add	bx,2			;ポインタ・インクリメント
-	jmp	c_Voice_Pcm_first_Start_Loop1
-c_Voice_Pcm_first_Start_Step1:		;
-	mov	cs:[pWTD_File],bx	;WTDファイルのポインタを設定する。
-
-;	アドレス設定
-	mov	word ptr ds:[0].WTD_Mus_DataAdr,bx
-
-;終了
-	popa				;レジスタ復帰
-	ret				;Return
+c_Voice_Pcm_first	endp
 ;===============================================================|
 ;			命令					|
 ;===============================================================|
-c_Voice_Pcm_Adrs:
-	dw	3			;数量
-	dw	offset cVPD_0		;#Voice
-	dw	offset cVPD_1		;@F
-	dw	offset cVPD_2		;@
+.const
+c_Voice_Pcm_Adrs	dw	((offset c_Voice_Pcm_Adrs_E)-(offset c_Voice_Pcm_Adrs_S))/2 + 1
+c_Voice_Pcm_Adrs_S	dw	offset cVPD_0		;#Voice
+			dw	offset cVPD_1		;@F
+c_Voice_Pcm_Adrs_E	dw	offset cVPD_2		;@
 ;---------------------------------------------------------------|
 ;	①コマンド文字列					|
 ;		最後は24hで終わる				|
@@ -201,73 +182,78 @@ c_Voice_Pcm_Adrs:
 ;	    F0h	プログラム					|
 ;		nnnn	Offset Address				|
 ;---------------------------------------------------------------
-c_Voice_Pcm_Data:
 cVPD_0	db	'#voice'    ,24h, 011h,1, 010h,16, 00h
 cVPD_1	db	0dh,0ah,'@F',24h, 011h,1, 0F0h	;@の前にある事！！
 	dw	offset c_Voice_Pcm_File
 	db	00h
 cVPD_2	db	0dh,0ah,'@' ,24h, 011h,1, 010h,16, 00h
+.code
 ;---------------------------------------------------------------|
 ;●ファイルからの読み込み		;
-c_Voice_File	DB	'            ',00h,0dh,0ah,24h
-c_Voice_Pcm_File:			;
+c_Voice_Pcm_File	proc	near
+
+	local	cFilename[128]:BYTE	;[BP+80h]
+
 	pusha				;レジスタ保存
 
 	call	A2H8R			;音色番号読み込み
 	push	ax			;番号保存
 
-;ファイル名文字列先頭の検索
-c_Voice_Pcm_File_Step1:
-	call	cread			;
-	cmp	ah,21H			;
-	jc	c_Voice_Pcm_File_Step1	;20未満のコードは飛ばす
-	mov	bx,offset c_Voice_File	;bx←ファイル名を格納するアドレス
-	mov	cl,13			;cl←ファイル名の最大文字数
+	;ファイル名文字列先頭の検索
+	.repeat
+	    CALL	CREAD_L		;
+	.until	(al>20h)		;２０未満のコードは飛ばす
+
+	;ファイル名文字列をピックアップ
 	dec	cs:[pMML_File]		;ポインタを一つ戻す。
+	xor	di,di			;
+	mov	cx,128			;cl←ファイル名の最大文字数
+	.repeat				;
+	   CALL	CREAD_L			;
+	   .break   .if	(al == 00dh)	;改行だったら格納終了
+	   mov	cFilename[di],al	;mov [BP + DI + 80h],ah
+	   inc	di			;
+	.untilcxz			;
+	mov	cFilename[di],0		;
+	inc	di			;
+	mov	cFilename[di],0dh	;
+	inc	di			;
+	mov	cFilename[di],0ah	;
+	inc	di			;
+	mov	cFilename[di],24h	;
 
-;ファイル名文字列をピックアップ
-c_Voice_Pcm_File_Step2:			;
-	call	cread			;
-	CMP	AH,0DH			;改行だったら
-	JZ	c_Voice_Pcm_File_Step3	;格納終了
-	MOV	CS:[BX],AH		;
-	INC	BX			;
-	DEC	CL			;
-	JNZ	c_Voice_Pcm_File_Step2	;文字列オーバ
-	JMP	VOI_ERROR		;存在しないファイル
-c_Voice_Pcm_File_Step3:			;
-	MOV	AH,00H			;
-	MOV	CS:[BX],AH		;
-
-;ファイルの読み込み
-	call	VOPEN			;
-	call	VOI_FILE_OPEN		;
-	call	VOI_MREAD		;
-
-;音色の転送
+	;音色の転送
 	pop	bx			;音色番号の復帰
-
 	mov	bl,bh			;
 	xor	bh,bh			;
-	shl	bx,4			;
-	push	es			;
-	mov	es,cs:[segVoice_File]	;es:bx←音色アドレス
-	mov	cl,16			;
-c_Voice_Pcm_File_Step4:			;
-	mov	ah,es:[bx]		;
-	inc	bx			;
-	call	CSET			;
-	sub	cl,1			;
-	jnz	c_Voice_Pcm_File_Step4	;
-	pop	es			;
+	shl	bx,4			;bx ← 音色ファイルのオフセット
 
-	call	VOI_FILE_CLOSE		;
-	call	VCLOSE			;
+	;ファイルの読み込み
+	;音色ファイル用メモリオープン
+	push	es			;
+	invoke	Memory_Open,	0800h	;
+	mov	es,ax			;es ← 音色ファイル
+	invoke	File_Open,	addr ss:cFilename,0
+	push	ax			;ハンドル保存
+	invoke	File_Load,	ax,addr es:0
+	pop	ax			;ハンドル復帰
+	invoke	File_Close,	ax	;ファイルクローズ
+
+	mov	cx,16			;cx ← 転送数
+	.repeat
+		mov	ah,es:[bx]	;
+		inc	bx		;
+		call	CSET		;
+	.untilcxz
+
+	invoke	Memory_Close,	es	;メモリの解放
+	pop	es			;
 
 	dec	cs:[pMML_File]		;ポインタ１つ戻す。
 
 	popa				;レジスタ復帰
 	ret				;
+c_Voice_Pcm_File	endp
 ;---------------------------------------------------------------|
 ;		音色コンパイル					|
 ;---------------------------------------------------------------|
@@ -280,11 +266,12 @@ c_Voice_Pcm_File_Step4:			;
 ;		di	c_Voice_Emb_Adrsポインタ		|
 ;		si	c_Voice_Emb_Dataポインタ		|
 ;---------------------------------------------------------------|
-c_Voice_Emb_first:				;
+c_Voice_Emb_first	proc	near		;
 	pusha				;レジスタ保存
 
 ;ヘッダー初期設定
-	call	c_Voice_Emb_first_Start	;
+	;ポインターの設定。
+	mov	cs:[pMML_File],0	;MMLファイルのポインタを先頭にする。
 
 ;コマンド検索
 ;コマンド数量の読み込み
@@ -380,32 +367,14 @@ c_Voice_Emb_first_Step99:		;
 c_Voice_Emb_first_End:			;
 	popa				;レジスタ復帰
 	ret				;
-;---------------------------------------------------------------|
-;		初期設定					|
-;---------------------------------------------------------------|
-;	引数							|
-;		無し						|
-;	返り値							|
-;		無し						|
-;---------------------------------------------------------------|
-c_Voice_Emb_first_Start:
-	pusha				;レジスタ保存
-
-;ポインターの設定。
-	xor	bx,bx			;
-	mov	cs:[pMML_File],bx	;MMLファイルのポインタを先頭にする。
-
-
-;終了
-	popa				;レジスタ復帰
-	ret				;Return
+c_Voice_Emb_first	endp
 ;===============================================================|
 ;			命令					|
 ;===============================================================|
-c_Voice_Emb_Adrs:
-	dw	2			;数量
-	dw	offset cVED_0		;E
-	dw	offset cVED_1		;Ex
+.const
+c_Voice_Emb_Adrs	dw	((offset c_Voice_Emb_Adrs_E)-(offset c_Voice_Emb_Adrs_S))/2 + 1
+c_Voice_Emb_Adrs_S	dw	offset cVED_0		;E
+c_Voice_Emb_Adrs_E	dw	offset cVED_1		;Ex
 ;---------------------------------------------------------------|
 ;	①コマンド文字列					|
 ;		最後は24hで終わる				|
@@ -417,7 +386,6 @@ c_Voice_Emb_Adrs:
 ;		nnnn	Offset Address				|
 ;	    FFh	終わり						|
 ;---------------------------------------------------------------
-c_Voice_Emb_Data:
 cVED_0	db	0dh,0ah,'Ex',24h,10h
 	db	WTD_Emb_FL
 	db	WTD_Emb_AR
@@ -448,3 +416,4 @@ cVED_1	db	0dh,0ah,'E', 24h,10h
 	db	WTD_Emb_RS + 80h,0ffh
 	db	WTD_Emb_RL + 80h,000h
 	db	0FFh
+.code

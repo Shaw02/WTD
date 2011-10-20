@@ -99,7 +99,7 @@ typedef struct {
 #define	WTD_WorkAdd_Ch1		0x0680	
 #define	WTD_WorkAdd_Ch2		0x0700	
 #define	WTD_WorkAdd_Ch3		0x0780	
-#define	WTD_WorkAdd_Ch4		0x0800	
+#define	WTD_WorkAdd_Ch4		0x0800	/**/
 #define	WTD_WorkAdd_Ch5		0x0880	
 #define	WTD_WorkAdd_Ch6		0x0900	
 #define	WTD_WorkAdd_Ch7		0x0980	
@@ -118,6 +118,7 @@ typedef struct {
 
 #define	WTD_WorkChSize		0x0080	/* パート個別構造体のサイズ */
 #define	WTD_WorkSize		0x1000	/* ワーク全体のサイズ */
+#define	WTD_WorkSize_H		0x0800	/* ワーク全体のサイズ */
 
 #define	WTD_WorkAdd_End		WTD_WorkSize
 
@@ -336,7 +337,7 @@ typedef struct {
 	int		OldIntvectorCom[2];	/* 18	前の割り込みベクタ */
 	int		ComFIFO_Offset;		/* 1C	FIFO Offset Address */
 	int		ComFIFO_Segment;	/* 1E	FIFO Segment Address */
-	char	Null_20;			/* 20	未使用 */
+	char	WTD_Sys_PCMVoice;	/* 20	ハードウェア音量 PCM Voice */
 	char	VolumeMusic;		/* 21	ソフトウェア音量 演奏 */
 	char	VolumeEffect;		/* 22	ソフトウェア音量 効果音 */
 	char	VolumePCM;			/* 23	ソフトウェア音量 PCM */

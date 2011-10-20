@@ -14,5 +14,6 @@ CFLAG = -m
 LINKER = link
 LFLAG = /tiny
 LIBS = C:\WWitch\LIB\libww.lib
+LIBFILES = C:\WWitch\WTD\DEVELOP\SRC\DOS_LIB\DOSLIB.LIB
 
 LIB = lib

@@ -1,5 +1,10 @@
 path c:\masm611\bin;c:\masm611\binr;c:\WWitch\bin\;c:\WWitch\bin16\;c:\WWitch\lsic86ww\bin\;c:\WWitch\wtd\bin
 
+rem œDOS—pƒ‰ƒCƒuƒ‰ƒŠ
+cd DOS_LIB
+nmake
+cd..
+
 rem œ—õ‰¿”Å
 cd wtd
 rem mkfent wtd_h.cf

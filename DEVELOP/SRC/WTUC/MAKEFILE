@@ -8,7 +8,7 @@ include ..\..\..\SDK\include\wtdsdk.mak
 
 PROJ = WTUC
 
-INC_FILES =  ..\..\..\SDK\include\wtd.h ..\..\..\SDK\include\bank.inc ..\..\..\SDK\include\comm.inc ..\..\..\SDK\include\process.inc ..\..\..\SDK\include\service.inc ..\..\..\SDK\include\sound.inc ..\..\..\SDK\include\timer.inc ..\..\..\SDK\include\wtd_def.inc ..\..\..\SDK\include\wtd_ver.inc ..\..\..\SDK\include\wtc_def.inc 
+INC_FILES =  ..\..\..\SDK\include\bank.inc ..\..\..\SDK\include\comm.inc ..\..\..\SDK\include\process.inc ..\..\..\SDK\include\service.inc ..\..\..\SDK\include\sound.inc ..\..\..\SDK\include\timer.inc ..\..\..\SDK\include\wtd_def.inc ..\..\..\SDK\include\wtd_ver.inc
 
 FILES = wtuc.asm wtuc_cmd.asm wtuc_sub.asm
 

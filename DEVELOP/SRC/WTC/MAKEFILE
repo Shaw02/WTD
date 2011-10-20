@@ -8,11 +8,9 @@ include ..\..\..\SDK\include\wtdsdk.mak
 
 PROJ = WTC
 
-INC_FILES =  ..\..\..\SDK\include\wtd.h ..\..\..\SDK\include\bank.inc ..\..\..\SDK\include\comm.inc ..\..\..\SDK\include\process.inc ..\..\..\SDK\include\service.inc ..\..\..\SDK\include\sound.inc ..\..\..\SDK\include\timer.inc ..\..\..\SDK\include\wtd_def.inc ..\..\..\SDK\include\wtd_ver.inc ..\..\..\SDK\include\wtc_def.inc 
+INC_FILES =  ..\..\..\SDK\include\wtd.h ..\..\..\SDK\include\bank.inc ..\..\..\SDK\include\comm.inc ..\..\..\SDK\include\process.inc ..\..\..\SDK\include\service.inc ..\..\..\SDK\include\sound.inc ..\..\..\SDK\include\timer.inc ..\..\..\SDK\include\wtd_def.inc ..\..\..\SDK\include\wtd_ver.inc
 
-FILES = wtc.asm wtc_com.asm wtc_hed.asm wtc_main.asm wtc_sub.asm wtc_voi.asm
-
-
+FILES = wtc.asm wtc_com.asm wtc_hed.asm wtc_voi.asm sub_cnv.asm wtc_def.inc 
 
 all: $(PROJ).com
 	@del *.bak
@@ -21,5 +19,6 @@ all: $(PROJ).com
 	@del *.bin
 
 $(PROJ).com : $(FILES) $(INC_FILES)
-	@$(ASM) $(AFLAG) $(PROJ);>wtcerr.txt
-	@$(LINKER) $(LFLAG) $(PROJ),,,$(LIBS);
+	@$(ASM) $(AFLAG) /la $(PROJ);>wtcerr.txt
+	@$(LINKER) $(LFLAG) $(PROJ),,,$(LIBFILES);
+
