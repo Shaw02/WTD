@@ -448,13 +448,15 @@ I_Play	proc	near	uses	cx	;
 
 	.endif
 
-	;制御ルーチンへ
-	call	I_Play_Pan			;パン制御
-	call	I_Play_Volume			;音量制御
-	.if	(ds:[di].WTD_ExprSet!=0)	;　音量０でなかったら
-		call	I_Play_Frection		;音程制御
+	mov	ax, ds:[di].WTD_FlagControl
+	.if	!( (ds:[bx] & WTD_Sys_Music) && (ax & WTD_Ctrl_PlayEnd) && (ax & WTD_Ctrl_Effect) )
+		;制御ルーチンへ
+		call	I_Play_Pan			;パン制御
+		call	I_Play_Volume			;音量制御
+		.if	(ds:[di].WTD_ExprSet!=0)	;　音量０でなかったら
+			call	I_Play_Frection		;音程制御
+		.endif
 	.endif
-
 
 	ret				;
 I_Play	endp
@@ -1096,8 +1098,9 @@ I_Play_LFO	endp
 ;*		ds:di	Part Sturuc				*
 ;****************************************************************
 	even				;偶数アドレス配置
-I_Effect_Return:				;
+I_Effect_Return	proc	near			;
 	pusha					;レジスタ保存
+
 ;---------------------------------------------------------------
 ;フラグのリセット
 	mov	cl,ch				;
@@ -1122,57 +1125,64 @@ I_Effect_Return:				;
 ;---------------------------------------------------------------
 ;パート個別
 
-;パート検索
+	;パート検索
 	mov	cl,MusicMaxPart			;20回ループ
-;	mov	di,bp				;
-;	add	di,WTD_WorkAdd_Ch0		;di←構造体アドレス
 	lea	di,[bp + WTD_WorkAdd_Ch0]	;
-I_Effect_Return_Loop0:				;
-	cmp	byte ptr ds:[di].WTD_Channel,ch	;
-	jz	I_Effect_Return_Step0		;
-	add	di,WTD_WorkChSize		;構造体のサイズは80h(0x80)
-	dec	cl				;
-	jnz	I_Effect_Return_Loop0		;
-	jmp	I_Effect_Return_End		;音源は使われていない。
-I_Effect_Return_Step0:
+	.repeat
+	  .if	(ds:[di].WTD_Channel == ch)
 
-;復帰
-	and	ch,03h				;チャンネル情報だけにする。
-;周波数
-	mov	ax,ds:[di].WTD_FrectionSet	;周波数の復帰
-	call	SP_Set_Frection			;
-;音量
-	mov	al,ds:[di].WTD_ExprPanSet	;音量の復帰
-	call	SP_Set_Volume			;
-;音色
-	push	si				;音色の復帰
-;	mov	si,bp				;
-;	add	si,WTD_WorkAdd_Wave		;
-	lea	si,[bp + WTD_WorkAdd_Wave]	;
-	xor	ax,ax				;
-	mov	al,ds:[di].WTD_Voice		;
-	shl	ax,4				;
-	add	si,ax				;ds:si←音色のあるアドレス
-	call	SP_Set_Voice			;
-	pop	si				;
-;スウィープ値(ch=02h)
-	cmp	ch,2				;スウィープ値の復帰
-	jnz	I_Effect_Return_Step2		;
-	mov	al,ds:[di].WTD_SweepLevel	;
-	mov	ah,ds:[di].WTD_SweepTime	;
-	call	SP_Set_Sweep			;
-I_Effect_Return_Step2:				;
-;ノイズモード(ch=03h)
-	cmp	ch,3				;ノイズモードの復帰
-	jnz	I_Effect_Return_Step3		;
-	mov	ah,01fh				;
-	mov	al,ds:[di].WTD_NoiseMode	;
-	or	al,018h				;
-	and	al,ah				;
-	call	SP_Set_Noise			;
-I_Effect_Return_Step3:				;
+	    push	es
+	    mov	es, ds:[bx].WTD_Sys_MusicSegment
+	    .if	!(ds:[di].WTD_FlagControl & WTD_Ctrl_PlayEnd)
+
+
+		;復帰
+		and	ch,03h				;チャンネル情報だけにする。
+
+		;周波数
+		mov	ax,ds:[di].WTD_FrectionSet	;周波数の復帰
+		call	SP_Set_Frection			;
+
+		;音量
+		mov	al,ds:[di].WTD_ExprPanSet	;音量の復帰
+		call	SP_Set_Volume			;
+
+		;音色
+		mov	al, ds:[di].WTD_Voice
+		inc	ds:[di].WTD_Voice
+		call	I_SP_Voice
+
+		.if	(ch == 2)
+			;スウィープ値(ch=02h)
+			mov	al,ds:[di].WTD_SweepLevel	;
+			mov	ah,ds:[di].WTD_SweepTime	;
+			call	SP_Set_Sweep			;
+		.elseif	(ch == 3)
+			;ノイズモード(ch=03h)
+			mov	ah,01fh				;
+			mov	al,ds:[di].WTD_NoiseMode	;
+			or	al,018h				;
+			and	al,ah				;
+			call	SP_Set_Noise			;
+		.endif
+
+	    .else
+		.if	(ds:[bx].WTD_Sys_Flag & WTD_Sys_Music)
+			mov	ax,0			;エクスプレッション = 0
+			call	SP_Set_Volume			;
+			mov	ax,0			;音色 = 0
+			call	SP_Set_Voice
+		.endif
+	    .endif
+	    pop		es
+	    .break
+	  .endif
+	  add	di,WTD_WorkChSize		;構造体のサイズは80h(0x80)
+	  dec	cl
+	.until	(zero?)
 
 ;---------------------------------------------------------------
 I_Effect_Return_End:
 	popa					;レジスタ復帰
 	ret					;
+I_Effect_Return	endp

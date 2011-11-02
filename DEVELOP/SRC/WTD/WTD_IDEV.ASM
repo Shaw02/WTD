@@ -218,7 +218,7 @@ ifndef	hyoka	;------------------------廉価版は無し
 	push	ax			;レジスタ保存
 
 	;バッファに書かれている内容を全てkeyOffし、空にする。
-	mov	cx,8				;８回ループ
+	mov	cl,8				;８回ループ
 	xor	bx,bx				;
 	.repeat
 		mov	al,ds:[di+bx].WTD_KeySet	;バッファ読み込み
@@ -227,7 +227,8 @@ ifndef	hyoka	;------------------------廉価版は無し
 		.if	(al!=0ffh)			;
 			call	SM_KeyOff		;KeyOffの送信
 		.endif
-	.untilcxz
+		dec	cl
+	.until	(cl == 0)
 ;
 ;	　ポインタは面倒だから戻さない。
 ;	どうせ、クルクル回っているから、処理時間が無駄。
@@ -436,12 +437,63 @@ I_SP_Voice:				;
 		push	si			;レジスタ保存
 
 		mov	ds:[di].WTD_Voice,al	;音色番号保存
-		xor	ah,ah			;
-		shl	ax,4			;ax←al×16
-		lea	si,[bp + WTD_WorkAdd_Wave]
-		add	si,ax			;ds:si←音色のあるアドレス
+		xor	ah,ah			;ax ← 音色番号
 
-		call	SP_Set_Voice		;音色セット
+		.if	(al < 16)
+			shl	ax,4			;ax←al×16
+			lea	si,[bp + WTD_WorkAdd_Wave]
+			add	si,ax			;ds:si←音色のあるアドレス
+
+			call	SP_Set_Voice		;音色セット
+		.else
+			push	cx
+			push	dx
+
+			mov	cl,ch
+			inc	cl
+			mov	dx,00800h
+			shl	dx,cl
+
+			.if	((ds:[di].WTD_FlagControl & WTD_Ctrl_Effect) || !(ds:[bx].WTD_Sys_Flag & dx))
+
+				mov	si, ds:[bx].WTD_Sys_MusicOffset	;アドレスの設定
+				mov	cl, es:[si].WTD_Mus_Voice
+				mov	si, es:[si].WTD_Mus_DataAdr
+				.while	(cl > 0)
+				   .if	(al == es:[si])
+
+					push	cx
+					push	di
+					push	ds
+					push	es
+
+					and	cx, PCM_Channel_mask	;
+					mov	di, ds:[bx].WTD_Sys_VoiceTableOffset
+					shr	cx, 4			;
+					inc	si
+					add	di, cx			;es:di←0000h:0180h + ch × 16
+
+					push	es
+					pop	ds
+					push	IRAM_Segment		;es←0000h
+					pop	es			;
+
+					mov	cx, 8			;16byte転送する。
+					rep	movsw			;転送
+
+					pop	es
+					pop	ds
+					pop	di
+					pop	cx
+					.break
+				   .endif
+				   add	si, 17
+				   dec	cl
+				.endw
+			.endif
+			pop	dx
+			pop	cx
+		.endif
 
 		pop	si			;レジスタ復帰
 		pop	ax			;
@@ -608,12 +660,24 @@ I_SP_Mode:				;
 	push	cx			;
 	push	ax			;レジスタ保存
 
-	and	ax,0001h		;and	al,01h
-	or	ax,0100h		;set	0,ah
-	mov	cl,ch			;
-	add	cl,4			;
-	shl	ax,cl			;
+	and	ax, 0001h		;and	al,01h
+	or	ax, 0100h		;set	0,ah
+	mov	cl, ch			;
+	shl	ax, cl
 
+	.if	!(ds:[di].WTD_FlagControl & WTD_Ctrl_Effect)
+		push	dx
+
+		mov	dx, WTD_Sys_ChannelMode1R
+		rol	dx, cl
+		and	dx, ds:[bx].WTD_Sys_Flag
+		or	dh, al
+		mov	ds:[bx].WTD_Sys_Flag, dx
+
+		pop	dx
+	.endif
+
+	shl	ax,4			;
 	call	SP_Set_Channel		;
 
 	pop	ax			;レジスタ復帰

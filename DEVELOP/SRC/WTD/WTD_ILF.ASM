@@ -1049,7 +1049,7 @@ _EffectPlay	endp			;
 ;	処理							|
 ;		効果音の発生終了				|
 ;===============================================================|
-_EffectStop	proc far c	uses bp ax cx dx di si ds
+_EffectStop	proc far c	uses bp ax bx cx dx di ds es
 
 	in	al,Int_Enable		;
 	and	al,Int_HblankReset	;
@@ -1061,15 +1061,17 @@ _EffectStop	proc far c	uses bp ax cx dx di si ds
 	WTD_WorkGet	ds,bp			;ワークエリアアドレスの取得
 
 ;構造体アドレスの設定
-	lea	di,[bp + WTD_WorkAdd_ECh0]
-	lea	si,[bp + WTD_WorkAdd_System]
+	lea	bx,[bp + WTD_WorkAdd_System]
+
+	lea	di,[bp + WTD_WorkAdd_Ech0]
+;	mov	es,ds:[bx].WTD_Sys_MusicSegment	;es←効果音データセグメント
 
 ;---------------------------------------------------------------
 ;個別構造体設定
 
 ;チャンネル数
 	xor	cx,cx					;
-	mov	ch,ds:[si].WTD_Sys_EffectPart		;使用トラック数
+	mov	ch,ds:[bx].WTD_Sys_EffectPart		;使用トラック数
 	.while	(ch!=0)
 		mov	cl,ds:[di].WTD_Channel			;
 
@@ -1080,13 +1082,18 @@ _EffectStop	proc far c	uses bp ax cx dx di si ds
 		mov	dx,offset CGROUP:I_Table_KeyOff	;
 		call	I_Table_Jump			;キーオフ
 
+		mov	ax,0			;エクスプレッション = 0
+		mov	dx,offset CGROUP:I_Table_Volume
+		call	I_Table_Jump		;(エンベロープ音量。)
+
 		push	cx				;
-		mov	ch,cl				;チャンネルの取得
+		mov	ch, cl				;
 		call	I_Effect_Return			;効果音復帰処理
 		pop	cx				;
 
-		mov	ax,8000h			;
-		or	ds:[di].WTD_FlagControl,ax	;演奏終了
+		or	ds:[di].WTD_FlagControl,WTD_Ctrl_PlayEnd
+	;	mov	ax,8000h			;
+	;	or	ds:[di].WTD_FlagControl,ax	;演奏終了
 
 ;		その他
 ;		to do	あれば
@@ -1098,9 +1105,9 @@ _EffectStop	proc far c	uses bp ax cx dx di si ds
 ;---------------------------------------------------------------
 ;共通構造体設定
 
-	mov	ax,ds:[si].WTD_Sys_Flag		;
+	mov	ax,ds:[bx].WTD_Sys_Flag		;
 	and	ax,WTD_Sys_EffectR		;演奏ディセーブル
-	mov	ds:[si].WTD_Sys_Flag,ax		;終了リセット
+	mov	ds:[bx].WTD_Sys_Flag,ax		;終了リセット
 ;
 ;	その他
 ;

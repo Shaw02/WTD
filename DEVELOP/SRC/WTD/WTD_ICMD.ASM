@@ -1057,6 +1057,7 @@ I_Com4c:				;
 	.if	(ax==0)
 		or	ds:[di].WTD_FlagControl,WTD_Ctrl_PlayEnd
 		mov	ch,byte ptr ds:[di].WTD_Channel
+
 		.if	((ds:[di].WTD_FlagControl&WTD_Ctrl_Effect) && (ch>=80h))
 			jmp	I_Effect_Return	;å¯â âπÇ©ÇÁÇÃïúãA	Å¶call Å® jmp
 		.endif
@@ -1459,12 +1460,6 @@ I_Com6d:				;
 ;---------------------------------------------------------------|
 ;	0x00Å`0x07	Set the noise mode 			|
 ;	(0Å`7)		bit 0-2 : Noise mode (0Å`7)		|
-;			bit 7   : Low				|
-;	0x80Å`0xFF	PUTI noise				|
-;	(128Å`255)	bit 0-1 : Right  Volume			|
-;			bit 2-3 : Left   Volume			|
-;			bit 4-5 : Master Volume	(WSC only)	|
-;			bit 7   : High				|
 ;===============================================================|
 	even				;ãÙêîÉAÉhÉåÉXîzíu
 I_Com6e:				;
@@ -1473,6 +1468,7 @@ I_Com6e:				;
 	mov	ds:[di].WTD_NoiseMode,al
 	or	al,18h			;
 	mov	ah,1fh			;
+	mov	ch, 3			;
 	jmp	SP_Set_Noise		;Å¶call Å® jmp
 
 	ret				;
@@ -1520,6 +1516,7 @@ I_Com73:				;
 	.if	(ds:[di].WTD_Channel==82h)
 		mov	ds:[di].WTD_SweepLevel,al
 		mov	ds:[di].WTD_SweepTime,ah
+		mov	ch, 2		;
 		jmp	SP_Set_Sweep	;Sweep ModeÇÃê›íË	Å¶call Å® jmp
 	.endif
 	ret				;
