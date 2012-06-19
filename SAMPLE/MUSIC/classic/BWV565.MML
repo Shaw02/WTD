@@ -1,0 +1,452 @@
+;Composed	TOCCATA AND FUGUE IN D MINOR	(BWV565)	J.S.Bach
+;Type		A.Watanabe
+#timebase 48
+#part	   8
+
+
+C0	C1	y91,127y94,16
+C1	C1	y91,127y94,16
+C2	C1	y91,127y94,16
+C3	C1	y91,127y94,16
+C4	C2	y91,127y94,16
+C5	C2	y91,127y94,16
+C6	C2	y91,127y94,16
+C7	C3	y91,127y94,16
+
+C0,1,2,3,4,5,6,7
+		@19 v127 q0 l64 t36
+C0		o5 aga8r8.gfedc+32r32d8r4
+C1		o4 aga8r8.gfedc+32r32d8r4
+C2		o3 r32 r8r8.r2
+C3		o2 r32 r8r8.r2
+C4,5,6,7	   r32 r8r8.r2
+
+C0		r32r2..
+C1		aga8r8.e16f16c+16d8r4
+C2		aga8r8.e16f16c+16d8r4
+C3		r32r2..
+C4,5,6,7	r32r2..
+
+C0		r32 r8r8.r2
+C1		r32 r8r8.r2
+C2		aga8r8.gfedc+32r32d8r4
+C3		aga8r8.gfedc+32r32d8r4
+C4,5,6,7	r32 r8r8.r2 t64
+
+C0	o4 r3r6r6r6r6r6e6&	r2 d2		r4o5l16	r8.r
+C1	o4 r3r6r6r6r6c+3&	r2r2		r4o4l16	r8.c+
+C2	o3 r3r6r6r6b-3.&	r2 a2		r4o3l16	r8.c+
+C3	o3 r3r6r6g3&r3&		r2&r8e8f+4	r4	r8.r16
+C4	o3 r3r6e3&r3.&	t32	r2 d2		r4	r8.r16
+C5	o3 r3c+3&r3&r3&		r2r2		r4	r8.r16
+C6	   r3 r3 r3  r3		r1		r4	r8.r16
+C7	o2 d3&r3&r3& r3&	r2&r2		r4	r8.r16
+
+C1,2		l24	det64c+t92dec+dec+t64d16e16 
+			ft92ge[fge]2t64f16g16 at92b-g[ab-g]2a16r2.
+C0,3,4,5,6,7	l24	rr   r    rrr rrr    r16r16
+			r   rr[rrr]2   r16r16 r   rr[rrr]2r16r2.
+
+C0,1		t32c+16
+C2,3,4,5,6,7	   r16
+
+C0,1		l24det94c+t92dec+dec+t64d16e16 
+		   ft92ge[fge]2t64f16g16 at92b-g[ab-g]2a16r2.
+C2,3,4,5,6,7	l24rr   r    rrr rrr    r16r16 
+		   r   rr[rrr]2   r16r16 r   rr[rrr]2r16r2.
+
+C0,1		t32 a16 l24
+C2,3,4,5,6,7	    r16 l24
+
+C0,1		gb-et64gb-et98[fad]2[egc]2[df<b->]2
+		[ce<a>]2[<b->d<g>]2[<a>c<f>]2<[gb-e]2
+C2,3,4,5,6,7	r1 r1
+
+C0,1		[fad]2[egc+]2
+C2,3,4,5,6,7	r2	t32
+
+C0	l32o4 r4rrrrrrrb-&r4&l32ragfedc+<b>c16<a16>c16egl64[fg]5t32fge16
+C1	l32o4 r4rrrrrrg16&r4	r2.
+C2	l32o4 r4rrrrre16.&r4	r2.
+C3	l32o4 r4rrrrc+8&  r4	r2.
+C4	l32o3 r4rrg&b-8&r32&r4	r2.
+C5	l32o3 r4re&e8.&   r4	r2.
+C6	l32o3 r4c+4&	  r4	r2.
+C7	l32o2 d2&	  r4t64	r2.
+
+C0	l16o4 C1 f2r8.t48at64>
+C1	l16o4 C1 d2r4
+C2	l16o4 C1 r2r4
+C3	l16o3 C2 a2r4
+C4	l16o3 C2 f2r4
+C5	l16o3 C2 d2r4
+C6	l16o3 C2 r2r4
+C7	l16o2 C3 d2r4
+
+C0		Q4 defdefge fgafgab-gafgefdec+ d<ab-gafgefdgefdec+
+		   d<ab-gafgefdgefdec+
+C1		Q4 r32[:a]56a32Q8
+C2,3,4,5,6,7	r2 r1r1r1
+
+C0	C1 d8t64l32o4Q8 dfb-fceae <b->dgd<a>c+ea	l16o4 rb-rarg
+C1	C1 r2r8					l16o4 rfrerd
+C2	C1 r2r8					l16o4 dr<arb-r>
+C3	C1 r2r8					l08o3 rr r
+C7	C3 r2r8					l08o3 dc<b-
+C4,5,6	C2 t32r1
+
+C0	a8l32o4 dfb-fceae <b->dgd<a>c+ea	l16o4 rb-rarg
+C1	e8 r2				l16o4 rfrerd
+C2	c+8r2				l16o4 dr<arb-r>
+C3	e8 r2				l08o3 rr r
+C7	a8 r2				l08o3 dc<b-
+C4,5,6	r1
+
+C0	a4&l32rgfedc+<b>c+ <ab>c+defga gfefdfa>c+
+C1	e4 r2.
+C2	c+4r2.
+C3	e4 r2.
+C7	a4 r2.
+C4,5,6	r1
+
+C0	t32dt64<ab>c+ def64g64ab-8	l16o5 rb-rarg	a8	l32dfb-f
+C1	r4r8				l16o5 rfrerd	e8	r8
+C2	r4r8				l16o5 dr<arb-r>	c+8	r8
+C3	r4r8				l08o4 rr r	e8	r8
+C7	r4r8				l08o3 dc<b	a8	r8
+C4,5,6	r1
+
+C0	ceae<b->dgd <a>c+ea	l16o5 rb-rarg	a8 <b8
+C1	r4.			l16o5 rfrerd	e8 <f8
+C2	r4.			l16o5 dr<arb-r>	c+8<d8
+C3	r4.			l08o4 rr r	e8 <b8
+C7	r4.			l08o3 dc<b-t32	a8  g+8
+C4,5,6	r1
+
+C0	o5l32 c+8.<b16t64a16>c+16egt18b-16t72 agfefedc+ dc<b-agfed
+C1	o4l16 a4 r2.
+C2	o4l16 e4 r2.
+C3	o3l16 a4 r2.
+C7	o2l16 g4 r2.
+C4,5,6	r1 t64
+
+C0	o5l24 e2
+C1	o5l24 c+2
+C2	o4l24 b-2
+C3	o4l24 g2
+C4	o4l24 e2
+C5	o4l24 c+2
+C6	o4l24 r2
+C7	o3l24 g2t92
+
+C1		[c+ec+<b->c+<b->]4<[g b-  gege]4 [c+ec+<b->c+<b->]4[c+ec+ege]4
+C4		[e ge  c+e  c+]4<[b->c+<b-gb-g]4 [e ge  c+e  c+]4[e ge gb-g]4
+C1		[gb-]6>		c+<b->c+[ec+]4t32e
+C4		[eg]3>[<b->c+]3	[ec+]6
+C0,2,3,5,6,7	r1r1r1r1r1
+
+C0	o5l04 a4 a4 g4 r4 g4  r4	r4	r8.r8  l8r1
+C1	o5l04 e4 f4 d4 r4 e4  r4	r4	r8.r8  l8d4rrr2
+C2	o5l04 c+4d4<b-4>r4 c+4 r4	r4	r8.c+8<l8a4rrr2
+C3	o4l04 a4 a4 g4 r4 a4  r4	r4	r8.a8  l8f4f4e2
+C4	o4l04 e4 f4 d4 r4 e4  r4	r4	r8.e8  l8d4d4&r4c+4
+C5	o4l04 c+4d4 r4 r4 c+4 r4	r4	r8.r8< l8a4a4&r4.g8&
+C6	o3l04 a4 a4 r4 r4 r4  r4	r4	r8.a8  l8r1
+C7	o3l16 g4 f4 b-4.ag a8.efdec+	d<b>c+<ab-g+a>g8   l8f4d4<a2
+
+C0	o4 d1		r2
+C1	o4 r1		r2
+C2	o4 r1		r2
+C3	o3 a1		r2
+C4	o3 r1		r2
+C5	o3 r4f8e8f2	r2
+C6	o3 d1		r2
+C7	o2 d1	t92	r2
+
+C4		l16o4 ragafaea dac+adaeafa<a>a<b>ac+a	dac+adaea
+C0,1,2,3,5,6,7	l01o4 r2	r1			r2
+
+C2		l16o5	rdcd<b->d<a>d
+			<g>d<f+>d<g>d<a>d<b->d<d>d<e>d<f+>d 
+			<g>d<f+>d<g>d<a>d
+C4		l08o4	 f  f+ g   c
+			<b- a  b- >c  d< f+  g   a
+			 b- a  b-  f+
+C0,1,3,5,6,7	r2	   r1				      r2
+
+C2	l08o5Q4 <b->d<b->de-<g>e-<g> c<a>c<a>d<f>d<f b-gb-g>c+<e>c+<e
+C4	l16o4Q8 [<g>g]2[dg]2[ce-]4 [cf]4[<b->d]4    [<b->e]4[<a>c+]4
+C0,1,3,5,6,7	r1		   r1		   r1
+
+C2	afafgc+gc+    fdfde<b->e<b-
+C4	[<f>d]4<[eb-]4 [da]4[eg]4
+C0,1,3,5,6,7	r1	      r1
+
+C0		l16o5Q8 ragafaeadac+adaeafa<a>a<b>ac+adac+adaea
+C2		l08o3Q8 [aaaa]4
+C4		l08o3Q8 fedgfefc+ dc+defefc+
+C1,3,5,6,7	l01	r1	  r1
+
+C0		l16 faeadaca<b->acadg<b->g egdgcg<b->g<a>g<b->gcf<a>f 
+C2		l04 a4>d4d4r4		 c4c4c4r4<
+C4		l04 d4 f4g4r4		 c4e4f4r4
+C1,3,5,6,7	l01 r1			 r1
+
+C0	dfcf<b->f<a>f<g>f<a>f<b->e<g>e c+e<b->e<a>e<g>e<f>e<g>e<a>d<f>d
+C2	 b-4 b-4b-4r4		      a4 a4 a4>l08rd
+C4	<b-4>d4e4r4		     <a4>c+4d4 l08rf
+C1,3,5,6,7	r1			     r1
+
+C0	[<e>e]2[<f>d]2[<b->c+]2<a>d<f>d
+C2	c+c+dde4rd
+C4	b- b- aag4ra
+C1,3,5,6,7	r1
+
+C0	[<e>e]2[<f>d]2rdc+d<b>dc+<b>
+C2	c+c+dde4 r4
+C4	b- b- aag+4r4
+C1,3,5,6,7	r1
+
+C0	l16 c4r4	rdc+dfdc+<b>c4e4&
+C2	l16 ragaegfe	f4d4<a>agac+gfe
+C4	l16 r2		r1
+C1,3,5,6,7	    r2		r1
+
+C0	r8d4c+8c4<b-4		  a4a4g4g4
+C2	f4e4d8a4g8&		  r4f+4f4e-4&
+C4	>rdc+d<aagaf+>dc+d<g>fe-d c+e<a>c+<d>e-dc<b>d<gbc>dc<b-
+C1,3,5,6,7	r1			  r1
+
+C0	f+8a4>e-8d4r8g8&
+C2	r8d8f+8>c8&r8<b-ab-8b-8
+C4	a>c<f+ad>c<b-ab->agf+g<b-ag>
+C1,3,5,6,7	r1
+
+C0	l08o5	gf+g4	<b->ddd		     d d dd  d ddd
+C2	l08o4	a4>dc	<b- ab-f+		     g f+ga  b- ab-f+
+C4	l08o4	d4rd	 d ddc		    <b->d dc <b->ddc
+C7	l16o3	rdcd<b->d<a>d<g>d<f+>d<g>d<a>d
+		<b->d<d>d<e>d<f+>d<g>d<f+>d<g>d<a>d
+C1,3,5,6	l01   r1			     r1
+
+C0	l16o5 dgfgefdec a g a fgef	d b-ab- g a fge>c<b->c<ab- g a
+C2	l16o4 gb-ab-gafge>c<b->c<ab-ga	f>dcd<b->c<ab-g>e d e cd<b->c
+C4	l16o3 b-4r2.			r1
+C7	l08o2 b-4rb>c4rc+		d4rde4re
+C1,3,5,6	l01   r1			r1
+
+C0	l16o5 fe-dcdc<b-ab->d<b-agb-gf	efgab->dc<b-
+C2	l16o4 a8 f8b-a gfg b- gfeged	cdefg8 e8
+C4	l16o4 r1			r2
+C7	l08o3 f<ab->d<g4rb-&		rag>c<
+C1,3,5,6	l01   r1			r2
+
+C0	l08o4 a4>c<b-agab-		     >c<efgagab-
+C2	l08o4 f4r2.			     r1
+C4	l16o4 rc<b->c<a>c<g>c<f>c<e>c<f>c<g>c <a>c<c>c<d>c<e>c<f>c<e>c<f>c<g>c
+C7	l04o2 f4r2.			     r1
+C1,3,5,6	l01   r1			     r1
+
+C0	l16o5 c<b-agfe-dc <b-4>>r4   edc<b-agfe d4>r4      gfedc<b-ag
+C2	l16o5 <<a4>>r4	  dc<b-agfed c4>r4      fedc<b-agf e4>r4
+C1,3,4,5,6,7		l01   r2	 r1		     r1
+
+C0	l16o5 [[afefcfef]2[gedecede]2]2
+C2	l08o4 [[fr>cr<]2  [er>cr<]2  ]2
+C1,3,4,5,6,7		      [r1]4
+
+C0	l16o5 fgfedc<ba
+C2	l08o4 d8r4.
+C1,3,4,5,6,7		r2
+
+C0	l16o5 [<bgb>dfafd ]2[<b-gb->cegec     ]2
+	l16o5 [<afa>cdfd<b-> ]2[<gegb->c+ec+<b-> ]2
+C1,2,3,4,5,6,7	      [r1]4
+
+C0	l16o5 ragafaea dac+adaeafa<a>a<b>ac+a dac+al8dedc<b-al16b-agfedc+<b
+C2	l08o5 <a>c+d<g fab>c+ dc+de fefc+ d<agf+ gr4.
+C4	l16o4 r1		r2.  raga rf+ef+ rdcd <b->c<b-agfed
+C1,3,5,6,7	      [r1]3
+
+C0	ar8.r2.r1r1r1 [r1]4 r1r1r1 r2
+C4	[[c+<a>c+egb-ge v98Q4]2v127Q8 [d<a>dfa>d<af v98Q4]2v127Q8]2
+C4	[[ec+egb->c+<b-g v98Q4]2v127Q8 [fdfa>dfd<a   v98Q4]2v127Q8]2
+C4	[gegb->c+ec+<b-  v98Q4]2v127Q8 afa>c+dfd<a b->d<b-gfafd<a>d<afd>dc+<b>
+C4	c+b-ag fgfe db-ag fgfe
+C1,2,3,5,6,7	[r1]8 r1r1r1 r2
+
+C0	o4l16 r4	   rfed    a16r8.	> redc+
+C4	o3l32 d16efgab>c+ d16r8. <a16b>c+defgl16agfe
+C7	o3l16 r1
+C1,2,3,5,6	      r1
+
+C0	l32o5 d16e-dc<b-agl8f+a&rg>c<b>
+C4	l16o4 f8r8	re-dc<b-8b8>c8g8
+C7	l16o3 r2	rgfge-gdg
+C1,2,3,5,6	      r1
+
+C0	e-de-<b> c<b>cd e-de-f [g32a32]32l16
+C4	[g32a32]24ggfge-gdg cg<b>gcgdge-g<g>g<a>g<b>g cg<b>gcgdg
+C7	cg<b>gcgdge-g<g>g<a>g<b>g cg<b>gcgdgl8e-dc<b> cde-fg<b>cd e-de-f
+C1,2,3,5,6	r1r1r1 r2
+
+C0	ggfge-fde- cfe-fde-cd<b->e-de-cd<b->c <a>dcd<b->c<ab-gb-ab->c<b-ag
+C4	e-8d8ga-fg e-8c8fge-f d8<b-8>e-fde-  c8f+8gafge-gf+gagf+e
+C7	g<b>cd    e-<ab->c    d<gab->	    cdgd	e-<b-a>c
+C1,2,3,5,6	r2 r1r1
+
+C0	f+8a8>d<g>c<f+b-g>d<ab-gaf+ g>d<f+>d<g>d<a>d<b-g>d<ab-g>c<a
+C4	rdcd<b->d<a>d<g>d<f+>d<g>d<a>d <b->d<d>d<e>d<f+>d<g>d<f+>d<g>d<a>d
+C7	d1&r1
+C1,2,3,5,6	r1r1
+
+C0	l16o5 dc<b-ab-ab-gab->cde-dcd <b->c<ab-g8b-8>ce-fga-gfg
+C4	l08o3 b-ag2f+4		  gab-16a16g16f16e-8>e-8d4
+C7	l08o3 d4<rg>c<a>d<d	  g4.g>c4.<b>
+C1,2,3,5,6	      r1r1
+
+C0	e-fde-c8<b-8a8b-4a4g4f+8f8e-4db-
+C4	cdl16e-fde-ce-dfgfe-f d<b->e-dc+<a>dc<bg>c<b-afb->d
+C7	c4r2.r1
+C1,2,3,5,6	r1r1
+
+C0	ab-agf+>e-dc<b->agf+g8.f	e-fde-c+4d4c4
+C2	l16o4 r1		r4rb-aga4f+4
+C4	cdc<b-a>c<b-ag>c<b-ab->c<b-a	gafge4f+4d4
+C6	l16o4 r1		r2re-dcdc<b-a
+C1,3,5,7	r1r1
+
+C0	<b-4a8>c+8d8e8f4		e2d4.f8
+C2	gfe-dc+8e8f8g8r8d8&	r4  c+4<ab-gaf8a8
+C4	g4r2>agaf		gagab-agafgefdc<b-a
+C6	g4ab-agfgead4		r1
+C1,3,5,7	r1r1
+
+C0	l08o5 gdc+dedc+d	edc+degfd	<b->edd
+C2	l08o4 gagfgfea		b-agfa>ed<a	ggaf
+C4	l16o3 b-agfefedc+<a>d<a>e<a>f<a>
+C4	g<a>f<a>e<a>d<a>c+a<a>adaf>d<	g>d<e>c+<f>d<d>d<
+C1,3,5,6,7	r1r1r2
+
+C0	l08 c+4defefc+ dc+defefg l16 ab-gafgefd<a>c+<a>d<a>e<a>
+C0	f<a>e<a>f<a>g<a>a<a>e<a>f<a>g<a> a4r4
+C2	l16 eagafaeadac+adaea fa<a>a<b>ac+adac+adaea
+C2	l08 f  edgfefc+ dc+d<b>c+gfd	 c+4r4
+C4	l01 a&r&r&r&r4r4
+C7	l16o3 r1r1r1r1 ragafaea
+C1,3,5,6	r1r1r1r1r2
+
+C7	dac+adaea fa<a>a<b>ac+a dac+adaea
+C0,1,2,3,4,5,6	r1r2
+
+C0	l16o5redc+d8rf efgab-agaf8e8defe- dc<b-agab->c<a4>r8 c4<b-8r8>g8e-fde-c<b-ag
+C4	l16o4rgfefc+d8&r4c+4dab>c+d8c8<f4.e-8.c<afa>ce-cd<b-gdgb->dgcd<b->c<agf+e
+C7	l08o3 f4rf gea<a>d4<ra b-g>c<cf4ra b-4rb->c4<ra>
+C1,2,3,5,6	r2r1r1r1
+
+C0	a4r2.	r1r1r1r1
+C4	@19f+df+ga>d<ag	@16f+df+ga>d<af+	@19gdgab->d<b-a	@16gdgab->dc<b-
+C4	@19af+ab->ce-c<b	@16af+ab->ce-c<b	@19ab->df+gb-gd<	@16b-gb->dgb-gd
+C4	@19c<a>ce-f+af+e-@16c<a>ce-f+af+e-@19
+C7	l04o3 [@19dr@16dr]5@19
+C1,2,3,5,6	r1r1r1r1r1
+
+C0	l08o5 r4 dc<b-4>c  d   e-4f ga4 f e-
+C2	l08o4 d rgf+g4 g  b> c4 c ef4<b- a
+C4	l08o3 f+rga b-4>e-<b  g4>c<b-a4 b->c
+C7	l16o3 rdcd<b->d<a>d<g>gfge-gdg cc<b->c<a>c<g>c<f>fe-fdfcf
+C1,3,5,6	r1r1
+
+C0	l16o5 de-dc<b->c<b-ag>c<b-agagf+ gfedc+8e8fgab>c+def
+C2	l16o4 b-8r2..r1
+C4	l16o4 dgfe-de-dc<b->e-dc<b->c<b-a b-agfe8g8ab>c+defga
+C7	l08o3 <b->e-f<f g>cd<d l16 g4ragaf8d8a4
+C1,3,5,6	r1r1
+
+C0	l08o5 gf16e16dc+defg ac+defefd
+C4	l16o4 b-8agfaeadac+adaea fa<a>a<b>ac+adac+ada<b>a
+C7	l08o2 d1.r4.>d<
+C1,2,3,5,6	r1r1
+
+C0	l8o5 e ddc+d fe4
+C2	l8o4 r ab-a a>ddc
+C4	l8o4 c+dge f ab-a
+C7	l8o2 t78at64fga t54ft46dt42gt38at32
+C1,3,5,6	r1
+
+C0	o5 d2	l32o5 rfga    b-r16.    rcde-    fr16.
+C1	o4 b-2r2
+C2	o4 f2	l32o4 r8   t48rab->c t64dr16. t78<rfgat92
+C3	o4 r2r2
+C4	o4 d2r2
+C5	o3 b-2r2
+C6	o3 f2r2
+C7	o2 b-2r2
+
+C0	o4 rab->c dr16. r<gab-> cr16. r<fga b-r16.  rcde- fr16.
+C2	o4 b-r16. ragf  e-r16. rgfe- dr16. r<ab->c dr16. r<fga
+C1,3,4,5,6,7	r1
+
+C0	o3 rab->c dr16.  r<b->cd e-r16. rcde  f+r16.  t78rf+t64gt56a b-r>d16
+C2	o3 b-r16. r>c<b-a gr16.  r>dc<b- ar16. r>e-dc< b-r16. t48r>>ct32d<g
+C4	o3 r2.. r16g16
+C1,3,5,6,7	r1
+
+C0	l02o5 e. d4& r r2..d8
+C1	l02o4 b-. r4  br2..b8
+C2	l02o4 g. a4  f r2..g+8
+C3	l02o4 e. f4  d r2..e8
+C4	l02o4 c+.d4< b r2..b8
+C5	l02o3    r1  r r2..g+8
+C6	l02o3 t48r1  r r2..e8
+C7	l16o3 c+2f4.d8 t32 <g+2>rg+bf g+df<b> d<g+a8 e4&
+
+C0	o5 c1		l32o4 rt78gfg er16. raga  fr16.
+C1	o4 a4.g16f16 e2	l32o4 r8      rede  cr16. rfef
+C2	o4 e2r2	r2
+C3	o4 r1	r2
+C4	o4 c1	r2
+C5	o3 a2g2	r2
+C6	o3 e1	r2
+C7	o2 r1	r2
+
+C0	o4 rbab gr16. r>c<b>c< ar16. r>ede  cr16. rgfg  er16.
+C1	o4 dr16.  rgfg  er16.>    rdcd< br16. r>fef dr16. rc<b>c
+C2,3,4,5,6,7	r1
+
+C0	o5 rdcd< b>r16. rc<b>c <ar16. rbab cr16. rg+f+g+  er16.
+C1	o4 ar16. rg+f+g+ er16.   rfef   dr16.  raga  <b>r16. rc<ba
+C2,3,4,5,6,7	r1
+
+C0	o4 rdc<b ar16. >rfed   cr16. t64ragf     er16.   >c4  t78
+C1	o3 g+r16. >redc <br16. >rgfe    dr16. t48rgab t32r8g8
+C2	o4 r2..e8
+C3	o4 r2..c8
+C4	o3 r1
+C5	o3 r2..f8
+C6	o3 r1
+C7	o3 r2..d8
+
+C0	l08o5 c+rc+c+drdd <brbb>crcc
+C1	l08o4 a rr a arra  g rr g  grrg
+C2	l08o4 e rr e frrf  d rr d  erre
+C3	l08o4 r1r1
+C4	l32o3 a8a>c+ea<r8a8 a8a>dfa<r8a8 b8gb>dg<r8g8 g8g>ceg<r8g8
+C7	l08o3 g rr g frrf  f rr f  erre
+C5,6	r1r1
+
+C0	<araab-rb-b- b-rb-b- a rt32aa&
+C1	 frrffrrf grrg f+rrf+t48
+C2	 crrcdrrd erre d rrd
+C3	 r1	  rrrc+r2
+C4	a8fa>cf<r8f8 f8fb->df<r8f8 e8egb->c+<r8e8 f+8da>df+<r8f+8
+C7	 erredrrd c+rrc+crrc
+C5,6	r1r1
+
+C0	l4o4 r4g2f4 e2d2&  r1&r1
+C1	l4o4 d2e4d4&r4c2<b-4a1&r1
+C2	l4o3 b-2>c+4r4r1    r1 r1
+C4	l4o3 g2b-4a4 a2f4g4 f1&r1
+C6	l4o3 r1	     r1	   d1&r1
+C7	l4o2 gb-ef    a2b-g  d1&r1
+C3,5	r1r1r1r1

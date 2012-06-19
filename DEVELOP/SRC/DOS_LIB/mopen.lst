@@ -1,0 +1,166 @@
+Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+mopen.asm						     Page 1 - 1
+
+
+
+					.186
+					.model	tiny,stdcall
+
+
+				;****************************************************************
+				;*		外部宣言					*
+				;****************************************************************
+				include	lib_dos.inc
+			      C 
+			      C 
+			      C ComSmole	proto	near,	sizeCOM:WORD
+			      C ExeSmole	proto	near,	szDGROUP:WORD
+			      C Memory_Open	proto	near,	ParaSize:word
+			      C Memory_Close	proto	near,	CloseSegment:word
+			      C 
+			      C File_Create	proto	near,	cFilename:dword,iAttr:word
+			      C File_Open	proto	near,	cFilename:dword,cMode:byte
+			      C File_Close	proto	near,	hFile:word
+			      C File_Load	proto	near,	hFile:word,	cBuff:dword
+			      C File_Load_S	proto	near,	hFile:word,	iSize:word,	cBuff:dword
+			      C File_Write	proto	near,	hFile:word,	iSize:word,	cBuff:dword
+			      C File_Seek	proto	near,	hFile:word,	iControl:BYTE,	dOffset	:dword
+			      C 
+			      C ChangeExt			proto	near,	cFilename:dword,cExt:dword
+			      C Change_Current_Directory	proto	near,	cDirname:dword
+			      C 
+			      C File_Err	proto	near
+			      C 
+			      C 
+			      C 
+			      C ASC2HEX8	proto	near
+			      C ASC2HEX16	proto	near
+			      C HEX2ASC8	proto	near
+			      C HEX2ASC16	proto	near
+			      C FH2A8		proto	near
+			      C FH2A16		proto	near
+			      C H2A_F		proto	near,	iValue	:WORD,	iForm	:WORD
+			      C H2A8		proto	near
+			      C dat2hex8	proto	near
+			      C dat2hex16	proto	near
+			      C 
+			      C 
+			      C 
+
+
+				;****************************************************************
+				;*		コード						*
+				;****************************************************************
+				;---------------------------------------------------------------|
+				;		メモリ確保					|
+				;---------------------------------------------------------------|
+				;	●引数							|
+				;		ParaSize	割り当てたいパラグラム		|
+				;	●返り値						|
+				;		ax		割り当てたメモリのセグメント	|
+				;	●処理							|
+				;		メモリを確保し、当該メモリを０クリアします。	|
+				;---------------------------------------------------------------|
+ 0000				.code
+ 0000				Memory_Open	proc	near	uses bx cx di es,
+					ParaSize:word
+
+ 0000  55		   *	    push   bp
+ 0001  8B EC		   *	    mov    bp, sp
+ 0003  53		   *	    push   bx
+ 0004  51		   *	    push   cx
+ 0005  57		   *	    push   di
+ 0006  06		   *	    push   es
+ 0007  8B 5E 04				MOV	bx,ParaSize		;データ領域の確保
+
+ 000A  B4 48				MOV	AH,48H			;
+ 000C  CD 21				INT	21H			;
+
+					.if(carry?)			;割り当て失敗時に飛ぶ。
+ 000E  73 03		   *	    jae    @C0001
+					invoke	File_Err		;
+ 0010  E8 0000 E	   *	    call   File_Err
+					.endif
+ 0013			   *@C0001:
+
+ 0013  8E C0				mov	es,ax			;
+ 0015  33 FF				xor	di,di			;
+ 0017  33 C0				xor	ax,ax			;
+ 0019  8B 4E 04				mov	cx,ParaSize		;
+ 001C  C1 E1 03				shl	cx,3			;
+ 001F  FC				cld
+ 0020  F3/ AB			   rep	stosw				;メモリ空間を０クリア
+ 0022  8C C0				mov	ax,es			;
+
+					RET				;
+ 0024  07		   *	    pop    es
+ 0025  5F		   *	    pop    di
+ 0026  59		   *	    pop    cx
+ 0027  5B		   *	    pop    bx
+ 0028  5D		   *	    pop    bp
+ 0029  C2 0002		   *	    ret    00002h
+ 002C				Memory_Open	endp			;
+				;****************************************************************
+					end
+Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+mopen.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_TEXT  . . . . . . . . . . . . .	16 Bit	 002C	  Word	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+ASC2HEX16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ASC2HEX8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ChangeExt  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Change_Current_Directory . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ComSmole . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ExeSmole . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+FH2A16 . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+FH2A8  . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Close . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Create  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Err . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Load_S  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Load  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Open  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Seek  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Write . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+H2A8 . . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+H2A_F  . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+HEX2ASC16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+HEX2ASC8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Memory_Close . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Memory_Open  . . . . . . . . . .	P Near	 0000	  _TEXT	Length= 002C Public STDCALL
+  ParaSize . . . . . . . . . . .	Word	 bp + 0004
+dat2hex16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+dat2hex8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0003h	 
+@Model . . . . . . . . . . . . .	Number	 0001h	 
+@code  . . . . . . . . . . . . .	Text   	 DGROUP
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+
+	   0 Warnings
+	   0 Errors

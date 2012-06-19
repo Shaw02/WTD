@@ -210,7 +210,7 @@ WTD_BendEmbRate		db	?		;3A	EMBレイト
 WTD_BendEmbCounter	db	?		;3B	EMBカウンター
 WTD_BendEmbMaxMin	db	?		;3C	EMB最大／最小値
 WTD_BendEmbLevelSet	db	?		;3D	EMB変位ﾚﾍﾞﾙ
-WTD_Null_3E		db	?		;3E	未使用
+WTD_ReleaseVolume	db	?		;3E	KeyOff時の音量
 WTD_ExprPanSet		db	?		;3F	出力/ｳﾞｪﾛｼﾃｨｰ
 WTD_ExprSet		db	?		;40	出力音量/ｴｸｽﾌﾟﾚｯｼｮﾝ
 WTD_Expr		db	?		;41	音量/ｴｸｽﾌﾟﾚｯｼｮﾝ
@@ -257,6 +257,9 @@ WTD_ProgramRate		dw	?		;62-63	音色を変える。
 WTD_Program1st		db	?		;64	音色の初期値
 WTD_Program2nd		db	?		;65	経時変化
 WTD_Program3rd		db	?		;66	KeyOff後音色
+WTD_ProgramDecay	db	?		;67	経時変化２
+WTD_ProgramDecayRate	dw	?		;68-69	音色を変える２
+
 WTD			ends
 ;---------------------------------------------------------------
 ;構造体位置

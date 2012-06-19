@@ -1,0 +1,98 @@
+
+ Start  Stop   Length Name                   Class
+ F0000H F3F3BH 03F3CH TEXT                   CODE
+ F3F40H F59D0H 01A91H _TEXT                  CODE
+ F59E0H F682FH 00E50H _GHOST_DATA            CODE
+ 00000H 00E4FH 00E50H DATA                   DATA
+ 00E50H 00E50H 00000H _DATA                  DATA
+ 00E50H 00ED7H 00088H BSS                    DATA
+ 00EE0H 016DFH 00800H _BSS                   BSS
+ 016E0H 016E0H 00000H _HEAP                  BSS
+
+ Origin   Group
+ F000:0   CGROUP
+ 0000:0   DGROUP
+
+  Address         Publics by Value
+
+ 0000:0000       _InteruptVector
+ 0000:0000       dseg_start
+ 0000:0200       _sPal4
+ 0000:0220       _grpKeyboard
+ 0000:04C0       _grpLogo
+ 0000:0600       _grpPan
+ 0000:06A0       _grpLength
+ 0000:0740       _grpVol
+ 0000:07E0       _grpCH
+ 0000:0920       _grpSpr
+ 0000:09C0       _grpFrame
+ 0000:0AE0       _grpButton
+ 0000:0BA0       _grpPattern
+ 0000:0C60       _mapKeyOn
+ 0000:0C90       _mapKeyboard
+ 0000:0CBA       _mapLogo
+ 0000:0CCE       _mapCH
+ 0000:0CEE       _mapFrame
+ 0000:0D56       _mapButton
+ 0000:0D64       _VramSprite
+ 0000:0D68       _VramScreen1
+ 0000:0D6C       _VramScreen2
+ 0000:0D70       _VramFont
+ 0000:0D74       _VramPalette
+ 0000:0E50       bss_start
+ 0000:0ED0       _TimeCount
+ 0000:0ED4       _old_vector_vblabk
+ 0000:0EE0       _WTD_Work
+ 0000:16E0       heap_start
+ F000:0000       _Start
+ F000:00E0       _Exit
+ F000:00E4       _InterruptVector_Default
+ F000:00E5       _InterruptVector_DivZero
+ F000:3128       _print
+ F000:3173       _LCDcls
+ F000:31B9       _SetFontData
+ F000:320E       _BGDraw
+ F000:3279       _DrawInit
+ F000:348E       _LCDinit
+ F000:35D8       _Inkey0
+ F000:3617       _KeyWait
+ F000:3637       _KeyHit
+ F000:365B       _time_int_main
+ F000:36CD       _Time_Init
+ F000:3730       _IRAM_Dump
+ F000:3851       _debug_main
+ F000:3871       _main
+ F000:3F40       _sprintf
+ F000:3F62       _vsprintf
+ F000:3F84       sprintf0
+ F000:4103       scandeci
+ F000:4120       WanderSwanTotalSoundDriver_
+ F000:41B5       _WTD_FunctionLoad
+ F000:41E4       __GetInfo
+ F000:41EA       __Stay
+ F000:4280       __StayOut
+ F000:42BC       __Init
+ F000:42DE       __MusicPlay
+ F000:4440       __MusicStop
+ F000:44C3       __EffectPlay
+ F000:461A       __EffectStop
+ F000:467F       __PcmPlay
+ F000:4773       __PcmStop
+ F000:4799       __PcmVoiceSet
+ F000:47D5       __SoftEmbSet
+ F000:4811       __ChangeFar
+ F000:4824       __SoundSetChannel
+ F000:4831       __SoundGetChannel
+ F000:4835       __SoundSetOutput
+ F000:4842       __SoundGetOutput
+ F000:4846       __SoundGetRandom
+ F000:484A       __SetMusicVolume
+ F000:4867       __GetMusicVolume
+ F000:487D       __SetEffectVolume
+ F000:489A       __GetEffectVolume
+ F000:48B0       __SetPcmVolume
+ F000:48D2       __GetPcmVolume
+ F000:48E8       __SetFIFO
+ F000:4A12       I_Start
+
+Program entry point at F000:0000

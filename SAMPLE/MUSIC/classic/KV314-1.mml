@@ -1,0 +1,420 @@
+TI	Oboe Konzerr in C
+FI	kv314-1.wtd
+TB	48
+PA	4
+FX	1
+
+
+;Violin
+@  0, 0, 1, 2, 4, 7, 9,12,15,12, 7, 3, 1, 0, 0, 1, 2,
+      3, 4, 5, 6, 7, 8, 9,11,12,12,11, 9, 7, 5, 3, 1
+
+;Violin Octave
+@  1,11,15,11, 7, 3, 2, 2, 3, 4, 7, 7, 6, 4, 2, 3, 7,
+     10,13, 9, 7, 7, 7, 7, 7, 7, 8, 7, 4, 2, 0, 2, 7
+
+;Viola
+;@  2, 9,11,13,14,15,13,11, 9, 8, 8, 9,10,11,11,10, 8,
+;      7, 5, 4, 4, 5, 6, 7, 7, 6, 4, 2, 0, 1, 2, 4, 6
+
+;Viola Octave
+@  3,10,13,15,13,13,12,12, 9, 7, 6, 7, 9, 8, 6, 5, 6,
+      9,10, 9, 7, 6, 8, 9, 8, 6, 3, 3, 2, 2, 0, 2, 5
+
+;Cello & Contrabass
+;@  5,10,13,15,13,13,12,12, 9, 7, 6, 7, 9, 8, 6, 5, 6,
+;      9,10, 9, 7, 6, 8, 9, 8, 6, 3, 3, 2, 2, 0, 2, 5
+
+@F0,0	Strings.wtv
+@F2,1	Strings.wtv
+@F5,4	Strings.wtv
+
+
+;Oboe （o3b- ～ o5c）	低域（o5c#～dは、トリルのみ使用可）
+@  6, 8,10, 8, 7, 5, 3, 2, 3, 5, 7, 8,12,12, 8, 4, 0,
+      4, 8,10,13,15,12, 9, 5, 3, 2, 3, 5, 7, 6, 4, 6
+
+;Oboe （o5c# ～ o5d#）	２倍音　ハーフホール（o5cは、トリルのみ使用可）
+@  7,12,14,15,15,14,12, 8, 5, 1, 0, 0, 0, 1, 5,10,13,
+     14,14,13, 9, 5, 3, 2, 2, 3, 7,10,11,10, 4, 3, 4
+
+;Oboe （o5e ～ o6c）	２倍音　オークターブ・キー領域（o5d～d#, o6c#～dは、トリルのみ使用可）
+@  8,12,14,15,15,14,12, 8, 4, 1, 0, 0, 1, 4, 8,10,11,
+     11,11,10, 9, 7, 5, 4, 4, 5, 6, 7, 7, 6, 5, 4, 5
+
+;Oboe （o6c# ～ ）		３倍音　ハイノート（o6cは、トリルのみ使用可）
+@  9,10,14,15,15,14,12, 8, 5, 1, 0, 0, 1, 5, 8,10,11,
+     11,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 2, 6
+
+;Horn
+@ 10, 0, 1, 3, 6,10,14,15,15,14,12,10, 9, 8, 8, 7, 7,
+      7, 8, 8, 8, 9, 9, 9, 9, 8, 8, 7, 6, 5, 3, 2, 1
+
+
+;		fl  ar  as  al  sr  ss  sl  dr  ds  sl  rr  rs  rl
+Ex 0	128, 16,  1,255,  3, -1,160,  1, -1,128,  6, -1,  0		;Strings	
+Ex 1	128, 16,  1,255,  4, -1,160,  4, -1,  0,  6, -1,  0		;Strings	
+Ex 2	128, 16,  1,255,  4, -1,160,  8, -1,  0,  6, -1,  0		;Strings	
+
+Ex 4	128, 20,  1,255,  8, -1,128, 16, -1, 00, 16, -1,  0		;Strings	Stc..8
+Ex 5	128, 20,  1,255, 16, -1,128, 16, -1, 00, 16, -1,  0		;Strings	Stc..16
+
+
+Ex16	 80, 16,  1,255,  3, -1,200,  5,  1,255, 48, -1,  0		;Wind	
+Ex17	 80, 16,  1,255,  4, -1,200,  7,  1,255, 48, -1,  0		;Wind	
+
+Ex20	128, 32,  1,255, 24, -1,200,  6, -1,  0, 16, -1,  0		;Wind	Stc..
+Ex21	128, 32,  1,255, 24, -1,200, 12, -1,  0, 16, -1,  0		;Wind	Stc..
+Ex22	128, 23,  1,255, 24, -1,200, 24, -1,  0, 16, -1,  0		;Wind	Stc..
+Ex23	128, 32,  1,255, 24, -1,200, 32, -1,  0, 16, -1,  0		;Wind	Stc..
+
+$m1	m1,16,1,350,8 *1,1	m0,16,1,48,8 *0,1
+$m2	m1,16,1,300,8 *1,1	m0,16,1,64,8 *0,1
+
+;
+;	気づいたバグ
+;		・マクロのネストが出来ない。
+;		・Ex,x	/x,x	命令の後じゃないと、LFO命令が効かない。
+;
+;
+
+$v1	@0	p28		_0		m1,16,1,350,8	*1,1	m0,16,1,40,8	*0,1
+$v2	@0	p100	_0		m1,16,1,350,8	*1,1	m0,16,1,40,8	*0,1
+$v3	@2	p76		_0		m1,16,1,350,8	*1,1	m0,16,1,40,8	*0,1
+$v4	@5	p52		_0		m1,16,1,350,8	*1,1	m0,16,1,40,8	*0,1
+
+$v6	@6	p64	v80	_0	m1,16,1,400,8	*1,1	m0,16,1,80,8	*0,1
+$v7	@6	p48	v40	_0	m1,16,1,400,8	*1,1	m0,16,1,80,8	*0,1
+$v8	@10	p80	v40	_0					*1,0					*0,0
+
+
+C0	C128	E1,0	/1,1	$v1	q1
+C1	C129	E1,0	/1,1	$v2	q1
+C2	C130	E1,0	/1,1	$v3	q1
+C3	C131	E1,4	/1,1	$v4	q1		t120			;120
+
+C0	l16	o5	v112	c4	c2	<b>c<b>c	f4	f2		f4	d+8&e8	e2	f&ef&e	a4	a2		a4	f+8&g8g4	E1,5	v64	r8g8a8b8
+C1	l16	o4	v112	e4	e2	 d&e d&e	a4	f8.g16a4b4	b8>c8	c2	d&cd&c	f4	f2		f4	f+8&e8e4	E1,5<	v64	r8g8a8b8
+C2	l8	o3	v112	g4	g2	@3	cc		cccc	cccc	cccc>	@2	cccc	a4	f8.g16a4b4	>c<eee	e4r4	v64
+C3	l8	o2	v120	cccc	cccc		cccc	cccc	cccc		cccc	cccc	cccc	c>c<cc	c4r4	v72
+
+C0	l8o6	E1,0	c2&<	g4e4	e8&f8c+8&d8d4.	v112	a8	l16	a&g4..	a&g4..		a&g8.	g4&gaga g&f	E1,5 ed E1,0	c8d32&c32&<b> crdr e8f32&e32&d erf+r	g8r8	b8r8 	p64	g8r8 r4	$v1
+C1	l8o5	E1,0	c2&<	g4e4	e8&f8c+8&d8d4.r8 v112 E1,4	l16	bbbbb8>d8 ccccc8 e8  dddd eeee ffff<bbbb>		E1,0	c8d32&c32&<b> crdr e8f32&e32&d erf+r	g8r8	d8r8<	p64	b8r8 r4	$v2
+C2	l8o3	E1,4	gggg	gggg	aaaa	aaaa	v112	>	l16	ddddd8 f8 eeeee8>c8< bbbb>cccc dddd<ffff		E1,0	e4.	<b8>		c4.		>c8<			b8r8	g8r8 	p64	d8r8 r4	$v3
+C3	l8o2	E1,4	eeee	eeee	ffff	ffff	v120			gggg	gggg		gggg	gggg						aaaa			aaaa					g8r8	g8r8<		g8r8 r4	$v4
+
+C0	l16o5v64	g4..a16&g4..a16&g4r2.				[	v80	>c8&< v64 a8f4.g&f erfr			:	g8&e8c4r2			]2
+C1	l16o4v64	r1				[c&d]4	[<b-&>c]4	[<	v80	a& v64 b-[a&:b-]3>c[<b&>:c]4d	:	[c&d]4	[<b->c]4	]2
+C2	l4 o4v64	r1				e1					[	v80	f8&v64f4. d4 g4					:	e4	e2		e4		]2
+C3	l8 o2v72	r1				cccc	cccc		[	v96	c	v72	ccc	cccc				:	cccc		cccc	]2
+
+C0	l16o5	E1,0	g4r4		g4.&<b8>	d8&c8r8dr	c+8&d8r8fr	d+8&e8r4	g8 g4&<b8>	d8c4e8		c+8&d8&e8&f8		d+8e4g8		e8&	v72	f8&	v80	g8&	v88	a8	v96	f+8&g8&a8&b-8	g+8&a8&b-8&>c8
+C1	l16o4	E1,4	cccce8g8	<bbbb>d8f8	gggge8c8	ggggf8d8	gggge8c8	<bbbb>ddff	gggg eecc	ffdd cc<bb	E1,0	b8>c4e8		c+8&v72	d8&	v80	e8&	v88	f8	v96	d+8&e8&f+8&g8	e8&f8&g8&a8
+C2	l16o4	E1,0	e2&			f2			g1						g4.&e8		f4.&d8		e4	 g2			g4	>	E1,4	ccccc8r8	cc	v72	cc	v80	c8	v88	r8	v96	ccccc8r8		ccccc8r8
+C3	l8 o2	E1,0	c2&			d2			e2&			<b2>		c2&			d2			e4	c4&	<b4&>	g4		E1,4	cccc		c	v80	c	v88	c	v96	c	v104	cccc		cccc
+
+C0	l16	o6v112	E1,2 c&<b-	b-4	b-4	b-4	b-8	E1,0	a&b	E1,5 >c<b>c8r8<E1,0 f&g E1,5 ag a8f8	e8 E1,0 g&e cre&c<E1,2 g4 b4>	c8r8 E1,0	v64	c&d&e&f	E1,5	g8g8g8g8	
+C1	l16	o5v112	E1,2	g8	g4	g4	g4	g8	E1,0	f&g	E1,5  a g a8r8 E1,0 d&e E1,5 fe f8d8	c8 E1,0 g&e cre&c< grg&e frf&d	e8r8		r2.	
+C2	l8	o5v112	E1,2	c8	c4	c4	c4	c8<	E1,4	cccc					aaaa				g8&>c8<	e8&g8 l16  ere&c drd<b	g8r8		r2.
+C3	l8	o2v120	E1,4	cege	cege				ffff					ffff				gggg	<gggg>					c8r8		r2.
+
+C0	l16	o5	E1,0	g8r8>v112	c8<g8 e8.g g&fe&d	c8r8 E1,0	v64	c&d&e&f	E1,5	g8g8g8g8 E1,0	g8r8>v112	c8<g8 e&ge&g g&fe&d		e&cg&e >c&<g>c&<g e&ge&g g&fe&d
+C1	l16	o4	E1,0	r4	 v112	e8 c8>c8.e e&dc&<b	e8r8		r2.									r4			e8c8> c&ec&e e&dc&<b>	c8 e&c  g&e  g&e  c&ec&e e&dc&<b
+C2	l8	o3	E1,4	r4	 v112	g8>g8 g8g8g8g8<		g8r8		r2.									r4			g8>g8 g8 g8  g8 g8		g8 g8g8g8 @3<g8g8 g8g8 @2
+C3	l8	o2	E1,4	r4	 v120	c8 e8 g8g8g8g8>		c8r8<		r2.									r4			c8 e8 g8 g8  g8 g8	>	c8<g8e8c8	<g8g8>g8g8
+
+C0	l16	o5	E1,0	cr cr l32 d&c&d&c&d&c&<b&>c E1,5 e8c8<g8e8	E1,0	c8 		$v6	E1,16	l32o5 x1 v64 c8 ) d&)c&)d&)c&)d&)c&)<b&)>c) l16 E1,22	<b)>c) @7 d) @8 e) f)g)a)b)> E1,16
+C1	l16	o4	E1,0	er>cr l32 d&c&d&c&d&c&<b&>c E1,5 e8c8<g8e8	E1,0	c4 r2.	$v1
+C2	l16	o3	E1,0	gr>cr l32 d&c&d&c&d&c&<b&>c E1,5 e8c8<g8e8	E1,0	c4 r2.	$v2
+C3	l16	o2	E1,0	cr>cr l32 d&c&d&c&d&c&<b&>c E1,5 e8c8<g8e8			c4 r2.	$v4
+
+;---------------------------------------
+;	[A]
+;---------------------------------------
+
+C0	l16	o6	x3		[	c16&(	]16				c1&				c1&				[	c16&)	]16			
+C1	l16	o5	v112	E1,0	c4	c2	<b>c<b>c	f4	f2		f4	d+8&e8	e2	f&ef&e	a4			a2			a4
+C2	l16	o4	v112	E1,0	e4	e2	 d&e d&e	a4	f8.g16a4b4	b8>c8	c2	d&cd&c	f4<	$v3	f8.g16a4>	$v2	f4
+C3	l8	o2	v120	E1,4	cccc	cccc		cccc	cccc	cccc		cccc	cccc	cccc
+
+C0	l16	o6	c8<b&>c d&c< E1,22 ba E1,16 g4g4& g4.(a&(f+(g4r4)))	>c4<b&a&g&f	f4f4	(f8&(e8&(d+8&(e8( e4 r8 v56x1 er	E1,16	g+&ag+&a g&f&e&d E1,22  )c+8)d8)e8)f8)	E1,16 f+&g&)a&g) f&e) E1,22 @7 d @6 c) E1,16c16>@8 c8.&c8r< g v64
+C1	l16	o5	E1,4v64	g8e8e8e8	e8e8e8e8	d8d8d8d8	d8d8d8d8	c8c8c8c8	c8c8c8c8	c8c8c8c8	c8c8c8c8	E1,0	c4&<	a4		 E1,4	r8a8a8a8	E1,0	>c4<a4	E1,4	r8g8g8>c8<
+C2	l16	o5	E1,4v64	e8c8c8c8	c8c8c8c8<	b8b8b8b8	b8b8b8b8	a8a8a8a8	a8a8a8a8	g8g8g8g8	g8g8g8g8			f8f8f8f8				f8f8f8f8			e8e8e8e8		e8e8e8e8
+C3	l16	o2		v72	c4r2.					r1						r1						r1								r1											r1
+
+C0	l16	o5	E1,16 f&g E1,22 ag E1,16 f&e E1,22 @7 d @6 c E1,16 (<b>c E1,22 @7 (d @6 c E1,16 (<ba E1,22 (gf(
+		[	E1,16 e&g E1,22 >c<g E1,16 f&g E1,22 bg E1,16 e&g E1,22 >c<g E1,16 d&g E1,22 bg	]2	E1,16 )e&)g>) E1,22 c) @8 e) E1,16 g8r@6 c @7 l32 [ e&:d& ]8 d
+C1	l8	o4	E1,0	$v1	a4>	d2<		f4	e4	f4&	e4&	d4&	c4	f4&	e4&	d4			c4>	c2	l32	c&<b&>c&<b&>c&<b&>c&<b
+C2	l8	o4	E1,0	$v2	f2		d2		c4	<b4&>c4&f4	e4	<b4&>c4&f4			e8e4	  g8	a8a8&	g8&f8
+C3	l8	o4	E1,0v64	$v3 d2<	g2<	$v4	v72	c4	d4&	c4&<b4>	c4	d4&	c4&<b4>	E1,4	c8c8	e8e8	f8f8	g8g8
+
+C0	l16	o5	v80	c4 	   v112	$v1	E1,0	>c8<g8  e8.g g&fe& d	e&cg&e >c&<g>c&<g e&ge&g g&fe& d	E1,5	c8 c8 E1,0	l32 d&c&d&c&d&c&<b&>c E1,5 e8c8<g8e8 E1,0	c8 		$v6
+C1	l16	o4	$v2	e8r8   v112		E1,0	 e8 c8> c8.e e&dc&<b>	c8 e&c  g& e g& e c&ec&e e&dc&<b>	E1,5	c8 c8 E1,0	l32 d&c&d&c&d&c&<b&>c E1,5 e8c8<g8e8 E1,0	c4 r2.	$v1
+C2	l16	o4	$v3	g8r8   v112		E1,4	<g8>g8  g8g8 g8 g8		g8 g8g8g8 @3 < g8g8 g8g8 @2					g8>c8 E1,0	l32 d&c&d&c&d&c&<b&>c E1,5 e8c8<g8e8 E1,0	c4 r2.	$v2
+C3	l16	o3		c8r8 < v120		E1,4	 c8 e8  g8g8 g8 g8	>	c8<g8e8c8    < g8g8>g8g8					c8>c8 E1,0	l32 d&c&d&c&d&c&<b&>c E1,5 e8c8<g8e8 		c4 r2.	$v4
+
+;---------------------------------------
+;	[B]
+;---------------------------------------
+
+C0	E1,16	x3	l32o5@8 v56 g8	a&g&a&g&a&g&f+&g l16 E1,22 >c8<g8e8 @6 c8
+
+C0	l32	o4	g4>		E1,16	c4& @7 )d4& @8 )e4 @7)		c+4.&(d8(	E1,22 d4(r4	E1,16	@8v56	r8g8 a&g&a&g&a&g&f+&g E1,22 b8g8 @7 d8< @6 b8	E1,16
+C1	l16	o4	v64	$v1	E1,0	r4 g4&b4&>c4<			a+4.&b8 E1,5  b4r4	E1,0						r1
+C2	l16	o4	v64	$v2	E1,0	g1&						g1&												g4r2.
+C3	l32	o4	v64	$v3	E1,0	r4 e4&d4& c4 o2 $v4	v72	r8g8 a&g&a&g&a&g&f+&g E1,4 b8g8d8<b8	E1,0	g4r2.	$v3	v64
+
+C0	l32	o4	g4> @7 e8&d8) @8 f8&e8) g8&f8)	@7 d+4.&( @8 e8( E1,22 e4(r4	E1,16	@8v64	r8g8 a&g&a&g&a&g&f+&g E1,22 >c8<b8a8g8	E1,16
+C1	l16	o4	r4b4&>c4&d4						<b4.&>c8	E1,4	c4r4			r1
+C2	l16	o4	g1&								g1									g4r2.
+C3	l32	o4	r4f4&e4&<b4	$v4	v72 r8c8 d&c&d&c&d&c&<b&>c E1,4 e8c8<g8e8	E1,0	c4r2.
+
+C0	l32	o5			f+4.(g16&)a16))	g8b8&g8&e8 @7x1	d4 @6 d&c&d&c&d&c&<b&>c <b4>r8 @8 v48 g8	l16	f+&g E1,22 ab E1,16 >c&<a E1,22 gf+ E1,16 g&a E1,22 ba E1,16 g&f+ E1,22 e @7 d
+C1	l8	o5	E1,4	d8d8d8d8		d8d8d8d8		d8 d8 d8 d8		d8 d8 d8 d8						d8d8d8d8	d8d8d8d8
+C2	l8	o5	E1,4	c8c8c8c8<		b8b8b8b8		f+8f+8f+8f+8	g8 g8 g8 b8	>					c8c8c8c8<	b8b8b8b8
+C3	l8	o3	E1,4	r1								r1												r1
+
+C0	l16	o5	E1,16 @6 c& @7 d E1,22 @8 e @7 d @8 E1,16 f+&e @7 d @6 c <b8>> v64 @9 d8& @8 c8&<b8	b8&a8 a4. v48 g+&a E1,22 b8g+8 E1,16	b8&a8 v56 a4. v64 g+&a >c&<b a&g+	a8e8 a4.ba a&gf+&g
+C1	l8	o5			d8 d8 d8 d8		d8	E1,0	<b8&>c8&d8		E1,4					[	e8e8e8e8	v112	f8	v64	f8f8f8	]2							e8e8e8e8	e8e8e8 e8
+C2	l8	o4			f+8f+8f+8f+8	g8	E1,0	 g8& a8&b8		E1,4			>		[	c8c8c8c8	v112	d8	v64	d8d8d8	]2							c8c8c8c8<	c8c8c+8c+8
+C3	l8	o3			r1																	[	r1									]2							r1
+
+C0	l16	o5	g8&f+4.	r4	x1	v56	@7	d4	v48	@6 [ c& @7 d @6 E1,22 c<b> E1,16 ]2 c<a)b>c) @7 d @8 e)f+g)	[ f+&g) E1,22 f+e) E1,16 ]2 f+e) @7 d @8 e) f+g)ab)
+C1	l8	o4	a4	r2					E1,4	a4			a8 a8 a8 a8		a8 	$v7	o5	E1,4	c8 c8 c8	$v1	v64	o5	E1,4	c8 c8 c8 c8		c8	$v7	o5	E1,4	f+8f+8f+8	$v1	v64	o5	E1,0
+C2	l8	o4	d4	r2				$v1	E1,4	f+4			f+8f+8f+8f+8	f+8	$v7	o4	E1,4	f+8f+8f+8	$v2	v64	o4	E1,4	a8 a8 a8 a8		a8	$v7	o5	E1,4	c8 c8 c8	$v2	v64	o4	E1,0
+C3	l8	o3	E1,0	r8d8&c8+&d8<	E1,4	d8f+8a8f+8	d8 d8 d8 d8		d8 	$v8	o4	E1,4	d8 d8 d8	$v4	v72	o2	E1,4	d8 d8 d8 d8		d8	$v8	o4	E1,4	d8 d8 d8	$v4	v72	o2	E1,0
+
+C0	l16	o6	c&<b (E1,22 ab (E1,16 a&g (E1,22 f+g (E1,16 a&g (E1,22 f+e (E1,16 @7 d& @6 c (E1,22 <b>c	v48	<b>c @7 d @8 e @7 d4	r @8 E1,22 g E1,16 f+&g x3	a&)g&)f+&)g	v56
+C1	l16	o5	c8	r8	c8	r8	c8	r8	c8	r8											E1,0	<	b8r8	b&>d c& e	d8r4.	
+C2	l16	o4	f+8	r8	f+8	r8	f+8	r8	f+8	r8											E1,0		g8r8	g& b a&>c<	b8r4.	
+C3	l8	o2	d8	r8	d8	r8	d8	r8	d8	r8											E1,4		g8g8g8g8	g8g8g8g8		
+
+C0	l16	o5	@6 c @7 d @8 ef e4 r E1,22 g E1,16 f+&g a&)g&)f+&)g	v64	d&f&e&g	f4	r @8 E1,22 g E1,16 x1	f+&)g) a&)g&)f+&)g	x3	v80[g32&((((]4 [g16&)]14			ga&)b-&a)	v96 [:b-16&(]6b-16 v80 ((a4((g8(
+C1	l16	o5	c8r8	c& e  d& f	e8r4.								d8r8	d& f e&g	f8r4.								re& d& e&f&e& d& e	rd&c&d& e& d&c&d	E1,4 v112	l8	c+	v64	c+c+c+	c+c+c+c+
+C2	l16	o4	g8r8	g&>c <b&>d	c8r4.				<				g8r8	g&>d c&e	d8r4.								rc&<b&>c&d&c&<b&>c<	rb&a&b&>c&<b&a&b	E1,4 v112	l8	b-	v64	g g g	g&a a&b
+C3	l8	o2	e8e8e8e8	e8e8e8e8					<				b8b8b8b8	b8b8b8b8				>	E1,0			c2					d2					E1,4 v127	l8	e-	v72	e-e-e-	e-e-e-e-
+
+C0	l32	o5			a&g&a&g&f+8)r8f+8)						g&f+&g&f+&e8)r8e8)		f+&e&f+&e&)	@7	v80	d8	l16	@8	b8.&g				g8.&e				e8.& @6 c	
+C1	l16	o5	E1,0	r8		d8& f+8	E1,4	f+8		E1,0	r8		<a8&>e8	E1,4	e8		r8				d8		r8			d8		r8			e8		r8			c8<		
+C2	l16	o4	E1,0	r8		a8  a8	E1,4	a8		E1,0	r8		f+8f+8	E1,4	f+8		r8				g8		r8			b8	>	r8			c8	<	r8			a8		
+C3	l8	o2	E1,0	d8>	$v3	a8&>d8	E1,4	d8	$v4	E1,0 <<	c8>>$v3	c8 c8<	E1,4	c8	$v4	<<b8>>	$v3		b8	$v4	<<a8>>	$v3	a8	$v4	<c8>>	$v3	c8	$v4	<<c8>>	$v3	e8	$v4	
+
+C0	l16	o4	E1,16	b&> @7 d @8 E1,22 e @7 d @6 E1,16 c&<b E1,22 ag	E1,16	l32	[b&a&]8	g8>v112	$v1	a& g&f+16	g8 a8	b8>c32&<b32&a16		b8>c+8	E1,4	d4	d4<<p64	d4	r4	$v6
+C1	l16	o4	E1,4	b8b8b8b8>	E1,0	c8&<a8	a8&f+8	<		$v2			l32	v112	b8>>		c&<b&a16	b8>d8	g8 a32& g32&f+16	g8 g8	E1,4	f+4	f+4<$v2	a4	r4	$v1
+C2	l16	o4	E1,4	g8g8g8g8	E1,0	a8& f+8	f+8&c8			$v3	E1,4		v112	d8d8d8d8						e8g8g8g8					E1,4	a4	a4		d4	r4	$v2
+C3	l8	o2	E1,4	d8d8d8d8			d8d8d8d8				$v4				v127	g8g8g8f+8						e8e8e8e8							d4	d4		d4	r4	
+
+;---------------------------------------
+;	[C]
+;---------------------------------------
+
+C0	l16	o5	E1,16	v48	@7 d4.. @8 e16& @7 d4.. @8 e16&	@7 d4r2.	[ @8 v80 g8& v56 e8 @6 c4. @7 d16& @6 c16 E1,22 <b8>c8 E1,16 @7 : d8& @6 v48 <b8 v40 g4r2>	]2
+C1	l16	o4	E1,0	v64	r1											[	[g&a]4	[f&g]4	v112	e& v64 fe&fe&fe&g	f+&gf+&gf+&gf+&a	]2
+C2	l16	o4	E1,0	v64	r1											[	d1						v112 c8&v64 c4.		<a4&>d4		]2
+C3	l8	o2	E1,4	v72	r1											[	g8g8g8g8	g8g8g8g8	v120 g8	v72	g8g8g8	g8g8g8g8	]2
+
+C0	l16	o5	d8	E1,22	@8 )d)f+) g)a)b)>c) E1,16 @9 d4.&< @8 v48 f+8	a8&)g8)r8)b8)	g+8)a8)>r8)c8)<		a+8&b8r8 v64 @7 d8> @9 v72 d8 v80 d4< @8 v72 f+8	x1	v48
+C1	l16	o4	E1,0	b4>	r4	E1,4	d8d8d8d8				d8d8d8d8	d8 d8 d8 d8		d8d8d8d8	d8d8d8d8
+C2	l16	o4	E1,0	d4>	r4	E1,4	c8c8c8c8		<		b8b8b8b8	f+8f+8f+8f+8	g8g8g8g8>	c8c8c8c8
+C3	l8	o2	E1,0	g4	r2.									r1							r1
+
+C0	l16	o5	a&)g) E1,22 f+)g)	E1,16 f+)&g) E1,22 a)b)		E1,16 b&)a) E1,22 g+)a)	E1,16 g+&)a) E1,22 b)>c<)
+	E1,16	b&)a) E1,22 g)a)	E1,16 g&)f+) E1,22 e)f+)	E1,16 e&) @7 d) E1,22 @6 c) @7 d)	E1,16 @6 c&)<b) E1,22 a)b)	x3	v80
+C1	l16	o5	d8d8d8d8	d8 d8 d8 d8		d8	E1,0	d+8&e8	<b8&>c8	<g+8&a8	E1,4	f8
+C2	l16	o4	b8b8b8b8	f+8f+8f+8f+8	E1,0	g4	r4	r4.					E1,4	d8
+C3	l8	o2	r1							r1
+
+C0	l16	o4	E1,16	a&(b&(>c&( @7 d( @8 e2	@7 d& @6 c&<b&a>	@7 d4 @6 v64 c&<ba&g l32 [b&:a&]8a	l12	E1,22 v72	dgb>@7 d @8 gb> @9	E1,16	d4r4<<	E1,22	@6 ea>c @8 ea>c	E1,16	c4r4	c8&<b8	E1,22	a8g8	E1,16 l32	[b&:a&]8a	v64
+C1	l16	o4			e8e8e8e8			f+8f+8f+8f+8				g8g8 g8g8	g8g8f+8f+8		l8	E1,0	g4	r4.				E1,4	ggg		E1,0	a4		r4.		E1,4	aaa		bbbb	aaaa
+C2	l16	o4			c8c8c8c8			c8 c8 c8 c8				<	b8b8>e8e8	c8c8d8 d8		l8	E1,0	d4	r4.				E1,4	ddd		E1,0	g4		r4.		E1,4	ggg		gggg	ggf+f+
+C3	l8	o1			r1												r1							l8	E1,0	b4	r4.				E1,4	bbb>	E1,0	c4		r4.		E1,4	ccc		ddee	ccdc
+
+C0	l16	o4	@6	r8gb> @7 d& @8 g	E1,22 b> @9 d	E1,16 d& @8 c<	E1,22	ba	E1,16	g&f+	E1,22	e @7 d	E1,16	@8 e8<	
+			@6	ea>	c& @8 e	E1,22	g>c	E1,16	c<b	E1,22	ag	E1,16	f+(e(	E1,22	@7 d( @6 c(		x1
+C1	l8	o4	E1,0		g8	$v7	o4	E1,4	bbb	E1,16	b8	$v1	o4	v64	E1,4	ggg		E1,0	g8	$v7	o4	E1,4	aaa	E1,16	a8	$v1	o5	v64	E1,4	ccc
+C2	l8	o4	E1,0	$v3	d8	$v8	o4	E1,4	ddd	E1,16	d8	$v2	o4	v64	E1,4	ddd		E1,0	e8	$v8	o4	E1,4	eee	E1,16	e8	$v2	o4	v64	E1,4	ggg
+C3	l8	o1	E1,0		b8	$v8	o3	E1,4	ggg	E1,16	g8	$v4	o1	v72	E1,4	bbb>	E1,0	c8	$v8	o4	E1,4	ccc	E1,16	c8	$v4	o2	v72	E1,4	eee
+
+C0	l16	o4	E1,16	b&)> @7 d) @6	E1,22	c)<b>)	E1,16 c&) @7 d) @8	E1,22 e)f+)	E1,16	g&)a)	E1,22	b)>c)	E1,16	@9 c+&)d)< @8	E1,22	b)g)
+			E1,16	[ b32&):a32&)	]16a32	g8	x3	$v1	v112	E1,2	g4	g8f8	f4	f8
+C1	l8	o4	E1,4	v112	b8	v64	b8b8b8	b8b8b8b8>	l16	x2	c )c )c )c )<	a)a)a)a)	>>	c)c)c)c)	<	f+)f+)f+)f+	<	v112			$v2		E1,2		b8							b4	b4		b4	b8
+C2	l8	o4	E1,4	v112	g8	v64	g8g8g8	g8g8g8g8	l16	x2	f+)f+)f+)f+)	c)c)c)c)		a)a)a)a)	>	c )c )c )c 	<	v112			$v3		E1,4		d8	g8	b8	g8	d8	g8	b8	g8
+C3	l8	o2	E1,4	v120	d8	v72	d8d8d8	d8d8d8d8		x4	d8	)	d8	)	d8	)	d8	)		d8	)	d8	)	d8	)	d8	v120					E1,4		g8	b8>	d8<	b8	g8	b8>	d8<	b8
+
+;---------------------------------------
+;	[D]
+;---------------------------------------
+
+C0	l16	o5	E1,0	e&f+	E1,5	gf+	E1,0	g8r8	a&b	E1,5	>c<b>c8<a8	b8>	E1,0	d<b	E1,5	g8	E1,0	b&g	E1,0	d4						f+4				p64	g4	$v1	v64	<g&a&b&>c	E1,5	d8d8d8d8	E1,0
+C1	l16	o4	E1,0	g&f+	E1,5	ed+	E1,0	e8r8>	c&d	E1,5	 e d e8 c8<	b8>	E1,0	d<b	E1,5	g8	E1,0	b&g	E1,5 >	d8	E1,0	d<b>E1,5	c8	E1,0	c<a	$v1	b4	r2.	$v2	
+C2	l16	o4			g8g8g8g8	e8e8e8e8										d8&g8	b8&>d8<							E1,5	b8	E1,0	bg	E1,5	a8	E1,0	af+	$v1	d4	r2.	$v3	
+C3	l8	o3			c8c8c8c8	c8c8c8c8										d8d8d8d8	<	d8d8d8d8																	g4	r2.		
+
+C0	l16	o5	d8r8 v112	g8d8<	b8.>d	d&c<b&a			g8r8	v64	g&a&b&>c	E1,5	d8d8d8d8	E1,0	d8r8 v112	g8d8<	b&>d<b&>d	d&c<b&a		b&g	E1,5	>d<b>	E1,0	g&d		E1,5	gd		E1,0	b&>d	E1,5	<b>d	E1,0	d&c<b&a
+C1	l16	o3	r4			b8g8>	g8. b	b&a g&f+	$v3	d8r8	$v2	r2.										r4	<		b8g8>	g& b g& b	b&a g&f+	g8	E1,5	 b g>	E1,0	d&<b>	E1,5	d<b>	E1,0	g&b		E1,5	gb		E1,0	b&a g&f+
+C2	l16	o3	r4	E1,4	d8>d8	d8	d8	d8	d8<			b8r8		r2.										r4			d8>d8	d8	d8	d8	d8			d8	d8	d8	d8	@3	d8	d8	d8	d8	@2
+C3	l8	o2	r4	E1,4	g8 b8>	d8	d8	d8	d8<			g8r8		r2.										r4			g8	b8>	d8	d8	d8	d8	<		g8	d8<	b8	g8>		d8	d8	d8	d8
+
+C0	l32	o5	E1,0	p64	g8<	$v1	g8	a&g&a&g&a&g&f+&g  E1,5	b8g8d8<b8	E1,0	g8>>$v6	@8	E1,16	v56	g8	a&g&a&g&a&g&f+&g	E1,22	b8g8 @7 d8< @6 b8	E1,16	g4&>>	v64 @9 d4 @8 c8&<b8 a8&g8	g4.& ((f+8(f+4r4	v48
+C1	l32	o4	E1,0	$v3	b8	$v2	g8	a&g&a&g&a&g&f+&g  E1,5	b8g8d8<b8	E1,0	g4	r2.				v64						$v1	E1,4	b8b8b8b8	b8b8b8b8>	c8c8c8c8	c8c8c8c8
+C2	l32	o4	E1,0		d8		g8	a&g&a&g&a&g&f+&g  E1,5	b8g8d8<b8	E1,0	g4	r2.				v64						$v3	E1,4	g8g8g8g8	g8g8g8g8	a8>	$v2	a8	E1,0	b&a&b&a&b&a&g&a	E1,4	>c8<a8f+8c8
+C3	l32	o1	E1,0		g8>		g8	a&g&a&g&a&g&f+&g  E1,5	b8g8d8<b8	E1,0	g4	r2.				v72							E1,4	g8g8g8g8	g8g8g8g8	g8g8g8g8	g8g8g8g8
+
+C0	l32	o5	@7 r8d8 e&d&e&d&e&d&c&d	E1,22	@8 f8 @7 d8< @6 b8 g8	E1,16	v56 f4&>>	v64 @9 d4< @8 b8&a8 g8&f8	f4.&((e8( e4r4	v64
+C1	l32	o4	f8				f8f8f8	f8f8f8f8								f8f8f8f8	f8f8b8b8	>		c8<g8g8g8	g8g8g8g8
+C2	l32	o3	b8	$v3	E1,4	b8b8b8	b8b8b8b8								b8b8b8b8>	d8d8d8d8			c8>	$v2	c8	E1,0	d&c&d&c&d&c&<b&>c	E1,4	e8c8<g8e8
+C3	l8	o1	g8				g8g8g8	g8g8g8g8								g8g8g8g8	g8g8g8g8			g8 g8g8g8	g8g8g8g8
+
+C0	l32	o5	r8g8 a&g&a&g&a&g&f+&g	E1,22	>c8<g8e8 @6 c8<	E1,16	a4>	@7 e-4& d4& @6 c4<	l8	E1,22	b8>	E1,16	v80 @8 g&f+&f e& @7 e-&d& @6 c<	E1,22	b8>	E1,17	v48	@8 gf+f e @7 e-d @6 c	x1
+C1	l16	o4	e8				e8e8e8	e8e8e8e8		e-8e-8c8 c8		d8 d8 e-8e-8				E1,0	d4	r2>		r8	c8&							<	b4	r2>			r8	c8
+C2	l16	o4	c8	$v3	E1,4	c8c8c8	c8c8c8c8<	$v2	a8 a8 a8 a8		a8 a8 a8 a8					E1,0	b4	r2>	$v3	r8	e-8&							d4	r2			r8	e-8
+C3	l8	o1	g8				g8g8g8>	g8g8g8g8		f+8f+8f+8f+8	f+8f+8f+8f+8				E1,0	g4	r2		r8	f+8&							g4	r2			r8	f+8
+
+C0	l12	o4	E1,16		b&)		g)	E1,22		b)	E1,16	b&)		g)	E1,22>	@7	d)	E1,16	@6	c&)	<a>)	E1,22		c)	E1,16	c)	<a>)	E1,22	@8	e)
+			E1,16	@7	d&)	@6	<b>)E1,22	@7	d)	E1,16	d&)	@6<b>)	E1,22	@8	f)	E1,16		e&)	@6c)	E1,22	@8	e)	E1,16	e&)	@6c)	E1,22	@8	g)
+C1	l16	o4	E1,4	b8b8	b8b8>	c8c8c8c8	d8d8d8d8	e8e8e8e8
+C2	l16	o4	d4	$v2	E1,4	g8g8	a8a8a8a8	b8b8b8b8>	c8c8c8c8
+C3	l8	o2	E1,4	g8g8	g8g8	g8g8g8g8	g8g8g8g8	g8g8g8g8
+
+C0	l16	o5	E1,16	f&e)	E1,22	@7d		c+)	E1,16	d&@8f)	E1,22	e	g)		E1,16	f&e)	E1,22	@7d	@6c)	E1,16	@7	d&	@8	f)	E1,22	eg)
+			E1,16	f&e)	E1,22	@7d	@6	c)	E1,16	<b&>c)	E1,22	@7d	@8e)	E1,16	f&e)	E1,22	@7d	@8e)	E1,16		f&		g)	E1,22	ab)	E1,16	x3
+C1	l16	o5	f8	<		r8d8e8	f8r8d8e8	f8r8>d8r8	f8r8<b8r8
+C2	l16	o5	d8	<	<	r8b8>c+8d8r8<b8>c+8	d8r8 f8r8>	d8r8<f8r8
+C3	l8	o2	g8	$v3o3	g8g8g8	g8g8g8g8	g8g8 g8g8	g8g8g8 g8	$v4
+
+;---------------------------------------
+;	[E]
+;---------------------------------------
+
+C0	l8	o6	c4 v112	E1,0 o3	$v3	g2 @3	cc		cccc	cccc>>	$v6 v48 E1,16 @6 x1 c8&>) @8 [c8&)]15		c8)<b-8)b-2		x3								l32	v48	b-4	[>c&<b-&]2a8r8a8 [b&a&]2g8r8g8
+C1	l16	o5	v112	E1,0 c4	c2<b>c<b>c	f4	f2		f4	v64	d+8&e8	e2	f&ef&e	a4			a2	 l8		a4	f+&g E1,4	gg	r				ggg					r				fff					r				eee
+C2	l16	o4	v112	E1,0 e4	e2 d&e d&e	a4	f8.g16a4b4	v64	b8>c8	c2	d&cd&c	f4<	$v3	f8.g16a4>l8	$v2	f4	d+&e E1,4	ee	r				eee<				r				aaa>				r				c+c+c+
+C3	l8	o2	v120	E1,4 cccc	cccc	cccc	cccc	v72	cccc	cccc	cccc	cccc	x8				cc+c+c+	E1,0	c+	$v3	E1,4>>(	c+c+c+)	$v4	E1,0<<	d	$v3	E1,4>>(	ddd)	$v4	E1,0<<	e	$v3	E1,4>>(	b-b-b-)	$v4	E1,0<<
+
+C0	l32	o5		[a&g&]2f8r8f8	l16	f&e g&f a&)g) E1,22 f)e) E1,16 a8&f8 @7 d4. ((((c+&)d) E1,22 @8 e8) @7 c+8)	E1,16
+C1	l8	o4	r				aaa					r				b-b-b-				r				aaa						g					ggg
+C2	l8	o5	r				ddd				<	r				ggg					r				fff						e					eee
+C3	l8	o2	f	$v3	E1,4>>(	afd)	$v4	E1,0<<	g	$v3	E1,4>(	ggg)	$v4	E1,0<	a	$v3	E1,4>(	aaa)	$v4	E1,0<<	a	$v3	E1,4>>(	aaa)	$v4	E1,0<<	
+
+C0	l16	o5	@8 e8&( @7 d8( d4 r8 E1,20 d8 E1,16 @8 )f8&)a8		a8&(g8(r8(g8(	g&fa&g	b&)a)g&)f)		@7 d+8&( @8 e8(r8( v56 e8	@7 c+&d @8 E1,22 fe E1,16 g&fe& @7 d		@8 g&eg&e @6 c4. @7 d& @8 e e& @7 d @6 c& <b>	x2
+C1	l8	o4	r	E1,0	f&a&>d			f&a		E1,4	aa					r				ggg					r				fff					r				eee					r				ddd			E1,0	c&g	E1,4	gg	E1,0	g&e f&d
+C2	l8	o4	r	E1,0	d&f&a>			d&f		E1,4	ff					r				eee				<	r				bbb				>	r				ccc				<	r				aaa			E1,0	e4	E1,4	ee	E1,0	e&c d&<b>
+C3	l8	o2	d	$v3>(	a&f&d)	$v4<<	b	$v3	E1,4>>(	bbb)	$v4	E1,0<	b	$v3	E1,4>>(	ccc)	$v4	E1,0<<	g	$v3	E1,4>(	ggg)	$v4	E1,0<	a	$v3	E1,4>(	aaa)	$v4	E1,0<	f	$v3	E1,4>>(	fff)	$v4	E1,0<<	g2	<	g2
+
+C0	l16	o5	E1,22	c8( @7 d( @8 e( f(g(a(b( >c8< E1,16	v56	g8&f8&e8	v64	[ e8& @7 d8d4. : v48 c+&d @8 E1,22 e8 @7 c+8 @8 E1,16	v56	]2	v64 c+&d @8 f&e @7 d& @6 c+ @8 e& @7 d @8 f&e g&fa&g b-&ag&f e& @7 d @8 f& @7 d @6 c8&<b4.r2	v72	x3
+C1	l8	o4	E1,0	p64	c4	r4.	$v2	e8&f8&g8	E1,4		[ aaaa	v80	b-	v64	b-b-b-	]2	aaaa	aaaa	E1,0	g4r2.
+C2	l8	o3	E1,0	$v3	g4	r4.	>	c8&d8&e8	E1,4		[ ffff	v80	g	v64	g g g	]2	ffff	ffff	E1,0	d	$v3	g&f+&g	E1,4	<gb>d<b
+C3	l8	o2	E1,0	$v4	c4	r2.								[ r1						]2	r1						r		g&f+&g	E1,4	<gb>d<b
+
+C0	l16	o4	[ E1,16 f&g E1,22  b g E1,16 e&g E1,22 >c<g ]2 f4>>@9 E1,16	d4&d&<@8b	E1,22	g		f	E1,16	@7	d&<	@6	b	E1,22		g 	f
+			[ E1,16 e&g E1,22 >c<g E1,16 f&g E1,22  b g ]2 e4>>@8 E1,16	c4&c&<	g	E1,22	e	@6	c	E1,16	@8	g&		e	E1,22	@6	c<	g
+			[ E1,16 f&g E1,22  b g E1,16 e&g E1,22 >c<g ]2 f4>>@9 E1,16	d4&d& @8c	E1,22<	b		a	E1,16	(	g&	(	f	E1,22	(	e(	f
+C1	l8	o5	$v7	E1,16	 d4  e4 d4  e4	d8<	$v1	v64	E1,4	fff ffff	E1,0	e4	$v7	o5	E1,16	d4	e4&	d4	e8<	$v1	v64	E1,4	eee	eeee	E1,0	f4	$v7	o5	E1,16	e4	d4&	e4	d8<	$v1	v64	E1,4	fff	ffff
+C2	l8	o5	$v7	E1,16	<b4&>c4<b4&>c4<	b8	$v2	v64	E1,4	ddd dddd	E1,0	c4	$v7	o4	E1,16	b4>	c4&<b4>	c8<	$v2	v64	E1,4	ccc	cccc	E1,0	d4	$v7	o5	E1,16	c4<	b4&>c4<	b8	$v2	v64	E1,4	ddd	dddd
+C3	l8	o1		E1,0	g4	r2.			r8	>		E1,4	ggg gggg<	E1,0	g4	r2.							r8	>		E1,4	ggg	gggg<	E1,0	g4	r2.							r8	>		E1,4	ggg	gggg
+
+C0	l16	o5	E1,16	v48	e&f	E1,22	g	a	E1,20	g4	E1,22 >	rc	E1,16	<b&>c	@9 d& @8 )c	E1,22	)<b>)c<
+			E1,16	v56	f&g	E1,22	a	b-	E1,20	a4	E1,22 >	rc	E1,16	<b&>c	@9 d& @8 )c	E1,22	)<b>)c<
+			E1,16	v64	g&a	E1,22	b->	c<	E1,20	b-4	E1,22 >	rc	E1,16	<b&>c	@9 d& @8 )c	E1,22	)<b>)c	E1,16	v48	[	:c8&)	]8	c8	x1
+C1	l16	o4	E1,0	p64	e8r8>	$v1	e&g	f&a	g8r4.		f8r8	f&a	g&b-a8r4.		g8r8<	g&b-a&>c<b-8r4.		ra&g&a&	b-&a&g&a	rg&f&g&	a&g&f&g
+C2	l16	o4	E1,0		c8r8>		c&e	d&f	e8r4.		c8r8	c&f	e&g	f8r4.		c8r8<	c&g	e&a	g8r4.		rf&e&f&	g&f&e&f		re&d&e&	f&e&d&e
+C3	l8	o3	E1,4		c8c8		c8	c8	c8c8c8c8<	a8a8	a8	a8	a8a8a8a8	e8e8	e8	e8	e8e8e8e8	E1,0	f2			g2
+
+C0	l16	o5	(@6c&(@7c+&(d&(e-&	(@8e&(f&(f+&(g&	(a-&(a&(b-&(b>	v48	E1,22	c8c8	E1,16	l32	[d&c&]2<b8r8	v56	b8	[>c&<b&]2a8r8	v64	a8	[b&a&]2g8	l16	x1	>c8.<g+	)a8.e	)f8.d	)
+C1	l8	o4	E1,4	v80	f+	v64	f+f+f+>	e-e-e-e-	E1,0	e-&d	E1,4		dd	r	E1,0	d&a		E1,4	a		r			g		r			c		r			c		r			f
+C2	l8	o4	E1,4	v80	e-	v64	e-e-e-	f+f+f+f+	E1,0	f+&g	E1,4		bb				r				bbb	>	r			c		r	<		g+		r			a		r			a
+C3	l8	o2	E1,4	v96	a-	v72	a-a-a-	a-a-a-a-	E1,0	g>	$v3	E1,4	(g>	gg)	$v4	E1,0<<	f>>	$v3	E1,4 (	fff	)<<	e	$v3	(>>e<<)	$v4	e	$v3	(>>e<<)	$v4	f	$v3	(>>f<<)	$v4	f	$v3	(>>d<<)	$v4		
+
+C0	l16	o5	f+&)g&)a&)g&) f&)e&)d&)c)	l32	[d&c&)]8	l16	v112	c8	$v1	E1,0	d32&c32&<b>	E1,4	c8 d8	e8	E1,0	f32&e32& d	E1,4	e8f+8	g4			b4	p64	g4	r4	$v6
+C1	l8	o5	eeee				E1,0	f&d	d&<b		l16	v112	e8	$v2			f32&e32& d	E1,4	e8<b8>	c8>	E1,0	d32&c32&<b>	E1,4	c8c8<	b4	>	p64	g4	<	b4	r4	$v1
+C2	l8	o5	cccc				E1,0	d&<bb&f	o3			v112		$v3	E1,4	a8a8a8a8								a8a8>c8c8					d4	$v2	p64	d4		d4	r4	$v2
+C3	l8	o2	gggg						gggg				v120		$v4			a8a8a8a8								a8a8 a8a8					g4			g4<		g4	r4
+
+;---------------------------------------
+;	[F]
+;---------------------------------------
+
+C0	l16o5v48	E1,16	@8 g4..a16&g4..a16&g4r2.			[	v64 >c8&< v48 a8f4.g&f E1,22 e8f8	E1,16	:	g8&e8 @6 c4r2 @8	]2
+C1	l16o4v64	E1,0	r1				[c&d]4	[<b-&>c]4	[<	v80 a& v64 b-[a&:b-]3>c[<b&>:c]4d			:	[c&d]4	[<b->c]4	]2
+C2	l4 o4v64	E1,0	r1				e1					[	v80 f8&v64f4. d4 g4							:	e1					]2
+C3	l8 o2v72	E1,4	r1				cccc	cccc		[	v96 c	v72	ccc	cccc						:	cccc		cccc	]2
+
+C0	l16	o5	E1,16	g8 [g&f+&]3	v56 g4.& v48 x2 @6	<b8>	@7 d8&) @6 c8) r8) @8 e8) @7 c+8&)d8) r8) @8 f8)	@7 d+8&) @8 e8) r8) <@6 g8)> @8 g8)g4((( <@6 b8>	v48
+C1	l8	o4	E1,0	e4	r4	E1,4	gggg	gggg	gggg	gggg	gggg
+C2	l8	o4	E1,0	g4	r4	E1,4	ffff	eeee<	bbbb>	cccc	ffff
+C3	l8	o2	E1,0	c4	r2.					r1				r1				E1,4
+
+C0	l16	o5	E1,16	@7	d&	@6	c	E1,22		<b>		c	E1,16		<b&>	c	E1,22	@7	d	@8	e	E1,16		e&	@7	d	E1,22		c+		d	E1,16		c+&		d	E1,22	@8	e		f
+		x1	E1,16		f&)		e)	E1,22	@7	d+)	@8	e)	E1,16	@7	d+)	@8	e)	E1,22		f)		g)	E1,16		g&)		f)	E1,22		e)		f)	E1,16		e&)		f)	E1,22		g)		a)
+			E1,16		a&)		g)	E1,22		f+)		g)	E1,16		f+)		g)	E1,22		a)		b-)	E1,16		b-&)	a)	E1,22		g+)		a)	E1,16		g+&)	a)	E1,22		b->)	c<
+		x2	E1,16	(b-&>(c<	(a&(b-	(g&(a	(f&(g	(e&(f	@7 (d& @8 (e	@6 (c& @7 (d	@6 (<b-&>(c<			
+					a&>) @7 c+) E1,22	d) @8 f)	E1,16	a2	g&f	E1,22	e @7 d	@8	E1,16	g4	f&e	E1,22	@7 d @6 c	@7	E1,16	[e32&:d32&]8 d32	v80
+C1	l8	o4	gggg	gggg	E1,0	g&e	E1,4	ee				r				fff				r					ggg				r				aaa			b-agf	edc<b-	a>aaa	bbbb>	cccc	cc<bb
+C2	l8	o4	eeee<	bbbb>			c	c		cc	$v3	E1,0	<b>	$v2	E1,4	ddd	$v3	E1,0	<b->	$v2	E1,4	eee	$v3	E1,0	<a>	$v2	E1,4	fff			gfed	c<b-ag>	c fff	ffff	eeaa	ff gg
+C3	l8	o2	r1						c	c		cc				c				ccc				c					ccc				c				ccc	E1,0	c4	r2.	$v3	o3	(g4	)	r2.		r1	$v4
+
+C0	l12	o4	E1,22	@6 ceg>	c @8 eg E1,16 >c4r4<<	E1,22	@6 dfa>	@7 d @8 fa	E1,16	a4r4<	l16	@6 g&>	@8 g8. f&e E1,22 @7 d @6 c	@7	E1,16	[e32&:d32&]8 d32
+			E1,16	@6	<r8eg>	c& @8 e E1,22	g>c	E1,16	c&<b	E1,22	ag	E1,16	f&e	E1,22	@7 d @6 c	E1,16	@8	a8<	@6 df	a&>@7 d	E1,22	@8	fa	E1,16	a&g	E1,22	fe	E1,16 @7 d& @6 c<	E1,22	ba
+C1	l8	o5	E1,0	c4	r4.	E1,4	ccc	E1,0	c4	r4.	E1,4	ccc		cccc	cc<bb>		E1,0	c	$v7	o5	E1,4	ccc	E1,16	c	$v1	o5	v64	E1,4	ccc	E1,0	c	$v7	o4	E1,4	aaa	E1,16	a	$v1	o5	v64	E1,4	ccc
+C2	l8	o4	E1,0	g4	r4.	E1,4	ggg	E1,0	a4	r4.	E1,4	aaa		geee	dddd	$v3 E1,0	g	$v7	o4	E1,4	ggg	E1,16	g	$v2	o4	v64	E1,4	ggg	E1,0	a	$v8	o4	E1,4	ddd	E1,16	f	$v2	o4	v64	E1,4	aaa
+C3	l8	o2	E1,0	er	r4.	E1,4	eee	E1,0	f4	r4.	E1,4	fff		gggg	gg ff		E1,0	e	$v8	o4	E1,4	eee	E1,16	e	$v4	o2	v72	E1,4	eee	E1,0	f	$v8	o4	E1,4	ccc	E1,16	c	$v4	o2	v72	E1,4	fff+
+
+C0	l16	o4	E1,16	x1	g)c)d)e)	f)g)a)b)>	c) @7 d) @8 e)f) g)a)b)>c)<	[e32&:d32&)]16d32
+C1	l8	o5	v80	c	v64	ccc	cccc<	l16	x2	b)b)b)b)>	d)d)d)d)	f)f)f)f)	b)b)b)b)	
+C2	l8	o4	v80	e	v64	eee	eeee	l16	x2	f)f)f)f)<	b)b)b)b)>	d)d)d)d)	f)f)f)f)	
+C3	l8	o2	v88	g	v72	ggg	gggg		x4	g)g)g)g)				g)g)g)g)				
+
+C0	l16	o6	$v1	v112	E1,0	c4<			c2			<b&>c<b&>c			f4	e2				<b&>c<b&>c			b-4	a2				<b&>c<b&>c				E1,4	l32	>c8<c8	E1,0	[d&c&]3<b&>c	E1,4	e8	c8<a8f+8	E1,0	p64	g2.r4
+C1	l16	o5	$v2	v112	E1,0	e4<			e2			 d&e  d&e		>	c4<	c2				 d&e  d&e		>	c4<	c2	>			<b&>c<b&>c				E1,4	l32	 e8 c8	E1,0	[d&c&]3<b&>c	E1,4	e8	c8<a8f+8<	E1,0	p64	g2.r4
+C2	l8	o4	$v3	v112	E1,0	g&e	E1,4	cc	c		g4				g	da	g	g4				g4			g	egff4						f4			f	E1,4	l32	f+8>c8	E1,0	[d&c&]3<b&>c	E1,4	e8	c8<a8f+8<	E1,0		g2.r4
+C3	l8	o2	$v4	v120	E1,4	cc			c>c	E1,0	<b&>c	E1,4	cc	<a>c<g>c	E1,0	<b&>c	E1,4	cc	<e>c<f>c		E1,0	<b&>c	E1,4	cc<	E1,4	l32	f+8>c8	E1,0	[d&c&]3<b&>c	E1,4
+								t112	e8	t100	c8<	t80	a8	t64	f+8	E1,0		g2.r4
+
+;---------------------------------------
+;	[Cadenza]
+;---------------------------------------
+
+C1,2,3	V-30000			;音を消して、カデンツァに同期させる。
+
+C0,1,2,3
+
+	l64	o5	$v6	@8	v64	t48	g&a&b&>c&c+& v88	t64	@9 d32.&<	t112	@8 b8	g4.	l16	a&g	E1,16	f+8g8	E1,16	a8f+8 @7 d4&d v64 @8 e @7 d c+&d& @8 e E1,22 ff+	E1,16
+
+			g8&e8 @6 c4.  t100 @8 e& @7 t96 d @6 t92 <b&> t88 c< t84 b&> t80 c	@7 t64 d2	r4	@6 v68 t116 E1,16 <g4> t120 E1,16  c4 c2 <b&>c<b&>c @8 f4 f2 f4 
+
+			@7 d+8& @8 e8 e2 f&e& @7 d+& @8 e	a4	a4&	a<@6a>c@8f a>c< t116 b t108 a
+
+			t100 f+8& g8 v72 g1	t100 a8&g2 t64 b24&a24&b24& v80 t64 a8& v70 g8 v80 t80 g1 t100 < v48 @6 f4	t120	x2
+
+	l16 o4	E1,16		e-&		g>)	E1,22 t124	c<		g)	E1,16 t128	f&		g)	E1,22 t132	b	g)	E1,16 t136	e-&		g>)	E1,22 t140	c<		g)	E1,16		f&		g>)	E1,22	@7	d<	@6	g)
+			E1,16		e-&		g>)	E1,22		c<		g)	E1,16		f&		g)	E1,22		b	g)	E1,16		e-&		g>)	E1,22		c<		g)	E1,16		f&		g>)	E1,22	@7	d<	@6	g)
+	t128	E1,16	e-&g>	E1,22	c @8 e-	E1,16	g4<	t120	E1,16	f&a->	E1,22	c @8 f	E1,16	a-4<	t112	v80	@6 f+8&a>	E1,22	c @8 e-f+a>	E1,16	t64	c8.<	t32	l32	g& t48 f+& t64 g& t80 f+& t96 g&f+&g&f+&g&f+&g&f+&g&f+& t80 e&f+ t64
+
+				g	g&f+&g& t72 a&g&f+&g t80	<@6 g>	@8 g&f+&g&a&g&f+&g	<@6 f>	@8 g&f+&g&a&g&f+&g	<@6 e>	@8 g&f+&g&a&g&f+&g	<@6 d+>	@8 g&f+&g& t72 a&g&f+&g
+
+	l16	t80	g8&e8& @6 c2	t96	r v64 @8 g&f+&g f&e E1,22 @7 dc+	E1,16	d4	r8> @9 v80 f8d8 < @8 b8	l12 gf @7 d<	l16 @6 bgfd< b2.r4
+
+C0	l32 o5 v72 x2 t120	@6	r8c8)	d&c&)d&c&)d&c&)<b&>c)	l16	<b&)>c)	E1,22	@7 d) @8 e) f)g)a)b)
+C1	r2	$v2	V0	r2	p64
+C2	r2	$v2	V0	r2
+C3	r2	$v4	V0	r2
+
+;---------------------------------------
+;	[Finale]
+;---------------------------------------
+
+C0	l16	o6	c8<	$v1	E1,0 v112	c4		c8		b-8b-4b-8		a&b	E1,5	>c<b>	E1,0	c8r8<	f&g	E1,5	ag	a8f8	e8	E1,0	g&e	E1,5	c8	E1,0	ec		<	g4						b4
+C1	l16	o4	v112	E1,0 	e8	e4	$v2	e8>	p64	c8 c4 c8	$v2	f&g	E1,5	 a g	E1,0	a8r8	d&e	E1,5	fe	f8d8	c8	E1,0	g&e	E1,5	c8	E1,0	ec<	E1,5	g8	E1,0	g&e	E1,5	f8	E1,0	fd
+C2	l16	o3	v112	E1,0 	g8	g4		g8>>	g8 g4 g8<	$v3	E1,4	c8c8c8c8	a8a8a8a8						E1,0	g8>c8<	e8&g8							E1,5	e8	E1,0	e&c	E1,5	d8	E1,0	d<b>
+C3	l8	o2	v112	E1,4 	c8		e8g8e8		c8e8g8e8				f8f8f8f8	f8f8f8f8								g8g8g8g8	<	g8g8g8g8
+
+C0	l16	o5	E1,0	$v1	p64	c4	v64	c&d&e&f	E1,5	g8g8g8g8	E1,0	g8r8 v112	>c8<g8	e8.g	g&fe&d	p64	c8r8	$v1	v64	c&d&e&f	E1,5	g8g8g8g8	E1,0	g8r8 v112	>c8<g8	e&ge&g	g&fe&d
+C1	l16	o4	E1,0	$v1		e4	$v2	r2.									r4		o4	 e8 c8> c8.e	e&dc&<b	$v3	e8r8	$v2		r2.									r4		o4	 e8 c8>	c&ec&e	e&dc&<b
+C2	l16	o3	E1,0	$v1		g4	$v3	r2.									r4		o3	 g8>g8	g8g8	g8g8<		g8r8			r2.									r4		o3	 g8>g8	g8g8	g8g8
+C3	l8	o2	E1,0			c4		r2.									r4		o2	 c8 e8	g8g8	g8g8>		c8r8			r2.									r4		o2	 c8 e8	g8g8	g8g8
+
+C0	l16	o5	e&cg&e	>c&<g>c&<g	e&ge&g	g&fe&d	E1,5	c8c8 l32 E1,0	d&c&d&c&d&c&<b&>c	E1,5	e8c8<g8e8	E1,0	c4>>p64	c4		c4	r4
+C1	l16	o5	c8 e&c	 g&e  g&e	c&ec&e	e&dc&<b>E1,5	c8c8 l32 E1,0	d&c&d&c&d&c&<b&>c	E1,5	e8c8<g8e8	E1,0	c4>	p64	e4		e4	r4
+C2	l8	o4	g8 g8	g8g8<	@3	g8g8	g8g8 @2	E1,5>	e8c8 l32 E1,0	d&c&d&c&d&c&<b&>c	E1,5	e8c8<g8e8	E1,0	c4>	$v2	g4		g4	r4
+C3	l8	o3	c8<g8	e8c8<		g8g8>	g8g8	E1,5 c8>c8	 l32 E1,0	d&c&d&c&d&c&<b&>c	E1,5	e8c8<g8e8	E1,0	c4		c4	t80	c4	r4
+

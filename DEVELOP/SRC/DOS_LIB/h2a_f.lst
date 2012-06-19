@@ -1,0 +1,202 @@
+Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+h2a_f.asm						     Page 1 - 1
+
+
+
+					.186
+					.model	tiny,stdcall
+
+
+				;****************************************************************
+				;*		外部宣言					*
+				;****************************************************************
+				include	lib_dos.inc
+			      C 
+			      C 
+			      C ComSmole	proto	near,	sizeCOM:WORD
+			      C ExeSmole	proto	near,	szDGROUP:WORD
+			      C Memory_Open	proto	near,	ParaSize:word
+			      C Memory_Close	proto	near,	CloseSegment:word
+			      C 
+			      C File_Create	proto	near,	cFilename:dword,iAttr:word
+			      C File_Open	proto	near,	cFilename:dword,cMode:byte
+			      C File_Close	proto	near,	hFile:word
+			      C File_Load	proto	near,	hFile:word,	cBuff:dword
+			      C File_Load_S	proto	near,	hFile:word,	iSize:word,	cBuff:dword
+			      C File_Write	proto	near,	hFile:word,	iSize:word,	cBuff:dword
+			      C File_Seek	proto	near,	hFile:word,	iControl:BYTE,	dOffset	:dword
+			      C 
+			      C ChangeExt			proto	near,	cFilename:dword,cExt:dword
+			      C Change_Current_Directory	proto	near,	cDirname:dword
+			      C 
+			      C File_Err	proto	near
+			      C 
+			      C 
+			      C 
+			      C ASC2HEX8	proto	near
+			      C ASC2HEX16	proto	near
+			      C HEX2ASC8	proto	near
+			      C HEX2ASC16	proto	near
+			      C FH2A8		proto	near
+			      C FH2A16		proto	near
+			      C H2A_F		proto	near,	iValue	:WORD,	iForm	:WORD
+			      C H2A8		proto	near
+			      C dat2hex8	proto	near
+			      C dat2hex16	proto	near
+			      C 
+			      C 
+			      C 
+
+
+				;****************************************************************
+				;*		コード						*
+				;****************************************************************
+				;---------------------------------------------------------------|
+				;		１６進数コード～ASCII CODE(255)			|
+				;---------------------------------------------------------------|
+				;	処理							|
+				;		１６進コードを１０進のアスキーコードに変換	|
+				;		スペースで、右揃え				|
+				;	引数							|
+				;		iValue	変換したい数値				|
+				;		iForm	整形文字数 (5～1)			|
+				;	返り値							|
+				;		DX←変換した文字列の先頭アドレス		|
+				;---------------------------------------------------------------|
+ 0000				.data
+ 0000  2D				DB	'-'			;符号
+ 0001 24 24 24 24 24 24		ASC	DB	'$$$$$$$'
+       24
+ 0008 2710 03E8 0064 000A	H2A_Div	dw	10000,1000,100,10,1
+       0001
+ 0000				.code
+ 0000				H2A_F	proc	near	uses ax bx cx di es,
+					iValue	:WORD,
+					iForm	:WORD
+
+					local	flag:byte
+
+ 0000  55		   *	    push   bp
+ 0001  8B EC		   *	    mov    bp, sp
+ 0003  83 C4 FE		   *	    add    sp, 0FFFEh
+ 0006  50		   *	    push   ax
+ 0007  53		   *	    push   bx
+ 0008  51		   *	    push   cx
+ 0009  57		   *	    push   di
+ 000A  06		   *	    push   es
+ 000B  0E				push	cs
+ 000C  07				pop	es
+ 000D  8D 3E 0001 R			lea	di, [ASC]		;es:di ← 変換先アドレス
+ 0011  88 5E FF				mov	flag, bl		;flag reset
+ 0014  8B 4E 06				mov	cx, iForm
+ 0017  8B 56 04				mov	dx, iValue
+ 001A  BB 0005				mov	bx, 5
+ 001D  2B D9				sub	bx, cx
+ 001F  D1 E3				shl	bx, 1
+					.repeat
+ 0021			   *@C0001:
+					   .if	( (ax >= word ptr cs:[H2A_Div + bx]) || (flag != 0) || (cx==1))
+ 0021  2E: 3B 87 0008 R	   *	    cmp    ax, word ptr cs : [H2A_Div + bx]
+ 0026  73 0B		   *	    jae    @C0003
+ 0028  80 7E FF 00	   *	    cmp    flag, 000h
+ 002C  75 05		   *	    jne    @C0003
+ 002E  83 F9 01		   *	    cmp    cx, 001h
+ 0031  75 11		   *	    jne    @C0002
+ 0033			   *@C0003:
+ 0033  C6 46 FF 01				mov	flag, 1
+ 0037  8B C2					mov	ax, dx
+ 0039  33 D2					xor	dx, dx
+ 003B  2E: F7 B7 0008 R				div	word ptr cs:[H2A_Div + bx]
+ 0040  04 30					add	al,30h
+					   .elseif
+ 0042  EB 02		   *	    jmp    @C0006
+ 0044			   *@C0002:
+ 0044  B0 20					mov	al,' '
+					   .endif
+ 0046			   *@C0006:
+ 0046  AA				   stosb
+ 0047  83 C3 02				   add	bx,2
+ 004A  49				   dec	cx
+					.until	(zero?)
+ 004B  75 D4		   *	    jne    @C0001
+ 004D  26: C7 05 0024			mov	word ptr es:[di], '$'
+ 0052  8D 16 0001 R			lea	dx, [ASC]		;es:di ← 変換先アドレス
+
+					ret
+ 0056  07		   *	    pop    es
+ 0057  5F		   *	    pop    di
+ 0058  59		   *	    pop    cx
+ 0059  5B		   *	    pop    bx
+ 005A  58		   *	    pop    ax
+ 005B  8B E5		   *	    mov    sp, bp
+ 005D  5D		   *	    pop    bp
+ 005E  C2 0004		   *	    ret    00004h
+ 0061				H2A_F	endp
+				;****************************************************************
+					end
+Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+h2a_f.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0061	  Word	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	16 Bit	 0012	  Word	  Public  'DATA'	
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+ASC2HEX16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ASC2HEX8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ChangeExt  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Change_Current_Directory . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ComSmole . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ExeSmole . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+FH2A16 . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+FH2A8  . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Close . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Create  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Err . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Load_S  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Load  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Open  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Seek  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Write . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+H2A8 . . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+H2A_F  . . . . . . . . . . . . .	P Near	 0000	  _TEXT	Length= 0061 Public STDCALL
+  iValue . . . . . . . . . . . .	Word	 bp + 0004
+  iForm  . . . . . . . . . . . .	Word	 bp + 0006
+  flag . . . . . . . . . . . . .	Byte	 bp - 0001
+HEX2ASC16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+HEX2ASC8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Memory_Close . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Memory_Open  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+dat2hex16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+dat2hex8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0003h	 
+@Model . . . . . . . . . . . . .	Number	 0001h	 
+@code  . . . . . . . . . . . . .	Text   	 DGROUP
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+ASC  . . . . . . . . . . . . . .	Byte	 0001	  _DATA	
+H2A_Div  . . . . . . . . . . . .	Word	 0008	  _DATA	
+
+	   0 Warnings
+	   0 Errors

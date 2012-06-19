@@ -110,9 +110,10 @@ c_Command_Adrs_S	dw	offset cMCD_0		;<CR+LF>+"C"
 			dw	offset cMCD_78		;@F	
 			dw	offset cMCD_79		;@S	
 			dw	offset cMCD_80		;@R	
-			dw	offset cMCD_81		;@	
-			dw	offset cMCD_82		;_	
-c_Command_Adrs_E	dw	offset cMCD_83		;{	
+			dw	offset cMCD_81		;@D	
+			dw	offset cMCD_82		;@	
+			dw	offset cMCD_83		;_	
+c_Command_Adrs_E	dw	offset cMCD_84		;{	
 ;c_Command_Adrs_E:
 ;---------------------------------------------------------------|
 ;	①コマンド文字列					|
@@ -247,12 +248,13 @@ cMCD_75	db	']',0,		0,3,	']',0,	0f0h	;]	Loop End
 	db		0				;
 cMCD_76	db	'<',0,		0,1,	'<',0,	0	;<
 cMCD_77	db	'>',0,		0,1,	'>',0,	0	;>
-cMCD_78	db	'@F',0,		1,5,	'@',80h,0,    11h,0	;@F
-cMCD_79	db	'@S',0,		1,5,	'@',81h,0,    11h,12h,0	;@S
-cMCD_80	db	'@R',0,		1,5,	'@',82h,0,    11h,0	;@R
-cMCD_81	db	'@',0,		0,1,	'@',0,	11h,0	;@
-cMCD_82	db	'_',0,		0,1,	'_',0,	11h,0	;_
-cMCD_83	db	'{',0,		0,8,	'{',0,	0f0h	;{
+cMCD_78	db	'@F',0,		1,05,	'@',80h,0,    11h,0	;@F
+cMCD_79	db	'@S',0,		1,05,	'@',81h,0,    11h,12h,0	;@S
+cMCD_80	db	'@R',0,		1,05,	'@',82h,0,    11h,0	;@R
+cMCD_81	db	'@D',0,		1,0dh,	'@',83h,0,    11h,12h,0	;@S
+cMCD_82	db	'@',0,		0,01,	'@',0,	11h,0	;@
+cMCD_83	db	'_',0,		0,01,	'_',0,	11h,0	;_
+cMCD_84	db	'{',0,		0,08,	'{',0,	0f0h	;{
 	dw		offset cMCD_trance		;
 	db		0				;
 .code
@@ -438,11 +440,21 @@ cMCD_sp		endp
 ;---------------------------------------------------------------
 ;	音量
 ;---------------------------------------------------------------
-cMCD_sv		proc	near	uses ax	;
+cMCD_sv		proc	near	uses ax	bx;
 
 	push	cs:[pMML_File]		;
 	call	CREAD_L			;%があったら、
 	pop	cs:[pMML_File]		;
+
+	xor	bx, bx
+	.if	(al == 'R')
+		mov	bh, 80h
+		inc	cs:[pMML_File]
+		push	cs:[pMML_File]		;Rがあったら、
+		call	CREAD_L			;もう一回読んでおく。
+		pop	cs:[pMML_File]		;
+	.endif
+
 	call	A2H8R	
 	.if	(al == '%')
 	   .if	(ah < 16)		;%があった場合
@@ -451,6 +463,7 @@ cMCD_sv		proc	near	uses ax	;
 		mov	ah,127		;もし16以上だったら127
 	   .endif
 	.endif
+	or	ah, bh
 	call	CSET			;
 
 	ret				;
@@ -856,6 +869,18 @@ c_Command	proc	near		;パートコンパイル
 				  div	cx			;
 				  mov	cx,ax			;cx←Step数。
 				.endif				;
+				mov	dx, cx
+
+				;-------
+				;音長（付点）の処理
+				call	CREAD_L			;読み込み。
+				.while	(al == '.')
+					shr	dx, 1		;
+					add	cx, dx		;
+					call	CREAD_L		;読み込み。
+				.endw
+				dec	cs:[pMML_File]		;(ポインタは、ずらさない。)
+
 				lodsb	cs:[si]			;al←コマンド
 				.if	(al == 01h)		;
 				  mov	cMCDinfo.cMCD_DefLength,cx

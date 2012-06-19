@@ -1,0 +1,237 @@
+TI	Fantaisie Impromptu
+;Composed by Fryderyk Franciszek Chopin
+;Arranged by Atsushi Watanabe (S.W.)
+FI	Fantaisie.wtd
+TB	48
+PA	4
+FX	1
+
+;
+;	TAB = Space * 4
+;	で作っているけど・・・・
+;	音量命令とか、かなり書いてあるんで、汚いデス。
+;	さくらの先行指定が便利だわ。（－－
+;											Ｓ．Ｗ．
+;
+
+
+;------------------------------------------------------------------------------
+
+
+@F0,0	Piano.wtv
+@F1,1	Piano.wtv
+@F2,2	Piano.wtv
+@F3,3	Piano.wtv
+@F4,4	Piano.wtv
+@F5,5	Piano.wtv
+@F6,7	Piano.wtv
+@F7,7	Piano.wtv
+
+
+;------------------------------------------------------------------------------
+;Piano Type Emb.
+Ex 0	255, 255,1,255, 8,-1,192, 1,-2,64,  6,-1,0		;for Tempo 156
+Ex 1	255, 255,1,255,13,-1,192, 3,-4,64, 10,-1,0		;for Tempo  96
+
+;------------------------------------------------------------------------------
+
+C0,1,2,3	Q8 q0	E1,0 /1,1 	{#fcgd}
+
+C0	o3C128	l12	t120	@3	r1 r1	v99		cr>	r	@4	v95	err		v90		rrr		v85	err		v80	rrr		v75	err		v70	rrr		v65	err
+C1	o3C129	l12	v127	@3	g1&r1	v99	rrt116	>	@4	c	v95	rcr		v90		rrc		v85	rcr		v80	rrc		v75	rcr		v70	rrc		v65	rcr
+C2	o2C130	l12	v127	@2	g1&r1	v99	rt104 >@3 gr 	v95	rrg		v90		rgr		v85	rrg		v80	rgr		v75	rrg		v70	rgr		v65	rrg
+C3	o2C131	l12			@2	r1 r1	v99	t64	c>rr t124	v95	r4 t132	v90	@3	crr t140v85	rrr	t144v80	crr	t146v75	rrr	t148v70	crr	t150v65	rrr	t152
+
+;[A]------------------------------------
+
+C0,1,2,3	[	E1,0	[
+
+C0	o5l16	[<		r@4	v64	g		rg	r g>	r@5	e		rcrc <r		>@5	c	rg	]2
+C1	o5l16	[<		r		r@4	v64	ar	f+r>@5	c	r		drdr <@4b+	>	r@5	er	]2
+C2	o3		[		r@3	v64	g>		r@4 e	r<@3g			r	g>	r@4	er<	@3	g	]2
+C3	o3		[@3	v64	c		r>@4	c	r	c<	r@3			e	r>@4c	rc<		r	]2
+
+C0	<r@4v68	a>		r	v76	d 		r	v84	a>		r@6	v92	d		r	v92	a		r	v84	f		r	v76	d		r	v68	c	v64	<r >d<r@5g rard rc<r >d <r@4gra&
+C1	<r		r>@5v72	c		r v80	f		r>@6v88	c		r	v96	b		r	v88	g		r	v80	e		r	v72	f		r	v64	 c= r<@5ar frer fr c= r <@4arbr
+C2		ra>r@4f	r<@3a r>@4c	  rarc<	[<r>@3dr>@4c=<r@3d]2
+C3	@3	dr>@4cr	c<r @3f>r	@4drdr<	[<@2a>r@3f r  fr]2
+
+C0,1,2,3	:
+
+C0	rgr g r g>r@5e rcrc  r crg	<r@4gr g r g>r@5e rcrc r crg
+C1	rra r f+r>@5cr drdr  c=rer	<rr@4a+r f+r>@5cr drdr c=rer
+C2	rg>r@4er<@3g rg>r@4er<@3g  rgr >@4c<r @3g rgr>@4c<r@3g
+C3	cr>@4crc<r@3 er>@4crc<r@3  cra+>  r<a+  r era+> r<a+ r
+
+C0	r	v66	e		r	v70	c+ 		r	v74	b		r 	v78	g		r>@6v82	e		r	v86	c		<r@5v90	a		r	v94	f+  	r	v99	grc+r	dr<@4a+> r<b>r<f+ r gr g>
+C1	d		r	v68	d		r  v72	d		r	v76	a+		r	v80	f+>		r@6	v84	d		r	v88	<@5b	r	v92	g		r	v96	a+	v99	rbr e	rg<  r > c<r>d<r@4a+rf+r>
+C2	r	v67	g		r>@4v73	d<		r@3	v79	g			r	v85	a+>		r@4	v91	f+		r<@3v97	a+	v99	[<  r>d  rbrd]2
+C3	d		r	v70	a>		r<	v76	a		r		v82	d		r>@4v88	c		r 	v94	c<		r	v99	[<@2g>r@3grgr]2
+
+;[B]------------------------------------
+
+C0	o5v99	r@5	gc=c	rfc=c	re+c=c	rfc=c	rc<@4fa>	r@5d<@4fa>	r@5e<@4gb>	r@5g<@4b>@5e
+C1	o4v127	@3	g8.r	f8.r	e+8.r	f8.r	c8.r		d8.r		e8.r		g8.r
+C2	o3v99		rc rgrc			rc rgrc			rfrbrf			<r@2b>r@3g<r@2b>	@3
+C3	o3v99		<@2ar>@3frfr	<@2ar>@3frfr	<@2br>@3arar	<@2er>@3erer
+
+C0				rg<@4b>@5c	rf<@4b>@5c	re+<@4b>@5c		rf<@4b>@5c	re+<@4b>@5d	rf<@4b>@5d	ra<@4b>@5e=	rg<@4b>@5e=
+C1				g8.r		f8.r		e+8.r			f8.r		e+8.r		f8.r		a8.r		g8.r
+C2				rc rgrc			rc rgrc			rfrbrf			<r@2b>r@3g<r@2b>	@3
+C3				<@2ar>@3frfr	<@2ar>@3frfr	<@2br>@3arar	<@2er>@3erer
+
+C0				rv96grv64c	rv96frv64c	rv96e+rv64c	rv96frv64c		r	v99	cr<@4v67a>	r@5	v102dr<@4v71a>	r@5		v106er<@4v75b>		r@5	v110gr	v79	e
+C1	v64	@4		grb+r		frb+r		e+rb+r		frb+r			cr	v66	fr	v68		dr	v70	fr	v72		er		v74	gr	v76			gr	v78		br
+C2	v64			rc rgrc					rc rgrc						r	v66	f		r	v69	b		r	v72	f			<r@2v75	b>@3	r	v78	g<		r@2	v81	b>	@3
+C3	v64			<@2ar>@3frfr			<@2ar>@3frfr				<@2b	r>@3v67	a		r	v70	a		r		v73	<@2	e	r>@3v76	e		r	v79	e		r
+
+C0				rv114g	rv83c		rv118f	rv87c>	rv127@6drv99<@5a>	rv127@6crv99<@5a>		rv125@6crv92<@5f	rv121b+rv84f	rv117b+rv76f	rv113b+rv68f
+C1	v80		g	rv82b+	rv84	f	rv86b+	rv99>@5	drfr				crfr					crv94d	rv90		c=	rv86drv82	c=rv78d	rv74	c=rv70d	r
+C2				rv84c		rv87g	rv90c			r	v99	d	rgrd							rv97d	rv91		b+	rv85d		rv79drv73		b+	rv67d
+C3	v82		<@2	a	r>@3v85	f	rv88f	rv99		<@2a	r>@3frfr							<@2	g	r>@3v94	f	rv88frv82		<@2gr>v76@3	f	rv70f	r
+
+C0			>	r v99@6	c=<r v64@5	f	r	v99	b r	v64	f r	v99	b r	v64	f r	v99	a+r	v64	f		ra+ rf		 ra rf		 ra rf		 rg rf
+C1	v64			c=		r  d		r<@4 b		r>@5 d	r<@4 b	r>@5 d	r<@4 a+	r>@5 d	r<	@4	a+r>@5dr	<@4ar>@5dr	<@4ar>@5dr	<@4gr>@5dr
+C2	v64			 rdrb=rd										 rd rg+rd						rdra=rd					rdra=rd
+C3	v64			<@2ar>@3frfr									<@2a+r>@3frfr					c=rfrfr					c=rfrfr
+
+C0	v48			r@5b+rf	 		rb rf			 rb rf		 ra+ rf			 r	v46	a+		r	v42	f		 r	v38	a 		r	v34	f		 r	v30	a 		r	v26	f		 r	v22	g 		r	v18	f
+C1	v48			<@4b+r>@5dr		<@4br>@5dr		<@4br>@5dr	<@4a+r>@5dr		<@4a+	r>v44@5	d		r	v40	<@4a	r>v36@5	d		r	v32	<@4a	r>v28@5	d		r	v24	<@4g	r>v20@5	d		r
+C2	v48			rd	rb=rd		rd	rg+rd		r	v45	d		r	v39	a=		r	v33	d			r 	v27	d		r	v22	g		r	v18	d
+C3	v48		<@2	ar>@3frfr	<@2	a+r>@3frfr	<@2	b t148	r>v42@3	f t144	r	v36	f t140	r t136	v30	c= t132	r	v25	f t128	r	v20	f t120	r	t152
+
+C0,1,2,3	]2
+
+;[A']------------------------------------
+
+C0	o5		<r@4gr g r g>r@5e rcrc  r crg	rdrd	rdra	re+re+	re+r>c<
+C1	o5		<rr@4a r f+r>@5cr drdr  c=rer	erer	c+rfr	frfr	d+rgr
+C2	o3		rg>r@4er<@3g rg>r@4er<@3g	>	r@4c rarc		 rc r br c
+C3	o3		cr>@4crc<r@3 er>@4crc<r@3		fr>@4drdr		<@3fr>@4e+re+r
+
+
+C0			rcrc	rcra	re+re+	re+r>c<	rfrf	rfr>c<	rgrg	rg>rd<
+C1			rrd=r	c=rfr	frfr	d+rgr	grgr	e+rar	arar	f+r>c=r<
+C2			 rc rarc		 rc rb=rc		 rc rarc		<r@3fr>@4d<r@3f
+C3			<@3ar>@4frfr	<@3gr>@4e+re+r	<@3ar>@4frfr	<@3c=rgrgr
+
+C0			rarf+	r>v99@6	er	v64	d=	rc=<r@5a+	rgrf		rfrd	r>	v99@6	er	v64	d=	rc=<r@5a+	rgrf
+C1			grgr	g>		r@6d	r	cr<@5b=r	a=rg=r		erer	e>		r@6d		r	cr<@5b=r	a=rg=r
+C2			rg>r@4e<r@3g				rg>r@4f<r@3g				rg>r@4e<r@3g		>r@4crarc<
+C3			cr>@4crcr<				@3	dr>@4c=rc=r<			@3	er>@4crcr<		@3	fr>@4drdr<
+
+C0	o5@5		v99	gr>	v127@6	gr	v99	fr er			d=cc=<@5b			ra=rg=	rrrd	r rrv106 <@4b		rrr	v114	g=		rrr	v122	c
+C1	o4@4	v99	e8>>		r@6g=	re+rd<<	v127@4	r32c8..>v99@5	a+rg+r	rre=r	r r	v104 c=<r	rr	v112@4	gr		rr	v120	dr
+C2	o4@4l16	v99	c8			r4.				v127	r16e32a8&a32&	r8r8>	r@5e+rr	r	v102 cr <r	r	v110@4	a=rr	r	v118	e=rr
+C3	o3@3l16	v99	g8			r4.				v127	f+4&			r8r8>>	@5frrr		v100 d=rr<r		v108@4	a+rrr		v116	frrr
+;			Ｃ									Ａ7(５度のEを省略。)
+
+C0			t136	r4 t156	o6@6	v127ar	v99	>@7er<v127@6fr	v99>@7cr<v127@6	dr	v99	gr<	v127@5	ar	v99>@6er<v127@5	fr	v99>@6cr<v127@5	dr	v99	gr< v127@4	ar	v99>@5er<
+C1	o3@3	v127	g8r8	o6@6	v99	rg		re			re		rc			rc		<r@5g		rg		re			re		rc			rc		<r@4g		rg		re
+C2	o2@2l4	v127	g4		o5@5	v120Q6	e4			@4	c4			<		g4					e4				@3	c4			<		g4					e4
+C3	o1@1l4	v127	g4		o4@4	v120Q6	e4			@3	c4			<		g4					e4				@2	c4			<		g4					e4
+
+
+C0			v127@4	fr	v99>@5cr<v127@4	dr	v99	gr v127	dr	v99	gr v127	dr	v99	ar 	v127	dr	v99	gr v127	dr	v99	f+r v127	dr	v99		gr v127		dr	v99		gr
+C1					re		rc			rc		<r@3g>	r@4c	<r@3g>	r@4c	<r@3a>		r@4c	<r@3g>	r@4c	<r@3f+>		r@4c t132	<r@3g> t128	r@4c= t120	<r@3g>
+C2				@2	c4				<	g4		t152	g4		t148	a4			t144	g4		t140	f+4			t136	g2	Q8
+C3				@1	c4				<	g4				g4				a4					g4				f+4					g2	Q8
+
+;[C]------------------------------------
+
+C0,1,2,3	:		{#}	{-beadg}	E1,1
+
+C0	l12o2	r	v67	@2	a>		r		rv76@3	a>		r		r		r<	v76	a		r		r<v67@2	a	r	v67		a>		r		rv76@3	a>		r		r		r<	v76	a		r		r<v67@2	a
+C1	l12o2	r			r>	t96	rv73@3	f		r>		rv82@4	f	t96	r<		rv73@3	f		r<		r	r			r>		rv73	f		r>		rv82@4	f		r<		rv73@3	f		r<		r
+C2	l12o2	r	t80		r>v70@3	d		r		r>v79@4	d	t64	r	v79	d<		r		rv70@3	d<		r	r			r>v70	d		r		r>v79@4	d		r	v79	d<		r		rv70@3	d<		r
+C3	l12o2@2	v99	t64	d2											r2										v64	d4							r4						r2
+
+;[C1]
+
+C0	l12	o2@2	v64	drr>>@4err	l32		b	r	v66	b	r	v68	a8	>	r8v76@5	e8	<<	l12	r v85@3 a>rr v94@4dr>		v127@5	a2			r4	v99		f4			r4 v127		f8.		r16<v80	@4		a2		<	@3	rrbrbr
+C1		o4@4	v64	a2		>	l32	rv65@5	c	r	v67	c		r8	v72	d8		r8	v80		f2							r4	v99	<@4a4>@5	g4			r4			e4			r8.	v80	d16		l12o3	rr@3arar>	@4	b2&
+C2	l12	o2@2	v64	ar>>@4crcr<	@3	d		r>v70@4	c		r 	v76	c		r<v82@3			dr>r v91@4 fr<r v99@3		dr>@4 frfr	v127	g4			f4			e4			d4	v80	<<				@2arr>>@4crr<<	@2grr>>@4drr<<
+C3	l12	o3@3	v64	r@3arrra		r	v67	a>		rv73@4	g<		rv79@3	a				rr> v88@4 drr< v97@3a		rv99 arrra>			r@4e<@3a>	r@4d<@3a>	r@4c<@3a>	r<v94@3	a v87 f	v80		r@3errre		rgrrrg
+
+C0	rfr>@4d=rr>		l32@5	r 	v82	cr v84	c	r8	v90	e8	r8	v99		g4		r4		e4		r4			d4.rdrd		r4.	v80	e8										l12	v64	o2	@2	arr>>@4	crr<<@2	arr>@3	b4
+C1	r2				l32		v81	b=r	v83	b=r	v85	b8>	r8v95@5	f8			r4	v99	f4		r4		f4			r4.crer		f4.r8	v99										l12				e1
+C2	@2brr>@3rrf		r	b>	r@4 a	r<@3b			r>v99@4	gr<@3	f	ra		r>@4er<	@3	a>	r@4	c<		r@3	a>	r@4	fr<	@3	a	r	v96	g=>		rv82@4	e<		r v70@3	g=	v64		rra		rar		rrg-	rg-r
+C3	rrbrbr	<@2		b>>	r@4	d	r	d<	r@3		v99	e 		rb		r>@4fr<@3	g	rb		r>@4g	r<@3	d	r>@4d	rd<		r@3	e		r>v88@4	d		r	v76	d		r<	v64	@3	rer		rre		rer		rr e
+
+;[C1']
+
+C0	o4	@4	v64	rrr @4err	l32		b	r	v66	b	r	v68	a8	>	r8v76@5	e8	<<	l12	r v85@3 a>rr v94@4dr>		v127@5	a2			r4	v99		f4		l32	r8 	frdr v127	f8.		r16<v80	l12	@4	a2		<	@3	rrb		rbr
+C1	o4	@4	v64	a2		>	l32	rv65@5	c	r	v67	c		r8	v72	d8		r8	v80		f2							r4	v99	<@4a4>@5	g4			r4			e8	rere		r8.	v80	d16		l12o3	rr@3a	rar>@4	b2&
+C2	o2	@2	v64	ar>>@4crcr<<@2	a>		r>v70@4	c		r 	v76	c		r<v82@3			dr>r v91@4 fr<r v99@3		dr>@4 frfr	v127	g4			f4			e4			d4	v80	<<				@2	arr>>@4	crr<<@2	grr>>@4	drr<<
+C3	o3	@3	v64	r	  arrra		r	v67	a>		rv73@4	g<		rv79@3	a				rr> v88@4 drr< v97@3a		rv99 arrra>			r@4e<@3a>	r@4d<@3a>	r@4c<@3a>	r<v94@3	a v87 f	v80			rer		rre		rgr		rrg
+
+C0	rfr>@4d=rr>		l32@5	r 	v82	cr v84	c	r8	v90	e8	r8	v99		g4		r4		e4		r4			d4.<r @4ara>		r4.	v80	@5	e8									l12	v64	@4<	rrc		rcr	@5>	d4	<@4	rdr
+C1	r2				l32		v81	b=r	v83	b=r	v85	b8>	r8v95@5	f8			r4	v99	f4		r4		f4			r4.<@4g=rbr>	@5	f4.			r8	v99								l12			e2		v64	@4<	rrd	>@5	r8a8
+C2	@2brr>@3rrf		r	b>	r@4 a	r<@3b			r>v99@4	gr<@3	f	ra		r>@4er<	@3	a>	r@4	c<		r@3	a>	r@4	fr<	@3	a	r	v96	a>		rv82@4	g		r< v70@3	a	v64		rar		rra		rar		rra
+C3	rrbrbr	<@2		b>>	r@4	d	r	d<	r@3		v99	e 		rb		r>@4fr<@3	g	rb		r>@4g	r<@3	d	r>@4d	rd<		r@3	d		r>v88@4	c		r	v76	c			r	v64	@3<	drr	>@4	grr	@3<	drr	>@4	frr
+
+;[C2]
+
+C0		v99	a2		>l32v64		rv67c	rv73c	rv79c	r16<v85	b8.		r16		v99	a8 r8	>	r4&	r16 v94	@5	b16		r16	v88	f-16	r16<v82	@4	b8		r16		v75	e2								r32	v72	b8&r32	r16	v70	b8.			r16	l12	v64	a4r4			b4		>	rv64c<		r
+C1	<<	@3rra    rar>l32v64	@4	b	rv70b	rv76b	rv82a=16	r8.>v96	c16			r4 v127	>@5	c4&	r16<		r16	v91	a16		r16 v85	d16			r8	v79	a16	<<	l12	r	rv82@3	a	rar>>v70@4	l32	c32<	r8&r32	a=16	r8.>v67	@5	e16	l12	<<@3rra		rar	<@2	grr	o5v67@5	d	r<v61@4	b
+C2		  rer    rre			r	v70	e		r	>v82@4	d<		r v94@3	e			r	v99	e	r>@4c<	r@3	e	rv97a>		rv91@4	f-		r<v85@3	a				rv82e		r	rre				rv79e		r>v73@4	d<		r	v67	@3	e		rer		rre		rrb		r	br
+C3	<<	@2arr>>@4crr<<		@2	a	>	r v76@3	g=			r	v88	g=		r	<v99@2	a>		r@3	a	r	a	r	d	r>v94@4	d		r	v88	d<		r		<@2	v82	e>>	r		r@4	crr<<	@2		e>	rv76@3	g=		r	v70	g=			r	<@2	arr>>@4	crr	<@3	rgr	>@4	d<	rg
+
+;[C1"]
+
+C0	o4	@4	v64	rrr @4err	l32		b	r	v66	b	r	v68	a8	>	r8v76@5	e8	<<	l12	r v85@3 a>rr v94@4dr>		v127@5	a2			r4	v99		f4		l32	r8 	frdr v127	f8.		r16<v80	l12	@4	a2		<	@3	rrb		rbr
+C1	o4	@4	v64	a2		>	l32	rv65@5	c	r	v67	c		r8	v72	d8		r8	v80		f2							r4	v99	<@4a4>@5	g4			r4			e8	rere		r8.	v80	d16		l12o3	rr@3a	rar>@4	b2&
+C2	o2	@2	v64	ar>>@4crcr<@3	e		r>v70@4	c		r 	v76	c		r<v82@3			dr>r v91@4 fr<r v99@3		dr>@4 frfr	v127	g4			f4			e4			d4	v80	<<				@2	arr>>@4	crr<<@2	grr>>@4	drr<<
+C3	o3	@3	v64	r	  arrra		r	v67	a>		rv73@4	g<		rv79@3	a				rr> v88@4 drr< v97@3a		rv99 arrra>			r@4e<@3a>	r@4d<@3a>	r@4c<@3a>	r<v94@3	a v87 f	v80			rer		rre		rgr		rrg
+
+C0	rfr>@4d=rr>		l32@5	r 	v82	cr v84	c	r8	v90	e8	r8	v99		g4		r4		e4		r4			d4.<r @4ara>		r4.	v80	@5	e8									l12	v64	@4<	rrc		rcr	@5>	d4	<@4	rdr
+C1	r2				l32		v81	b=r	v83	b=r	v85	b8>	r8v95@5	f8			r4	v99	f4		r4		f4			r4.<@4g=rbr>	@5	f4.			r8	v99								l12			e2		v64	@4<	rrd	>@5	r8a8
+C2	@2brr>@3rrf		r	b>	r@4 a	r<@3b			r>v99@4	gr<@3	f	ra		r>@4er<	@3	a>	r@4	c<		r@3	a>	r@4	fr<	@3	a	r	v96	a>		rv82@4	g		r< v70@3	a	v64		rar		rra		rar		rra
+C3	rrbrbr	<@2		b>>	r@4	d	r	d<	r@3		v99	e 		rb		r>@4fr<@3	g	rb		r>@4g	r<@3	d	r>@4d	rd<		r@3	d		r>v88@4	c		r	v76	c			r	v64	@3<	drr	>@4	grr	@3<	drr	>@4	frr
+
+;[C2]
+
+C0		v99	a2		>l32v64		rv67c	rv73c	rv79c	r16<v85	b8.		r16		v99	a8 r8	>	r4&	r16 v94	@5	b16		r16	v88	f-16	r16<v82	@4	b8		r16		v75	e2								r32	v72	b8&r32	r16	v70	b8.			r16	l12	v64	a4r4			b4		>	rv64c<		r
+C1	<<	@3rra    rar>l32v64	@4	b	rv70b	rv76b	rv82a=16	r8.>v96	c16			r4 v127	>@5	c4&	r16<		r16	v91	a16		r16 v85	d16			r8	v79	a16	<<	l12	r	rv82@3	a	rar>>v70@4	l32	c32<	r8&r32	a=16	r8.>v67	@5	e16	l12	<<@3rra		rar	<@2	grr	o5v67@5	d	r<v61@4	b
+C2		  rer    rre			r	v70	e		r	>v82@4	d<		r v94@3	e			r	v99	e	r>@4c<	r@3	e	rv97a>		rv91@4	f-		r<v85@3	a				rv82e		r	rre				rv79e		r>v73@4	d<		r	v67	@3	e		rer		rre		rrb		r	br
+C3	<<	@2arr>>@4crr<<		@2	a	>	r v76@3	g=			r	v88	g=		r	<v99@2	a>		r@3	a	r	a	r	d	r>v94@4	d		r	v88	d<		r		<@2	v82	e>>	r		r@4	crr<<	@2		e>	rv76@3	g=		r	v70	g=			r	<@2	arr>>@4	crr	<@3	rgr	>@4	d<	rg
+
+;[C1`]
+
+C0	o4	@4	v64	rrr @4err	l32		b	r	v66	b	r	v68	a8	>	r8v76@5	e8	<<	l12	r v85@3 a>rr v94@4dr>		v127@5	a2			r4	v99		f4		l32	r8 	frdr v127	f8.		r16<v80	l12	@4	a2		<	@3	rrb		rbr
+C1	o4	@4	v64	a2		>	l32	rv65@5	c	r	v67	c		r8	v72	d8		r8	v80		f2							r4	v99	<@4a4>@5	g4			r4			e8	rere		r8.	v80	d16		l12o3	rr@3a	rar>@4	b2&
+C2	o2	@2	v64	ar>>@4crcr<<@2	a>		r>v70@4	c		r 	v76	c		r<v82@3			dr>r v91@4 fr<r v99@3		dr>@4 frfr	v127	g4			f4			e4			d4	v80	<<				@2	arr>>@4	crr<<@2	grr>>@4	drr<<
+C3	o3	@3	v64	r	  arrra		r	v67	a>		rv73@4	g<		rv79@3	a				rr> v88@4 drr< v97@3a		rv99 arrra>			r@4e<@3a>	r@4d<@3a>	r@4c<@3a>	r<v94@3	a v87 f	v80			rer		rre		rgr		rrg
+
+C0	rfr>@4d=rr>		l32@5	r 	v82	cr v84	c	r8	v90	e8	r8	v99		g4		r4		e4		r4			d4.<r @4ara>		r4.	v80	@5	e8									l12	v64	@4<	r t92 r t88 c t84 r t80 c t76 r t72 r t68 r t64 c t60 r t56 c t32 r t152
+C1	r2				l32		v81	b=r	v83	b=r	v85	b8>	r8v95@5	f8			r4	v99	f4		r4		f4			r4.<@4g=rbr>	@5	f4.			r8	v99								l12			e1				
+C2	@2brr>@3rrf		r	b>	r@4 a	r<@3b			r>v99@4	gr<@3	f	ra		r>@4er<	@3	a>	r@4	c<		r@3	a>	r@4	fr<	@3	a	r	v96	a>		rv82@4	g		r< v70@3	a	v64		rar		rra		rar		rra
+C3	rrbrbr	<@2		b>>	r@4	d	r	d<	r@3		v99	e 		rb		r>@4fr<@3	g	rb		r>@4g	r<@3	d	r>@4d	rd<		r@3	d		r>v88@4	c		r	v76	c			r	v64	@3<	drr	>@4	grr	@3<	drr	>@4	grr
+
+C0,1,2,3	{-} {#fcgd}		]2
+
+;[D]------------------------------------
+
+C0	@4o4	v99		d	rv85g		r	v99	a			r>v127	[@4	[	e8r8	]2[	d8r8	]2	c8r8<@3	v99	g8r8		g8r8		g8r8>	v127	]2
+C1	@4o4	t152	rv92c	rv78<@3	g>		r	v99	@4	g		[	[	reag	]2[	rdag	]2	rced	v64	<r@3g>@4ed	<r@3g>@4dc	<r@3g>v99@4	ag	]2
+C2	o2l8v99	[	@2	c>		r	@3	c<		r	@2	c>		r	@3	c=<		r	]4
+C3	o2l8v99	[		r>	@3	e		r<	@2	g		r>	@3	f		r<	@2	g	]4
+
+
+C0		v127@4	er<v99@3fr>	v127@4	cr<v99@3ar>	v127@4	er<	v99	@3	dr v127	gr	v99	ar>	v127@4	er<	v99	@3	fr>	v127@4	cr<	v99	@3	ar>	v127@4	er<
+C1				re		re			rc		rg			re			rc<	@3	rg>	@4	rg			re			re			rc			rg			re
+C2			[	@2	c>		r	@3	c<		r	@2	c>		r	@3	c=<		r	]2	
+C3			[		r>	@3	e		r<	@2	g		r>	@3	g		r<	@2	g	]2	
+
+
+C0	v99		[	x2		fr(	x20	)>cr<(	x2(	ar( x20	)>cr<(	x2(	]4		[	x1	d		r(	x20	)	g		r(	x1(	]8
+C1	v99		[	x2		r(e		r(c			r(g		r(c			]4		[	x1	r(	@4	c	<		r(	@3	g>		]8
+C2	v99		[	x4	@2	c>		r(	@3	c<		r(	]4		@2	c4r2.	r1
+C3	v99		[	x4		r>(	@3	e		r<(	@2	g	]4			r1		r1
+
+C0	v48		[	d	r	g		r	]24								[	d	r	g	r	]4	t144	e+r t136	gr t128	e+r t120	gr t112	e+r t104	gr t96	e+r t88	gr t80<	l16	E1,1v48	@3	r8.g&	r2.			E1,0	rrr g&		r2.&r1	r1
+C1	v48		[	r@4	c<	r	@3	g>	]24								[	r@4	c<	r@3	e+>	]4		[	r@4	c	<	r@3	f	>	]4												<	l16	E1,1v48		r8f8&r>@4d8.&r2	<	E1,0 @3	rre+&r&		r2.&r1	r1
+C2	v48x4	l4	g1	a+)	r>)	c)		r)	@3	e+1			r1			f2	r2	d2	e+4	r4	<	@2	g1				g1																l16	E1,1v48		rg8.>@3	b+2.	<	E1,0 @2	rg&r8>>	@4	c2.&r1	r1
+C3	v48x4	l4	c1	r)	g>)	r)	@3	d)		r1	x20	)	g1	(x4		r2	e+2	r2	r4	c4	<		r1		<	@1	g1	>															l16	E1,1v48	@2	c1		t156		E1,0	c1&				r1	r1
+
+

@@ -75,10 +75,6 @@ SP_init	proc near			;
 	mov	cx,0020h		;64byteì]ëó
 	rep	stosw			;âπêFÇÃèâä˙âª
 	xor	ax,ax			;
-	out	PCM_Com_FrectionCh1,ax	;
-	out	PCM_Com_FrectionCh2,ax	;
-	out	PCM_Com_FrectionCh3,ax	;
-	out	PCM_Com_FrectionCh4,ax	;
 	out	PCM_Com_VolumeCh1,al	;
 	out	PCM_Com_VolumeCh2,al	;
 	out	PCM_Com_VolumeCh3,al	;
@@ -91,6 +87,11 @@ SP_init	proc near			;
 	mov	al,00fh			;
 	out	PCM_Com_Output,al	;
 	out	PCM_Com_VolumePCM,al	;
+	mov	ax, 07FFh
+	out	PCM_Com_FrectionCh1,ax	;
+	out	PCM_Com_FrectionCh2,ax	;
+	out	PCM_Com_FrectionCh3,ax	;
+	out	PCM_Com_FrectionCh4,ax	;
 
 ;		to do	WSC check
 ;	mov	al,0FFh			;

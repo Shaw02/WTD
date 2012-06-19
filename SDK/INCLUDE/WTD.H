@@ -205,7 +205,7 @@ typedef struct {
 	char	BendEmbCounter;			/* 3B		EMBカウンター */
 	char	BendEmbMaxMin;			/* 3C		EMB最大／最小値 */
 	char	BendEmbLevelSet;		/* 3D		EMB変位ﾚﾍﾞﾙ */
-	char	Null_3E;				/* 3E		未使用 */
+	char	ReleaseVolume;			/* 3E		KeyOff時の音量 */
 	char	ExprPanSet;				/* 3F		出力/ｳﾞｪﾛｼﾃｨｰ */
 	char	ExprSet;				/* 40		出力音量/ｴｸｽﾌﾟﾚｯｼｮﾝ */
 	char	Expr;					/* 41		音量/ｴｸｽﾌﾟﾚｯｼｮﾝ */
@@ -252,6 +252,8 @@ typedef struct {
 	char	Program1st;				/* 64		音色の初期値 */
 	char	Program2nd;				/* 65		経時変化 */
 	char	Program3rd;				/* 66		KeyOff後音色 */
+	char	ProgramDecay;			/* 67		経時変化2 */
+	int		ProgramDecayRate;		/* 68-69	経時変化2 */
 } Wtd;
 
 /* 構造体位置 */

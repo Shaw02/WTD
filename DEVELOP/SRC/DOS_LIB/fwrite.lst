@@ -1,0 +1,161 @@
+Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+fwrite.asm						     Page 1 - 1
+
+
+
+					.186
+					.model	tiny,stdcall
+
+
+				;****************************************************************
+				;*		外部宣言					*
+				;****************************************************************
+				include	lib_dos.inc
+			      C 
+			      C 
+			      C ComSmole	proto	near,	sizeCOM:WORD
+			      C ExeSmole	proto	near,	szDGROUP:WORD
+			      C Memory_Open	proto	near,	ParaSize:word
+			      C Memory_Close	proto	near,	CloseSegment:word
+			      C 
+			      C File_Create	proto	near,	cFilename:dword,iAttr:word
+			      C File_Open	proto	near,	cFilename:dword,cMode:byte
+			      C File_Close	proto	near,	hFile:word
+			      C File_Load	proto	near,	hFile:word,	cBuff:dword
+			      C File_Load_S	proto	near,	hFile:word,	iSize:word,	cBuff:dword
+			      C File_Write	proto	near,	hFile:word,	iSize:word,	cBuff:dword
+			      C File_Seek	proto	near,	hFile:word,	iControl:BYTE,	dOffset	:dword
+			      C 
+			      C ChangeExt			proto	near,	cFilename:dword,cExt:dword
+			      C Change_Current_Directory	proto	near,	cDirname:dword
+			      C 
+			      C File_Err	proto	near
+			      C 
+			      C 
+			      C 
+			      C ASC2HEX8	proto	near
+			      C ASC2HEX16	proto	near
+			      C HEX2ASC8	proto	near
+			      C HEX2ASC16	proto	near
+			      C FH2A8		proto	near
+			      C FH2A16		proto	near
+			      C H2A_F		proto	near,	iValue	:WORD,	iForm	:WORD
+			      C H2A8		proto	near
+			      C dat2hex8	proto	near
+			      C dat2hex16	proto	near
+			      C 
+			      C 
+			      C 
+
+
+				;****************************************************************
+				;*		コード						*
+				;****************************************************************
+				;---------------------------------------------------------------|
+				;		ファイルのライト				|
+				;---------------------------------------------------------------|
+				;	●引数							|
+				;		hFile	ハンドル				|
+				;		iSize	書き込みバイト数			|
+				;		cBuff	バッファのアドレス			|
+				;	●返り値						|
+				;		無し						|
+				;---------------------------------------------------------------|
+ 0000				.code
+ 0000				File_Write	proc	near	uses ax bx cx dx ds,
+						hFile:word,
+						iSize:word,
+						cBuff:dword
+
+ 0000  55		   *	    push   bp
+ 0001  8B EC		   *	    mov    bp, sp
+ 0003  50		   *	    push   ax
+ 0004  53		   *	    push   bx
+ 0005  51		   *	    push   cx
+ 0006  52		   *	    push   dx
+ 0007  1E		   *	    push   ds
+ 0008  C5 56 08					lds	dx,dword ptr cBuff
+ 000B  8B 4E 06					mov	cx,iSize	;cx←サイズ
+ 000E  8B 5E 04					mov	bx,hFile	;bx←ハンドル
+ 0011  B4 40					mov	ah,040h		;
+ 0013  CD 21					int	21h		;
+
+ 0015  73 03					jnc	File_Write_Ok	;
+ 0017  E8 0000 E				call	File_Err	;
+ 001A				File_Write_Ok:				;
+						ret			;
+ 001A  1F		   *	    pop    ds
+ 001B  5A		   *	    pop    dx
+ 001C  59		   *	    pop    cx
+ 001D  5B		   *	    pop    bx
+ 001E  58		   *	    pop    ax
+ 001F  5D		   *	    pop    bp
+ 0020  C2 0008		   *	    ret    00008h
+ 0023				File_Write	endp			;
+				;****************************************************************
+					end
+Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+fwrite.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0023	  Word	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+ASC2HEX16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ASC2HEX8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ChangeExt  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Change_Current_Directory . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ComSmole . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ExeSmole . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+FH2A16 . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+FH2A8  . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Close . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Create  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Err . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Load_S  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Load  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Open  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Seek  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Write . . . . . . . . . . .	P Near	 0000	  _TEXT	Length= 0023 Public STDCALL
+  hFile  . . . . . . . . . . . .	Word	 bp + 0004
+  iSize  . . . . . . . . . . . .	Word	 bp + 0006
+  cBuff  . . . . . . . . . . . .	DWord	 bp + 0008
+  File_Write_Ok  . . . . . . . .	L Near	 001A	  _TEXT	
+H2A8 . . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+H2A_F  . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+HEX2ASC16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+HEX2ASC8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Memory_Close . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Memory_Open  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+dat2hex16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+dat2hex8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0003h	 
+@Model . . . . . . . . . . . . .	Number	 0001h	 
+@code  . . . . . . . . . . . . .	Text   	 DGROUP
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+
+	   0 Warnings
+	   0 Errors

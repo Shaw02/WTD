@@ -380,6 +380,17 @@ I_Play	proc	near	uses	cx	;
 		.endif
 
 
+		;音長による、音色制御２
+		.if	( !(ds:[di].WTD_ProgramDecay&80h) && (ds:[di].WTD_Key!=0ffh) && (ax==ds:[di].WTD_ProgramDecayRate) )
+			push	ax				;
+			mov	al,ds:[di].WTD_ProgramDecay	;
+			and	al,07fh				;上位bitのマスク
+			mov	dx,offset CGROUP:I_Table_Voice	;
+			call	I_Table_Jump			;
+			pop	ax				;
+		.endif
+
+
 		;音長による、音色制御
 		.if	( !(ds:[di].WTD_Program2nd&80h) && (ds:[di].WTD_Key!=0ffh) && (ax==ds:[di].WTD_ProgramRate) )
 			push	ax				;
@@ -427,8 +438,8 @@ I_Play	proc	near	uses	cx	;
 			.endif
 
 		.else
+			and	ds:[di].WTD_FlagTai, 0FEh	;Tai関係なしにKeyOff
 			call	I_Play_KeyOff			;
-
 		.endif
 
 
@@ -718,79 +729,113 @@ I_Play_Frection	endp
 	even				;偶数アドレス配置
 I_Play_Volume	proc	near		;
 
-	;音量読み込み＆14bitに変換
 	xor	ax,ax			;
-	mov	al,ds:[di].WTD_Expr	;
-	inc	ax			;
-	shl	ax,7			;128倍にする。
-	dec	ax			;（Range:0～16383）
 
-	;ディチューンの加算
-	add	ax,ds:[di].WTD_ExprDetune
+	mov	dl, ds:[di].WTD_KeySet + 0	;
+ifndef	hyoka	;--------------------------------廉価版は無し
+	and	dl, ds:[di].WTD_KeySet + 1	;
+	and	dl, ds:[di].WTD_KeySet + 2	;
+	and	dl, ds:[di].WTD_KeySet + 3	;
+	and	dl, ds:[di].WTD_KeySet + 4	;
+	and	dl, ds:[di].WTD_KeySet + 5	;
+	and	dl, ds:[di].WTD_KeySet + 6	;
+	and	dl, ds:[di].WTD_KeySet + 7	;
+endif	;----------------------------------------
 
-	;音量LFO処理
-	.if	(ds:[di].WTD_FlagControl & WTD_Ctrl_ExprLFO)
-		mov	dx,WTD_ExprLFO		;
-		call	I_Play_LFO		;
-		add	ax,dx			;
-	.endif
+	;休符でないか、音量＝０でない場合に実行
+	cmp	dl, 0FFh
+	jnz	I_Play_Volume_Step1
 
-	;音量Emb処理
-	.if	(ds:[di].WTD_FlagControl & WTD_Ctrl_ExprEmb)
-		mov	cx,WTD_Ctrl_EmbVol	;
-		mov	dx,WTD_ExprEmb		;
-		call	I_Play_Emb		;
-;		mov	ds:[di].WTD_ExprEmbLevelSet,dl	;エンベロープ値
-	.endif
+	.if	(ds:[di].WTD_ExprEmbLevelSet != 0)
 
-	;音量を、7bitに補正
-	inc	ax			;
-	shr	ax,7			;ax←{(ax+1)÷128}-1
-	dec	ax			;（Range:0～127）
-	.if	(ah==0)
-		.if	(al>=80h)
-		  mov	ax,07fh		;if (128=>ax>255){ax = 0x7F;};
+		;リリース機能を使う？
+		.if	(ds:[di].WTD_ReleaseVolume == 0FFh)
+
+I_Play_Volume_Step1:
+			;音量読み込み＆14bitに変換
+			mov	al,ds:[di].WTD_Expr	;
+			inc	ax			;
+			shl	ax,7			;128倍にする。
+			dec	ax			;（Range:0～16383）
+
+			;ディチューンの加算
+			add	ax,ds:[di].WTD_ExprDetune
+
+			;音量LFO処理
+			.if	(ds:[di].WTD_FlagControl & WTD_Ctrl_ExprLFO)
+				mov	dx,WTD_ExprLFO		;
+				call	I_Play_LFO		;
+				add	ax,dx			;
+			.endif
+
+			;音量Emb処理
+			.if	(ds:[di].WTD_FlagControl & WTD_Ctrl_ExprEmb)
+				mov	cx,WTD_Ctrl_EmbVol	;
+				mov	dx,WTD_ExprEmb		;
+				call	I_Play_Emb		;
+		;		mov	ds:[di].WTD_ExprEmbLevelSet,dl	;エンベロープ値
+			.endif
+
+			;音量を、7bitに補正
+			inc	ax			;
+			shr	ax,7			;ax←{(ax+1)÷128}-1
+			dec	ax			;（Range:0～127）
+			.if	(ah==0)
+				.if	(al>=80h)
+				  mov	ax,07fh		;if (128=>ax>255){ax = 0x7F;};
+				.endif
+			.else
+				xor	ax,ax		;ax = 0x00;
+			.endif
+
+			;エンベロープ音量の合成
+			xor	cx,cx			;
+			mov	cl,al			;
+			inc	cx				;cx←音量+1
+			xor	ax,ax				;ax←0
+			mov	al,ds:[di].WTD_ExprEmbLevelSet	;ax←音量
+			inc	ax				;ax←ソフト音量+1
+			mul	cx			;
+			dec	ax			;
+			shl	ax,1			;al←((Vol.+1)×(SoftVol.+1)-1)／128
+			mov	al,ah			;(Range:0～255)
+
+		.else
+			mov	al,ds:[di].WTD_ReleaseVolume
+			stc
+			rol	al, 1
+			mov	ds:[di].WTD_ExprEmbLevelSet, al
 		.endif
+
+
+		;ソフトウェア音量の合成
+		xor	cx,cx			;
+		mov	cl,al			;
+		inc	cx			;cx←音量+1
+		xor	ax,ax			;ax←0
+		.if	(ds:[di].WTD_FlagControl & WTD_Ctrl_Effect)
+		  mov	al,ds:[bx].WTD_Sys_VolumeEffect	;ax←効果音音量
+		.else
+		  mov	al,ds:[bx].WTD_Sys_VolumeMusic	;ax←音楽音量
+		.endif
+
+
+	;	mov	bx,offset CGROUP:I_Volume_Table	;log演算
+	;	xlat
+	;	xor	ah,ah
+		mov	si,ax			;
+		and	si,00ffh		;
+		mov	al,byte ptr cs:[CGROUP:I_Volume_Table + si]
+
+		inc	ax			;ax←ソフト音量+1
+		mul	cx			;
+		dec	ax			;al←((2*Vol.+1)×(SoftVol.+1)／256)-1
+		mov	al,ah			;(Range:0～255)
+		shr	al,1			;al÷2 (Range:0～127)
+
 	.else
-		xor	ax,ax		;ax = 0x00;
+
 	.endif
-
-	;エンベロープ音量の合成
-	xor	cx,cx			;
-	mov	cl,al			;
-	inc	cx				;cx←音量+1
-	xor	ax,ax				;ax←0
-	mov	al,ds:[di].WTD_ExprEmbLevelSet	;ax←音量
-	inc	ax				;ax←ソフト音量+1
-	mul	cx			;
-	dec	ax			;
-	shl	ax,1			;al←((Vol.+1)×(SoftVol.+1)-1)／128
-	mov	al,ah			;(Range:0～255)
-
-	;ソフトウェア音量の合成
-	xor	cx,cx			;
-	mov	cl,al			;
-	inc	cx			;cx←音量+1
-	xor	ax,ax			;ax←0
-	.if	(ds:[di].WTD_FlagControl & WTD_Ctrl_Effect)
-	  mov	al,ds:[bx].WTD_Sys_VolumeEffect	;ax←効果音音量
-	.else
-	  mov	al,ds:[bx].WTD_Sys_VolumeMusic	;ax←音楽音量
-	.endif
-
-
-;	mov	bx,offset CGROUP:I_Volume_Table	;log演算
-;	xlat
-;	xor	ah,ah
-	mov	si,ax			;
-	and	si,00ffh		;
-	mov	al,byte ptr cs:[CGROUP:I_Volume_Table + si]
-
-	inc	ax			;ax←ソフト音量+1
-	mul	cx			;
-	dec	ax			;al←((2*Vol.+1)×(SoftVol.+1)／256)-1
-	mov	al,ah			;(Range:0～255)
-	shr	al,1			;al÷2 (Range:0～127)
 
 	;音量の出力
 	mov	dx,offset CGROUP:I_Table_Volume
@@ -984,9 +1029,13 @@ I_Play_Emb	proc	near	uses	ax di si
 	lea	si,[di]
 	add	di,dx
 
-	;●Speed処理
-	dec	ds:[di].WTD_ChEmb_Counter
-	.if	(zero?)
+;	mov	al, ds:[di].WTD_ChEmb_Address
+;	and	al, 00Fh
+;	.if	!((ds:[di].WTD_ChEmb_LevelSet == 0) && (al == 00Ch))
+
+	  ;●Speed処理
+	  dec	ds:[di].WTD_ChEmb_Counter
+	  .if	(zero?)
 
 		;●アドレスの設定
 		xor	ax,ax
@@ -1042,7 +1091,8 @@ I_Play_Emb_StepEnd:					;
 
 		mov	ds:[di].WTD_ChEmb_LevelSet,al	
 
-	.endif
+	  .endif
+;	.endif
 
 	xor	dx,dx				;
 	mov	dl,ds:[di].WTD_ChEmb_LevelSet	;

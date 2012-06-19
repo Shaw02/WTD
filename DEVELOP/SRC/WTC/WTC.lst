@@ -1,0 +1,4719 @@
+Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:05
+WTC.asm							     Page 1 - 1
+
+
+				;=======================================================================|
+				;									|
+				;		Wander Swan Total Sound Driver				|
+				;				MML Compiler Program			|
+				;									|
+				;					Programmed by			|
+				;						A.Watanabe		|
+				;									|
+				;=======================================================================|
+
+				.186
+				.model	tiny,stdcall
+
+				;=======================================================================|
+				;				define					|
+				;=======================================================================|
+
+				include	lib_dos.inc
+			      C 
+			      C 
+			      C ComSmole	proto	near,	sizeCOM:WORD
+			      C ExeSmole	proto	near,	szDGROUP:WORD
+			      C Memory_Open	proto	near,	ParaSize:word
+			      C Memory_Close	proto	near,	CloseSegment:word
+			      C 
+			      C File_Create	proto	near,	cFilename:dword,iAttr:word
+			      C File_Open	proto	near,	cFilename:dword,cMode:byte
+			      C File_Close	proto	near,	hFile:word
+			      C File_Load	proto	near,	hFile:word,	cBuff:dword
+			      C File_Load_S	proto	near,	hFile:word,	iSize:word,	cBuff:dword
+			      C File_Write	proto	near,	hFile:word,	iSize:word,	cBuff:dword
+			      C File_Seek	proto	near,	hFile:word,	iControl:BYTE,	dOffset	:dword
+			      C 
+			      C ChangeExt			proto	near,	cFilename:dword,cExt:dword
+			      C Change_Current_Directory	proto	near,	cDirname:dword
+			      C 
+			      C File_Err	proto	near
+			      C 
+			      C 
+			      C 
+			      C ASC2HEX8	proto	near
+			      C ASC2HEX16	proto	near
+			      C HEX2ASC8	proto	near
+			      C HEX2ASC16	proto	near
+			      C FH2A8		proto	near
+			      C FH2A16		proto	near
+			      C H2A_F		proto	near,	iValue	:WORD,	iForm	:WORD
+			      C H2A8		proto	near
+			      C dat2hex8	proto	near
+			      C dat2hex16	proto	near
+			      C 
+			      C 
+			      C 
+
+				.dosseg
+
+				.stack	1000h
+
+ 0000				.data
+ = 'WTD',0			WtdIL_Name		equ	'WTD',0
+ = 0014				MusicMaxPart		equ	20	;製品版は20パート
+ = 0003				EffectMaxPart		equ	3	;効果音は3 パート
+
+ 0000 00			D_Debug			DB	00h		;デバッグフラグ
+
+				;=======================================================================|
+				;				Start Up				|
+				;=======================================================================|
+ 0000				.code
+					.startup
+ 0100			   *@Startup:
+ 0100  8C C8				mov	ax,cs
+ 0102  8E D0				mov	ss,ax
+ 0104  BC 1000 R			mov	sp,offset DGROUP:STACK
+					invoke	ComSmole,	sp	;メモリの最小化
+ 0107  54		   *	    push   sp
+ 0108  E8 0000 E	   *	    call   ComSmole
+
+ 010B  FC				cld
+
+ 010C  E8 0CCE				call	_main
+
+					.exit	0
+ 010F  B8 4C00		   *	    mov    ax, 04C00h
+ 0112  CD 21		   *	    int    021h
+
+				;---------------------------------------------------------------|
+				;		エラー処理					|
+				;---------------------------------------------------------------|
+				;引数								|
+				;	dx	表示文字列（エラー内容）			|
+				;---------------------------------------------------------------|
+ 0114				PRINT_ERR:
+ 0114  0E				push	cs			;
+ 0115  1F				pop	ds			;
+ 0116  B4 09				MOV	AH,09H			;
+ 0118  CD 21				INT	21H			;
+					.exit	255			;
+ 011A  B8 4CFF		   *	    mov    ax, 04CFFh
+ 011D  CD 21		   *	    int    021h
+
+				;=======================================================================|
+				;				Start					|
+				;=======================================================================|
+ 011F				.code
+				include bank.inc	;バンク
+			      C ;=======================================================================|
+			      C ;									|
+			      C ;			ＷａｎｄｅｒＳｗａｎ				|
+			      C ;				汎用定義ファイル			|
+			      C ;				ＢＩＯＳ編　－バンク制御		|
+			      C ;									|
+			      C ;						A.Watanabe (S.W.)	|
+			      C ;									|
+			      C ;=======================================================================|
+			      C ;===============機能番号定義	（AHレジスタに代入し、割り込みをかける。）
+ = 0000			      C BANK_SET_MAP			equ	00h	;バンクマッピング設定
+ = 0001			      C BANK_GET_MAP			equ	01h	;バンクマッピング取得
+ = 0002			      C BANK_READ_BYTE			equ	02h	;バンク指定１バイト読みこみ
+ = 0003			      C BANK_WRITE_BYTE			equ	03h	;バンク指定１バイト書きこみ
+ = 0004			      C BANK_READ_WORD			equ	04h	;バンク指定１ワード読みこみ
+ = 0005			      C BANK_WRITE_WORD			equ	05h	;バンク指定１ワード書きこみ
+ = 0006			      C BANK_READ_BLOCK			equ	06h	;バンク指定ブロック読みこみ
+ = 0007			      C BANK_WRITE_BLOCK		equ	07h	;バンク指定ブロック書きこみ
+ = 0008			      C BANK_FILL_BLOCK			equ	08h	;バンク指定ブロックフィル
+ = 0009			      C BANK_ERASE_FLASH		equ	09h	;ﾌﾗｯｼｭﾛﾑのﾌﾗｯｼｭ（メーカ未公開）
+			      C ;===============bank identifiers
+ = 0000			      C BANK_SRAM			equ	0	;バンク SRAM
+ = 0001			      C BANK_ROM0			equ	1	;バンク ROM0
+ = 0002			      C BANK_ROM1			equ	2	;バンク ROM1
+			      C 
+ = 1000			      C BANK_SRAM_ADDRESS		equ	01000h	;SRAM　のセグメントアドレス
+ = 2000			      C BANK_ROM0_ADDRESS		equ	02000h	;ROM0　のセグメントアドレス
+ = 3000			      C BANK_ROM1_ADDRESS		equ	03000h	;ROM1　のセグメントアドレス
+			      C 
+ = 007F			      C BANK_MAX_BANKS			equ	7Fh	;バンクの最大
+			      C 
+ = 0000			      C BANK_SOFTFS			equ	00h	;SRAM FreyaOS Filesys
+ = 0001			      C BANK_USERDS1			equ	01h	;SRAM FreyaOS Process 2
+ = 0002			      C BANK_USERDS0			equ	02h	;SRAM FreyaOS Peocess 1
+ = 0003			      C BANK_OSWORK			equ	03h	;SRAM FreyaOS Work
+			      C 
+			      C ;#define sram_get_map()		bank_get_map(BANK_SRAM)
+			      C SRAM_GET_MAP	macro
+			      C 		mov	ah,BANK_GET_MAP		;ファンクション番号
+			      C 		mov	bl,BANK_SRAM		;バンクの種類　SRAM
+			      C 		int	INT_BANK		;ファンクション呼び出し
+			      C 		endm
+			      C 
+			      C ;#define sram_set_map(bank)	bank_set_map(BANK_SRAM, bank)
+			      C SRAM_SET_MAP	macro	bank
+			      C 		mov	ah,BANK_SET_MAP		;ファンクション番号
+			      C 		mov	bl,BANK_SRAM		;バンクの種類　SRAM
+			      C 		mov	cx,bank			;バンク番号
+			      C 		int	INT_BANK		;ファンクション呼び出し
+			      C 		endm
+			      C 
+			      C ;#define rom0_get_map()		bank_get_map(BANK_ROM0)
+			      C ROM0_GET_MAP	macro
+			      C 		mov	ah,BANK_GET_MAP		;ファンクション番号
+			      C 		mov	bl,BANK_ROM0		;バンクの種類　ROM0
+			      C 		int	INT_BANK		;ファンクション呼び出し
+			      C 		endm
+			      C 
+			      C ;#define rom0_set_map(bank)	bank_set_map(BANK_ROM0, bank)
+			      C ROM0_SET_MAP	macro	bank
+			      C 		mov	ah,BANK_SET_MAP		;ファンクション番号
+			      C 		mov	bl,BANK_ROM0		;バンクの種類　ROM0
+			      C 		mov	cx,bank			;バンク番号
+			      C 		int	INT_BANK		;ファンクション呼び出し
+			      C 		endm
+			      C 
+			      C ;#define rom1_get_map()		bank_get_map(BANK_ROM1)
+			      C ROM1_GET_MAP	macro
+			      C 		mov	ah,BANK_GET_MAP		;ファンクション番号
+			      C 		mov	bl,BANK_ROM1		;バンクの種類　ROM1
+			      C 		int	INT_BANK		;ファンクション呼び出し
+			      C 		endm
+			      C 
+			      C ;#define rom1_set_map(bank)	bank_set_map(BANK_ROM1, bank)
+			      C ROM1_SET_MAP	macro	bank
+			      C 		mov	ah,BANK_SET_MAP		;ファンクション番号
+			      C 		mov	bl,BANK_ROM1		;バンクの種類　ROM1
+			      C 		mov	cx,bank			;バンク番号
+			      C 		int	INT_BANK		;ファンクション呼び出し
+			      C 		endm
+			      C 
+				include wtd_ver.inc	;WTD Version infomation
+			      C ;=======================================================================|
+			      C ;									|
+			      C ;		Wander Swan Total Sound Driver				|
+			      C ;				IL Struct define			|
+			      C ;				IL Function Routine			|
+			      C ;					Programmed by			|
+			      C ;						A.Watanabe		|
+			      C ;									|
+			      C ;=======================================================================|
+ = '1.0d',0		      C WtdIL_Version		equ	'1.0d',0	;文字列
+ = 010D			      C WTdIL_Version_N		equ	010dh		;数値
+			      C 
+				include wtd_def.inc	;WTD Define infomation
+			      C ;=======================================================================|
+			      C ;									|
+			      C ;		Wander Swan Total Sound Driver				|
+			      C ;				define file				|
+			      C ;					for Assemble Language		|
+			      C ;									|
+			      C ;					Programmed by			|
+			      C ;						A.Watanabe		|
+			      C ;									|
+			      C ;=======================================================================|
+			      C ;****************************************************************
+			      C ;*								*
+			      C ;*			マクロ定義				*
+			      C ;*								*
+			      C ;****************************************************************
+			      C ;===============================================================|
+			      C ;	マクロ	ワークエリアのアドレスを取得する		|
+			      C ;===============================================================|
+			      C ;	●マクロ書式						|
+			      C ;		WTD_WorkGet	reg1,reg2			|
+			      C ;	●引数							|
+			      C ;		DS	DGROUP					|
+			      C ;	●返値							|
+			      C ;		reg1	Segment Address				|
+			      C ;		reg2	Offset  Address				|
+			      C ;===============================================================|
+			      C WTD_WorkGet	macro	seg,off		;
+			      C ifdef	library	;------------------------	;※　ライブラリ版のみ必要
+			      C 
+			      C ifdef	IRAM	;---------------		;D-GROUP ＝ I-RAMの場合
+			      C 		push	IRAM_Segment		;
+			      C 		pop	seg			;
+			      C 		mov	off,offset DGROUP:_WTD_Work
+			      C 
+			      C else	;-----------------------		;D-GROUP ≠ S-RAMの場合
+			      C 		push	SRAM_Segment		;（WonderWitch等）
+			      C 		pop	seg			;
+			      C 		mov	off,offset DGROUP:_WTD_Work
+			      C endif	;-----------------------
+			      C 
+			      C else	;--------------------------------	;WonderWitch版
+			      C 		push	SRAM_Segment		;
+			      C 		pop	seg			;
+			      C 		mov	off,ds:[ProcContext_heap]
+			      C endif	;--------------------------------
+			      C 		endm				;
+			      C 
+			      C ;****************************************************************
+			      C ;*								*
+			      C ;*			定数					*
+			      C ;*								*
+			      C ;****************************************************************
+			      C ;===============================================================|
+			      C ;		ハードウェア割り込み				|
+			      C ;===============================================================|
+ = INT_HARDHAEW_VECTOR_BASE   C InterruptVectorBase_WW	equ	INT_HARDHAEW_VECTOR_BASE	;WonderWitch
+ = InterruptVectorBase_WW     C InterruptVectorBase	equ	InterruptVectorBase_WW		;割り込みベクタ
+			      C 
+			      C ;===============================================================|
+			      C ;		Wander Swan Segment Address			|
+			      C ;===============================================================|
+			      C ;セグメントアドレス定義
+ = 0000			      C IRAM_Segment		equ	0000h			;本体RAM
+ = BANK_SRAM_ADDRESS	      C SRAM_Segment		equ	BANK_SRAM_ADDRESS	;SRAM
+ = BANK_ROM0_ADDRESS	      C FROM_Segment		equ	BANK_ROM0_ADDRESS	;ROM
+			      C 
+			      C ;===============================================================|
+			      C ;		本体RAM Work Address				|
+			      C ;===============================================================|
+			      C ;CommEnpty_intvector	equ	000a0h		;割り込みベクタ(028h×4)
+			      C ;Hblank_intvector	equ	000bch		;割り込みベクタ(02fh×4)
+			      C 
+ = 0180			      C IRAM_SoundVoiceTable_WW	equ	00180h			;WonderWitch設定
+ = IRAM_SoundVoiceTable_WW    C IRAM_SoundVoiceTable	equ	IRAM_SoundVoiceTable_WW	;音色テーブル
+			      C 
+			      C ;===============================================================|
+			      C ;		ワーク領域アドレス				|
+			      C ;===============================================================|
+			      C ;構造体位置
+ = 0000			      C WTD_WorkAdd_User	equ	0000h		;ユーザ用ワーク
+ = 0100			      C WTD_WorkAdd_Wave	equ	0100h		;音色
+ = 0200			      C WTD_WorkAdd_Emb		equ	0200h		;エンベロープ
+ = 0380			      C WTD_WorkAdd_System	equ	0380h		;パート共通構造体
+			      C 
+ = 0400			      C WTD_WorkAdd_Ech0	equ	0400h		;Effect ch1
+ = 0480			      C WTD_WorkAdd_Ech1	equ	0480h		;Effect ch2
+ = 0500			      C WTD_WorkAdd_Ech2	equ	0500h		;Effect ch3
+ = 0580			      C WTD_WorkAdd_PCM		equ	0580h		;Effect PCM Voice
+			      C 
+ = 0600			      C WTD_WorkAdd_Ch0		equ	0600h		;ch0
+ = 0680			      C WTD_WorkAdd_Ch1		equ	0680h		;ch1
+ = 0700			      C WTD_WorkAdd_Ch2		equ	0700h		;ch2
+ = 0780			      C WTD_WorkAdd_Ch3		equ	0780h		;ch3
+ = 0800			      C WTD_WorkAdd_Ch4		equ	0800h		;ch4
+ = 0880			      C WTD_WorkAdd_Ch5		equ	0880h		;ch5
+ = 0900			      C WTD_WorkAdd_Ch6		equ	0900h		;ch6
+ = 0980			      C WTD_WorkAdd_Ch7		equ	0980h		;ch7
+ = 0A00			      C WTD_WorkAdd_Ch8		equ	0a00h		;ch8
+ = 0A80			      C WTD_WorkAdd_Ch9		equ	0a80h		;ch9
+ = 0B00			      C WTD_WorkAdd_Ch10	equ	0b00h		;ch10
+ = 0B80			      C WTD_WorkAdd_Ch11	equ	0b80h		;ch11
+ = 0C00			      C WTD_WorkAdd_Ch12	equ	0c00h		;ch12
+ = 0C80			      C WTD_WorkAdd_Ch13	equ	0c80h		;ch13
+ = 0D00			      C WTD_WorkAdd_Ch14	equ	0d00h		;ch14
+ = 0D80			      C WTD_WorkAdd_Ch15	equ	0d80h		;ch15
+ = 0E00			      C WTR_WorkAdd_Ch16	equ	0e00h		;ch16
+ = 0E80			      C WTD_WorkAdd_Ch17	equ	0e80h		;ch17
+ = 0F00			      C WTD_WorkAdd_Ch18	equ	0f00h		;ch18
+ = 0F80			      C WTD_WorkAdd_Ch19	equ	0f80h		;ch19
+			      C 
+ = 0080			      C WTD_WorkChSize		equ	080h		;ワークのサイズ
+ = 1000			      C WTD_WorkSize		equ	1000h		;ワークのサイズ
+			      C 
+ = WTD_WorkSize		      C WTD_WorkAdd_End		equ	WTD_WorkSize	;ワークの最後＋１
+			      C 
+			      C ;****************************************************************
+			      C ;*								*
+			      C ;*			構造体定義				*
+			      C ;*								*
+			      C ;****************************************************************
+			      C ;===============================================================|
+			      C ;		Micro Soft  RIFF and Wave data formats		|
+			      C ;===============================================================|
+			      C ;構造体定義 RIFF Header
+ 000D			      C Riff			struc			;
+ 0000  0004 [		      C Riff_Head		db	4	dup(?)	;'RIFF'
+        00
+       ]
+ 0004  00000000		      C Riff_Size		dd	?		;File Size(全体-8)
+ 0008  0004 [		      C Riff_Type		db	4	dup(?)	;'WAVE'
+        00
+       ]
+ 000C  00		      C Riff_Data		db	?		;データ
+			      C Riff			ends
+			      C 
+			      C ;構造体定義	RIFF struct
+ 0009			      C RiffHed			struc			;
+ 0000  0004 [		      C RiffHed_Head		db	4	dup(?)	;ヘッダ
+        00
+       ]
+ 0004  00000000		      C RiffHed_Size		dd	?		;ヘッダのデータのサイズ
+ 0008  00		      C RiffHed_Data		db	?		;ヘッダのデータ
+			      C RiffHed			ends			;
+			      C 
+			      C ;構造体定義	WAVE fmt
+ 0018			      C WaveFmt			struc			;
+ 0000  0004 [		      C WaveFmt_Head		db	4	dup(?)	;'fmt '
+        00
+       ]
+ 0004  00000000		      C WaveFmt_Size		dd	?		;16	[byte]
+ 0008  0000		      C WaveFmt_Type		dw	?		;1	(wave)
+ 000A  0000		      C WaveFmt_Channel		dw	?		;1	(mono)
+ 000C  00000000		      C WaveFmt_SamplingRate	dd	?		;11025	[Hz]
+ 0010  00000000		      C WaveFmt_SamplingSec	dd	?		;11025	[Byte]
+ 0014  0000		      C WaveFmt_DataSize	dw	?		;1	[Byte]
+ 0016  0000		      C WaveFmt_ChannelSize	dw	?		;8	[bit]
+			      C WaveFmt			ends			;
+			      C 
+			      C ;構造体定義	WAVE Data
+ 0009			      C WaveData		struc			;
+ 0000  0004 [		      C WaveData_Head		db	4	dup(?)	;'data'
+        00
+       ]
+ 0004  00000000		      C WaveData_Size		dd	?		;Data Size
+ 0008  00		      C WaveData_Data		db	?		;wave data
+			      C WaveData		ends			;
+			      C 
+			      C ;===============================================================|
+			      C ;		パート個別ワーク構造体				|
+			      C ;===============================================================|
+			      C ;構造体定数定義
+ = WTD_SweepLevel	      C WTD_NoiseMode		equ	WTD_SweepLevel	;
+ = WTD_Program		      C WTD_Voice		equ	WTD_Program	;
+ = WTD_ProgramRate	      C WTD_VoiceRate		equ	WTD_ProgramRate	;
+ = WTD_ProgramCnt	      C WTD_VoiceCnt		equ	WTD_ProgramCnt	;
+ = WTD_Program1st	      C WTD_Voice1st		equ	WTD_Program1st	;
+ = WTD_Program2nd	      C WTD_Voice2nd		equ	WTD_Program2nd	;
+ = WTD_Program3rd	      C WTD_Voice3rd		equ	WTD_Program3rd	;
+ = WTD_Bend		      C WTD_Frection		equ	WTD_Bend	;
+ = WTD_BendSet		      C WTD_FrectionSet		equ	WTD_BendSet	;
+ = WTD_ExprPanSet	      C WTD_Velocity		equ	WTD_ExprPanSet	;
+ = WTD_LoopCount	      C WTD_PcmAddress		equ	WTD_LoopCount	;発生中アドレス
+ = WTD_LoopCount+4	      C WTD_PcmSize		equ	WTD_LoopCount+4	;発生終了アドレス
+			      C ;---------------------------------------------------------------
+			      C ;パート個別構造体定義
+ 007A			      C WTD			struc			;各パート個別用	
+ 0000  0000		      C WTD_FlagControl		dw	?		;00-01	フラグ
+ 0002  00		      C WTD_FlagTai		db	?		;02	タイフラグ
+ 0003  00		      C WTD_FlagSharp		db	?		;03	#フラグ
+ 0004  00		      C WTD_FlagFlat		db	?		;04	bフラグ
+ 0005  00		      C WTD_Channel		db	?		;05	ﾁｬﾝﾈﾙ/ﾄﾗｯｸ
+ 0006  0000		      C WTD_Address		dw	?		;06-07	演奏中のｱﾄﾞﾚｽ
+ 0008  0008 [		      C WTD_LoopCount		db	8	dup(?)	;08-0F	ループ回数/PCM Address
+        00
+       ]
+ 0010  00		      C WTD_LoopCountPointer	db	?		;10	上記ﾎﾟｲﾝﾀ
+ 0011  00		      C WTD_Program		db	?		;11	出力した音色
+ 0012  00		      C WTD_SweepLevel		db	?		;12	ｽｳｨｰﾌﾟ値/ﾉｲｽﾞﾓｰﾄﾞ
+ 0013  00		      C WTD_SweepTime		db	?		;13	ｽｳｨｰﾌﾟ時間
+ 0014  0000		      C WTD_Leng		dw	?		;14-15	音長
+ 0016  0000		      C WTD_LengCounter		dw	?		;16-17	音長カウンター
+ 0018  0000		      C WTD_LengDefault		dw	?		;18-19	ﾃﾞﾌｫﾙﾄの音長
+ 001A  0000		      C WTD_KeyOffTime		dw	?		;1A-1B	ｹﾞｰﾄﾀｲﾑ制御値
+ 001C  0000		      C WTD_KeyOnDelay		dw	?		;1C-1D	ｷｰｵﾝﾃﾞｨﾚｲ
+ 001E  00		      C WTD_KeyShift		db	?		;1E	移調値
+ 001F  00		      C WTD_Key			db	?		;1F	音程
+ 0020  0008 [		      C WTD_KeySet		db	8	dup(?)	;20-27	出力した音程
+        00
+       ]
+ 0028  00		      C WTD_KeySetPointer	db	?		;28	上記ﾎﾟｲﾝﾀ
+ 0029  00		      C WTD_AcsentVelocity	db	?		;29	アクセント値
+ 002A  0000		      C WTD_BendSet		dw	?		;2A-2B	出力した周波数
+ 002C  0000		      C WTD_Bend		dw	?		;2C-2D	指定周波数
+ 002E  0000		      C WTD_BendDetune		dw	?		;2E-2F	ディチューン
+ 0030  00		      C WTD_BendLfoDecayRate	db	?		;30	LFOディケイレイト
+ 0031  00		      C WTD_BendLfoSpeedRate	db	?		;31	LFOスピード
+ 0032  0000		      C WTD_BendLfoLevel	dw	?		;32-33	LFO変位ﾚﾍﾞﾙ
+ 0034  00		      C WTD_BendLfoCount	db	?		;34	LFO変化回数
+ 0035  00		      C WTD_BendLfoRateCounter	db	?		;35	LFOレイト用カウンタ
+ 0036  0000		      C WTD_BendLfoLevelSet	dw	?		;36-37	LFO現在の変位ﾚﾍﾞﾙ
+ 0038  00		      C WTD_BendLfoCountCounter	db	?		;38	LFO回数用カウンタ
+ 0039  00		      C WTD_BendEmbAddress	db	?		;39	EMB番号（ｱﾄﾞﾚｽ）
+ 003A  00		      C WTD_BendEmbRate		db	?		;3A	EMBレイト
+ 003B  00		      C WTD_BendEmbCounter	db	?		;3B	EMBカウンター
+ 003C  00		      C WTD_BendEmbMaxMin	db	?		;3C	EMB最大／最小値
+ 003D  00		      C WTD_BendEmbLevelSet	db	?		;3D	EMB変位ﾚﾍﾞﾙ
+ 003E  00		      C WTD_ReleaseVolume	db	?		;3E	KeyOff時の音量
+ 003F  00		      C WTD_ExprPanSet		db	?		;3F	出力/ｳﾞｪﾛｼﾃｨｰ
+ 0040  00		      C WTD_ExprSet		db	?		;40	出力音量/ｴｸｽﾌﾟﾚｯｼｮﾝ
+ 0041  00		      C WTD_Expr		db	?		;41	音量/ｴｸｽﾌﾟﾚｯｼｮﾝ
+ 0042  0000		      C WTD_ExprDetune		dw	?		;42-43	音量増減値
+ 0044  00		      C WTD_ExprLfoDecayRate	db	?		;44	LFOディケイレイト
+ 0045  00		      C WTD_ExprLfoSpeedRate	db	?		;45	LFOスピード
+ 0046  0000		      C WTD_ExprLfoLevel	dw	?		;46-47	LFO変位ﾚﾍﾞﾙ
+ 0048  00		      C WTD_ExprLfoCount	db	?		;48	LFO変化回数
+ 0049  00		      C WTD_ExprLfoRateCounter	db	?		;49	LFOレイト用カウンタ
+ 004A  0000		      C WTD_ExprLfoLevelSet	dw	?		;4A-4B	LFO現在の変位ﾚﾍﾞﾙ
+ 004C  00		      C WTD_ExprLfoCountCounter	db	?		;4C	LFO回数用カウンタ
+ 004D  00		      C WTD_ExprEmbAddress	db	?		;4D	EMB番号（ｱﾄﾞﾚｽ）
+ 004E  00		      C WTD_ExprEmbRate		db	?		;4E	EMBレイト
+ 004F  00		      C WTD_ExprEmbCounter	db	?		;4F	EMBカウンター
+ 0050  00		      C WTD_ExprEmbMaxMin	db	?		;50	EMB最大／最小値
+ 0051  00		      C WTD_ExprEmbLevelSet	db	?		;51	EMB変位ﾚﾍﾞﾙ
+ 0052  00		      C WTD_WorkAddress		db	?		;52	ワークｱﾄﾞﾚｽ上位8BIT
+ 0053  00		      C WTD_OctaveSet		db	?		;53	出力したオクターブ
+ 0054  00		      C WTD_Octave		db	?		;54	指定オクターブ
+ 0055  00		      C WTD_GateTime8		db	?		;55	ｹﾞｰﾄﾀｲﾑ（Q,U)
+ 0056  0000		      C WTD_GateTimeStepLast	dw	?		;56-57	ｹﾞｰﾄﾀｲﾑ(q)
+ 0058  0000		      C WTD_GateTimeStepFirst	dw	?		;58-59	ｹﾞｰﾄﾀｲﾑ(u)
+ 005A  00		      C WTD_VolumeUpDown	db	?		;5A	相対ボリュームの増減値
+ 005B  0000		      C WTD_ModDecay		dw	?		;5B-5C	ﾓｼﾞｭﾚｰｼｮﾝ ﾃﾞｨｹｲﾚｲﾄ
+ 005D  00		      C WTD_ModLevel		db	?		;5D	ﾓｼﾞｭﾚｰｼｮﾝ ﾚﾍﾞﾙ
+ 005E  00		      C WTD_ModLevelSet		db	?		;5E	現在のﾓｼﾞｭﾚｰｼｮﾝ ﾚﾍﾞﾙ
+ 005F  00		      C WTD_Null_5F		db	?		;5F	未使用
+ 0060  00		      C WTD_PanSet		db	?		;60	出力パンポット
+ 0061  00		      C WTD_Pan			db	?		;61	パンポット
+ 0062  0000		      C WTD_PanDetune		dw	?		;62-63	音量増減値
+ 0064  00		      C WTD_PanLfoDecayRate	db	?		;64	LFOディケイレイト
+ 0065  00		      C WTD_PanLfoSpeedRate	db	?		;65	LFOスピード
+ 0066  0000		      C WTD_PanLfoLevel		dw	?		;66-67	LFO変位ﾚﾍﾞﾙ
+ 0068  00		      C WTD_PanLfoCount		db	?		;68	LFO変化回数
+ 0069  00		      C WTD_PanLfoRateCounter	db	?		;69	LFOレイト用カウンタ
+ 006A  0000		      C WTD_PanLfoLevelSet	dw	?		;6A-6B	LFO現在の変位ﾚﾍﾞﾙ
+ 006C  00		      C WTD_PanLfoCountCounter	db	?		;6C	LFO回数用カウンタ
+ 006D  00		      C WTD_PanEmbAddress	db	?		;6D	EMB番号（ｱﾄﾞﾚｽ）
+ 006E  00		      C WTD_PanEmbRate		db	?		;6E	EMBレイト
+ 006F  00		      C WTD_PanEmbCounter	db	?		;6F	EMBカウンター
+ 0070  00		      C WTD_PanEmbMaxMin	db	?		;60	EMB最大／最小値
+ 0071  00		      C WTD_PanEmbLevelSet	db	?		;61	EMB変位ﾚﾍﾞﾙ
+ 0072  0000		      C WTD_ProgramRate		dw	?		;62-63	音色を変える。
+ 0074  00		      C WTD_Program1st		db	?		;64	音色の初期値
+ 0075  00		      C WTD_Program2nd		db	?		;65	経時変化
+ 0076  00		      C WTD_Program3rd		db	?		;66	KeyOff後音色
+ 0077  00		      C WTD_ProgramDecay	db	?		;67	経時変化２
+ 0078  0000		      C WTD_ProgramDecayRate	dw	?		;68-69	音色を変える２
+			      C 
+			      C WTD			ends
+			      C ;---------------------------------------------------------------
+			      C ;構造体位置
+ = WTD_BendLfoDecayRate	      C WTD_BendLFO		equ	WTD_BendLfoDecayRate	;ChLFO構造体先頭
+ = WTD_ExprLfoDecayRate	      C WTD_ExprLFO		equ	WTD_ExprLfoDecayRate	;ChLFO構造体先頭
+ = WTD_PanLfoDecayRate	      C WTD_PanLFO		equ	WTD_PanLfoDecayRate	;ChLFO構造体先頭
+ = WTD_BendEmbAddress	      C WTD_BendEmb		equ	WTD_BendEmbAddress	;ChEmb構造体先頭
+ = WTD_ExprEmbAddress	      C WTD_ExprEmb		equ	WTD_ExprEmbAddress	;ChEmb構造体先頭
+ = WTD_PanEmbAddress	      C WTD_PanEmb		equ	WTD_PanEmbAddress	;ChEmb構造体先頭
+			      C 
+			      C ;ChLFO構造体
+ 0009			      C WTD_ChLfo		struc
+ 0000  00		      C WTD_ChLfo_DecayRate	db	?		;	LFOディケイレイト
+ 0001  00		      C WTD_ChLfo_SpeedRate	db	?		;	LFOスピード
+ 0002  0000		      C WTD_ChLfo_Level		dw	?		;	LFO変位ﾚﾍﾞﾙ
+ 0004  00		      C WTD_ChLfo_Count		db	?		;	LFO変化回数
+ 0005  00		      C WTD_ChLfo_RateCounter	db	?		;	LFOレイト用カウンタ
+ 0006  0000		      C WTD_ChLfo_LevelSet	dw	?		;	LFO現在の変位ﾚﾍﾞﾙ
+ 0008  00		      C WTD_ChLfo_CountCounter	db	?		;	LFO回数用カウンタ
+			      C WTD_ChLfo		ends
+			      C ;ChEmb構造体
+ 0005			      C WTD_ChEmb		struc
+ 0000  00		      C WTD_ChEmb_Address	db	?		;	EMB番号（ｱﾄﾞﾚｽ）
+ 0001  00		      C WTD_ChEmb_Rate		db	?		;	EMBレイト
+ 0002  00		      C WTD_ChEmb_Counter	db	?		;	EMBカウンター
+ 0003  00		      C WTD_ChEmb_MaxMin	db	?		;	EMB最大／最小値
+ 0004  00		      C WTD_ChEmb_LevelSet	db	?		;	EMB変位ﾚﾍﾞﾙ
+			      C WTD_ChEmb		ends
+			      C ;---------------------------------------------------------------
+			      C ;フラグビット・セット
+ = 0001			      C WTD_Ctrl_BendLfo	equ	00001h		;音程ＬＦＯスイッチ
+ = 0002			      C WTD_Ctrl_BendEmb	equ	00002h		;音程エンベロープスイッチ
+ = 0004			      C WTD_Ctrl_ExprLfo	equ	00004h		;音量ＬＦＯスイッチ
+ = 0008			      C WTD_Ctrl_ExprEmb	equ	00008h		;音量エンベロープスイッチ
+ = 0010			      C WTD_Ctrl_PanLfo		equ	00010h		;パンＬＦＯスイッチ
+ = 0020			      C WTD_Ctrl_PanEmb		equ	00020h		;パンエンベロープスイッチ
+ = 0040			      C WTD_Ctrl_Acsent		equ	00040h		;次の音階はアクセント
+ = 0080			      C WTD_Ctrl_EmbFreq	equ	00080h		;音程エンベロープ 上位bit
+ = 0100			      C WTD_Ctrl_EmbVol		equ	00100h		;音量エンベロープ 上位bit
+ = 0200			      C WTD_Ctrl_EmbPan		equ	00200h		;パンエンベロープ 上位bit
+ = 0400			      C WTD_Ctrl_Vol0		equ	00400h		;音量＝０ & Relase
+ = 0800			      C WTD_Ctrl_WorkSw		equ	00800h		;次のコマンドは、ワーク参照
+ = 1000			      C WTD_Ctrl_WorkCy		equ	01000h		;ワーク演算結果、オーバーフロー
+ = 2000			      C WTD_Ctrl_WorkZe		equ	02000h		;ワーク演算結果、０になった。
+ = 4000			      C WTD_Ctrl_Effect		equ	04000h		;このパートは効果音か？
+ = 8000			      C WTD_Ctrl_PlayEnd	equ	08000h		;演奏終了
+			      C ;---------------------------------------------------------------
+			      C ;フラグビット・リセット
+ = FFFE			      C WTD_Ctrl_BendLfoR	equ	0fffeh		;音程ＬＦＯスイッチ
+ = FFFD			      C WTD_Ctrl_BendEmbR	equ	0fffdh		;音程エンベロープスイッチ
+ = FFFB			      C WTD_Ctrl_ExprLfoR	equ	0fffbh		;音量ＬＦＯスイッチ
+ = FFF7			      C WTD_Ctrl_ExprEmbR	equ	0fff7h		;音量エンベロープスイッチ
+ = FFEF			      C WTD_Ctrl_PanLfoR	equ	0ffefh		;パンＬＦＯスイッチ
+ = FFDF			      C WTD_Ctrl_PamEmbR	equ	0ffdfh		;パンエンベロープスイッチ
+ = FFBF			      C WTD_Ctrl_AcsentR	equ	0ffbfh		;次の音階はアクセント
+ = FF7F			      C WTD_Ctrl_EmbFreqR	equ	0ff7fh		;音程エンベロープ 上位bit
+ = FEFF			      C WTD_Ctrl_EmbVolR	equ	0feffh		;音量エンベロープ 上位bit
+ = FDFF			      C WTD_Ctrl_EmbPanR	equ	0fdffh		;パンエンベロープ 上位bit
+ = FBFF			      C WTD_Ctrl_Vol0R		equ	0fbffh		;音量＝０ & Relase
+ = F7FF			      C WTD_Ctrl_WorkSwR	equ	0f7ffh		;次のコマンドは、ワーク参照
+ = EFFF			      C WTD_Ctrl_WorkCyR	equ	0efffh		;ワーク演算結果、オーバーフロー
+ = DFFF			      C WTD_Ctrl_WorkZeR	equ	0dfffh		;ワーク演算結果、０になった。
+ = BFFF			      C WTD_Ctrl_EffectR	equ	0bfffh		;このパートは効果音か？
+ = 7FFF			      C WTD_Ctrl_PlayEndR	equ	07fffh		;演奏終了
+			      C 
+			      C ;===============================================================|
+			      C ;		パート共通ワーク構造体				|
+			      C ;===============================================================|
+ 0034			      C WTD_Sys			struc			;システム全体	
+ 0000  0000		      C WTD_Sys_Flag		dw	?		;00	Flag
+ 0002  0000		      C WTD_Sys_ProgramOffset	dw	?		;02	Program Offset Address
+ 0004  0000		      C WTD_Sys_ProgramSegment	dw	?		;04	Program Segment Address
+ 0006  0000		      C WTD_Sys_MusicOffset	dw	?		;06	Music Offset Address
+ 0008  0000		      C WTD_Sys_MusicSegment	dw	?		;08	Music Segment Address
+ 000A  0000		      C WTD_Sys_EffectOffset	dw	?		;0a	Effect Offset Address
+ 000C  0000		      C WTD_Sys_EffectSegment	dw	?		;0c	Effect Segment Address
+ 000E  0000		      C WTD_Sys_PcmOffset	dw	?		;0e	Pcm Offset Address
+ 0010  0000		      C WTD_Sys_PcmSegment	dw	?		;10	Pcm Segment Address
+ 0012  0000		      C WTD_Sys_StayOutMask	dw	?		;12	常駐解除禁止
+ 0014  0002 [		      C WTD_Sys_OldIntvector	dw	2	dup(?)	;14-17	前の割り込みベクタ
+        0000
+       ]
+ 0018  0002 [		      C WTD_Sys_OldIntvectorCom	dw	2	dup(?)	;18-1B	前の割り込みベクタ
+        0000
+       ]
+ 001C  0000		      C WTD_Sys_ComFIFO_Offset	dw	?		;1C-1D	FIFO Offset Address
+ 001E  0000		      C WTD_Sys_ComFIFO_Segment	dw	?		;1E-1F	FIFO Segment Address
+ 0020  00		      C WTD_Sys_Null_20		db	?		;20	未使用
+ 0021  00		      C WTD_Sys_VolumeMusic	db	?		;21	ソフトウェア音量 演奏
+ 0022  00		      C WTD_Sys_VolumeEffect	db	?		;22	ソフトウェア音量 効果音
+ 0023  00		      C WTD_Sys_VolumePCM	db	?		;23	ソフトウェア音量 PCM
+ 0024  0000		      C WTD_Sys_Tempo		dw	?		;24	テンポ
+ 0026  0000		      C WTD_Sys_TempoCounter	dw	?		;26	テンポカウンタ
+ 0028  00		      C WTD_Sys_MusicPart	db	?		;28	演奏のパート数(最大20)
+ 0029  00		      C WTD_Sys_EffectPart	db	?		;29	効果音のパート数(最大3)
+ 002A  0000		      C WTD_Sys_ComFIFO_Cnt	dw	?		;2A-2B	FIFO ポインタ 書き込み
+ 002C  0000		      C WTD_Sys_ComFIFO_Adr	dw	?		;2C-2D	FIFO ポインタ 送信
+ 002E  0000		      C WTD_Sys_ComFIFO_Size	dw	?		;2E-2F	FIFO サイズ
+ 0030  00		      C WTD_Sys_RunningStatus	db	?		;30	MIDI Running Status
+ 0031  00		      C WTD_Sys_InterruptBase	db	?		;31	割り込みベースベクタ
+ 0032  0000		      C WTD_Sys_VoiceTableOffset dw	?		;32	音色Table(IRAM)Address
+			      C WTD_Sys			ends			
+			      C ;---------------------------------------------------------------
+			      C ;フラグビット・セット
+ = 0001			      C WTD_Sys_Music		equ	00001h		;演奏中
+ = 0002			      C WTD_Sys_Effect		equ	00002h		;効果音発声中
+ = 0004			      C WTD_Sys_Pcm		equ	00004h		;PCMボイス発生中
+ = 0008			      C WTD_Sys_3		equ	00008h		;	(元：PCM Voice終了)
+ = 0010			      C WTD_Sys_Midi		equ	00010h		;MIDIモード(システムでは未使用)
+ = 0020			      C WTD_Sys_5		equ	00020h		;
+ = 0040			      C WTD_Sys_6		equ	00040h		;
+ = 0080			      C WTD_Sys_TimerEmulate	equ	00080h		;タイマーをエミュレート中
+ = 0100			      C WTD_Sys_ChannelMode1	equ	00100h		;チャンネルモード ch1
+ = 0200			      C WTD_Sys_ChannelMode2	equ	00200h		;チャンネルモード ch2
+ = 0400			      C WTD_Sys_ChannelMode3	equ	00400h		;チャンネルモード ch3
+ = 0800			      C WTD_Sys_ChannelMode4	equ	00800h		;チャンネルモード ch4
+ = 1000			      C WTD_Sys_EffectMask1	equ	01000h		;効果音パートマスク ch1
+ = 2000			      C WTD_Sys_EffectMask2	equ	02000h		;効果音パートマスク ch2
+ = 4000			      C WTD_Sys_EffectMask3	equ	04000h		;効果音パートマスク ch3
+ = 8000			      C WTD_Sys_EffectMask4	equ	08000h		;効果音パートマスク ch4
+			      C ;---------------------------------------------------------------
+			      C ;フラグビット・リセット
+ = FFFE			      C WTD_Sys_MusicR		equ	0fffeh		;演奏中
+ = FFFD			      C WTD_Sys_EffectR		equ	0fffdh		;効果音発声中
+ = FFFB			      C WTD_Sys_PcmR		equ	0fffbh		;PCMボイス発生中
+ = FFF7			      C WTD_Sys_3R		equ	0fff7h		;	(元：PCM Voice終了)
+ = FFEF			      C WTD_Sys_MidiR		equ	0ffefh		;MIDIモード(システムでは未使用)
+ = FFDF			      C WTD_Sys_5R		equ	0ffdfh		;
+ = FFBF			      C WTD_Sys_6R		equ	0ffbfh		;
+ = FF7F			      C WTD_Sys_TimerEmulateR	equ	0ff7fh		;タイマーをエミュレート中
+ = FEFF			      C WTD_Sys_ChannelMode1R	equ	0feffh		;チャンネルモード ch1
+ = FDFF			      C WTD_Sys_ChannelMode2R	equ	0fdffh		;チャンネルモード ch2
+ = FBFF			      C WTD_Sys_ChannelMode3R	equ	0fbffh		;チャンネルモード ch3
+ = F7FF			      C WTD_Sys_ChannelMode4R	equ	0f7ffh		;チャンネルモード ch4
+ = EFFF			      C WTD_Sys_EffectMask1R	equ	0efffh		;効果音パートマスク ch1
+ = DFFF			      C WTD_Sys_EffectMask2R	equ	0dfffh		;効果音パートマスク ch2
+ = BFFF			      C WTD_Sys_EffectMask3R	equ	0bfffh		;効果音パートマスク ch3
+ = 7FFF			      C WTD_Sys_EffectMask4R	equ	07fffh		;効果音パートマスク ch4
+			      C 
+			      C ;===============================================================|
+			      C ;		ソフトウェアエンベロープ構造体			|
+			      C ;===============================================================|
+ 0010			      C WTD_Emb			struc
+ 0000  00		      C WTD_Emb_AR		db	?		;00h	:Attack Rate
+ 0001  00		      C WTD_Emb_AS		db	?		;01h	:Attack Speed (001h)
+ 0002  00		      C WTD_Emb_AL		db	?		;02h	:Attack Level (0FFh)
+ 0003  00		      C WTD_Emb_FL		db	?		;03h	:First Level
+ 0004  00		      C WTD_Emb_DR		db	?		;04h	:Decay Rate
+ 0005  00		      C WTD_Emb_DS		db	?		;05h	:Decay Speed (081h)
+ 0006  00		      C WTD_Emb_DL		db	?		;06h	:Decay Level
+ 0007  00		      C WTD_Emb_Null1		db	?		;07h	:未使用
+ 0008  00		      C WTD_Emb_SR		db	?		;08h	:Sustain Rate
+ 0009  00		      C WTD_Emb_SS		db	?		;09h	:Sustain Speed (081h)
+ 000A  00		      C WTD_Emb_SL		db	?		;0Ah	:Sustain Level (000h)
+ 000B  00		      C WTD_Emb_Null2		db	?		;0Bh	:未使用
+ 000C  00		      C WTD_Emb_RR		db	?		;0Ch	:Relase Rate
+ 000D  00		      C WTD_Emb_RS		db	?		;0Dh	:Relase Speed (081h)
+ 000E  00		      C WTD_Emb_RL		db	?		;0Eh	:Relase Level (000h)
+ 000F  00		      C WTD_Emb_Null3		db	?		;0Fh	:未使用
+			      C WTD_Emb			ends				
+			      C 
+			      C ;===============================================================|
+			      C ;			曲データ構造体				|
+			      C ;===============================================================|
+ 0012			      C WTD_Mus			struc
+ 0000  0004 [		      C WTD_Mus_Name		db	4	dup(?)	;00-03h	:選別子
+        00
+       ]
+ 0004  0000		      C WTD_Mus_Version		dw	?		;04-05h	:Version
+ 0006  0000		      C WTD_Mus_Extr		dw	?		;06-07h	:拡張ヘッダサイズ
+ 0008  00		      C WTD_Mus_Emb		db	?		;08h	:エンベロープ数量
+ 0009  00		      C WTD_Mus_Voice		db	?		;09h	:波形データ数量
+ 000A  00		      C WTD_Mus_Part		db	?		;0Ah	:パート数
+ 000B  00		      C WTD_Mus_TimeBase	db	?		;0Bh	:４部音符の分割数
+ 000C  0000		      C WTD_Mus_ExtrAdr		dw	?		;0Ch	:拡張ヘッダのアドレス
+ 000E  0000		      C WTD_Mus_DataAdr		dw	?		;0Eh	:データのアドレス
+ 0010  0000		      C WTD_Mus_PartAdr		dw	?		;10h	:曲データアドレス
+			      C WTD_Mus			ends
+			      C 
+			      C ;===============================================================|
+			      C ;			拡張ヘッダー構造体定義			|
+			      C ;===============================================================|
+ 0000			      C WTD_MusEx		struc
+			      C ;
+			      C ;			現在、未使用
+			      C ;
+			      C WTD_MusEx		ends
+			      C 
+			      C 
+				include wtc_def.inc	;Define
+			      C ;=======================================================================|
+			      C ;									|
+			      C ;		Wander Swan Total Sound Driver				|
+			      C ;				MML Compiler Program			|
+			      C ;				Define file				|
+			      C ;									|
+			      C ;					Programmed by			|
+			      C ;						A.Watanabe		|
+			      C ;									|
+			      C ;=======================================================================|
+			      C ;****************************************************************
+			      C ;*								*
+			      C ;*			変数					*
+			      C ;*								*
+			      C ;****************************************************************
+			      C ;===============================================================|
+			      C ;		MS-DOS	Fileハンドル & ファイル制御用		|
+			      C ;===============================================================|
+ 0000			      C .data?
+			      C ;●コンパイル前ファイル
+ 0000 0000		      C hMml_File	dw	?		;ハンドル(h)
+ 0002 0000		      C szMml_File	dw	?		;ファイルサイズ(sz)
+ 0004 0000		      C pMml_File	dw	?		;アドレス管理(p)
+ 0006 0000		      C segMml_File	dw	?		;アドレス管理(Segment)
+			      C 
+			      C ;●コンパイル後ファイル
+ 0008 0000		      C hWtd_File	dw	?		;
+ 000A 0000		      C szWtd_File	dw	?		;
+ 000C 0000		      C pWtd_File	dw	?		;
+ 000E 0000		      C segWtd_File	dw	?		;
+			      C 
+			      C ;●音色ファイル用（全て、local変数にした。）
+			      C ;hVoice_File	dw	?		;
+			      C ;szVoice_File	dw	?		;
+			      C ;pVoice_File	dw	?		;
+			      C ;segVoice_File	dw	?		;
+			      C 
+			      C ;●インクルードファイル用（全て、local変数にした。）
+			      C ;hInclude_File		dw	?		;
+			      C ;szInclude_File		dw	?		;
+			      C ;pInclude_File		dw	?		;
+			      C ;segInclude_File	dw	?		;
+			      C 
+			      C ;●デバッグ用（全て、local変数にした。）
+			      C ;hTest_File	dw	?		;
+			      C ;szTest_File	dw	?		;
+			      C ;pTest_File	dw	?		;
+			      C ;segTest_File	dw	?		;
+			      C 
+			      C 
+
+				include sub_cnv.asm	;10進 16進 変換
+			      C ;=======================================================================|
+			      C ;									|
+			      C ;	変換サブルーチン						|
+			      C ;		10進（ASCII）	─　16進(BIN)				|
+			      C ;		16進（BIN）	－　10進（ASCII）			|
+			      C ;		16進（BIN）	－　16進（ASCII）			|
+			      C ;									|
+			      C ;					Programmed by			|
+			      C ;						────		|
+			      C ;									|
+			      C ;=======================================================================|
+			      C ;---------------------------------------------------------------|
+			      C ;		ASCII CODE→１６進コード(-128～256)		|
+			      C ;			数値データがあるまでずっと		|
+			      C ;---------------------------------------------------------------|
+			      C ;	引数							|
+			      C ;		CS:[pMML_File] ←変換したい文字列先頭アドレス	|
+			      C ;		ES←MML Dataのあるセグメント			|
+			      C ;	返り値							|
+			      C ;		AH←データ					|
+			      C ;		CS:[pMML_File] ←次のアドレス			|
+			      C ;---------------------------------------------------------------|
+ 011F			      C .code
+ 011F			      C A2H8R	proc	near
+ 011F  53		      C 	PUSH	BX			;
+ 0120  51		      C 	PUSH	CX			;
+ 0121  52		      C 	PUSH	DX			;
+ 0122  1E		      C 	PUSH	DS			;
+ 0123  8A C8		      C 	MOV	CL,AL			;ALの保存
+ 0125  50		      C 	PUSH	AX			;
+ 0126  8C C0		      C 	MOV	AX,ES			;
+ 0128  8E D8		      C 	MOV	DS,AX			;
+ 012A  58		      C 	POP	AX			;
+ 012B  2E: 8B 16 0004 R	      C 	MOV	DX,CS:[pMML_File]	;
+ 0130  E8 0096		      C A2H8R1:	CALL	COMMENT_CHK		;コメントチェック
+ 0133  E8 0000 E	      C 	CALL	ASC2HEX8		;ASC Code →16進Code変換
+ 0136  8B D3		      C 	MOV	DX,BX			;
+ 0138  73 02		      C 	JNC	A2H8RR			;変換不可能？だったら
+ 013A  EB F4		      C 	JMP	A2H8R1			;やり直し。
+ 013C  2E: 89 16 0004 R	      C A2H8RR:	MOV	CS:[pMML_File],DX	;
+ 0141  8A C1		      C 	MOV	AL,CL			;ALの復帰
+ 0143  1F		      C 	POP	DS			;
+ 0144  5A		      C 	POP	DX			;
+ 0145  59		      C 	POP	CX			;
+ 0146  5B		      C 	POP	BX			;
+ 0147  C3		      C 	RET				;RETURN
+ 0148			      C A2H8R	endp
+			      C ;---------------------------------------------------------------|
+			      C ;		ASCII CODE→１６進コード(-32767～65535)		|
+			      C ;			数値データがあるまでずっと		|
+			      C ;---------------------------------------------------------------|
+			      C ;	引数							|
+			      C ;		CS:[pMML_File] ←変換したい文字列先頭アドレス	|
+			      C ;		ES←MML Dataのあるセグメント			|
+			      C ;	返り値							|
+			      C ;		AX←データ					|
+			      C ;		CS:[pMML_File] ←次のアドレス			|
+			      C ;---------------------------------------------------------------|
+ 0148			      C A2H16R	proc	near
+ 0148  E8 007E		      C 	CALL	COMMENT_CHK		;コメントチェック
+			      C 
+ 014B  53		      C 	PUSH	BX			;
+ 014C  52		      C 	PUSH	DX			;
+ 014D  1E		      C 	PUSH	DS			;
+ 014E  50		      C 	PUSH	AX			;
+ 014F  8C C0		      C 	MOV	AX,ES			;
+ 0151  8E D8		      C 	MOV	DS,AX			;
+ 0153  58		      C 	POP	AX			;
+ 0154  2E: 8B 16 0004 R	      C 	MOV	DX,CS:[pMML_File]	;
+ 0159  E8 0000 E	      C A2H16R1:CALL	ASC2HEX16		;ASC Code →16進Code変換
+ 015C  8B D3		      C 	MOV	DX,BX			;
+ 015E  73 02		      C 	JNC	A2H16RR			;変換不可能？だったら
+ 0160  EB F7		      C 	JMP	A2H16R1			;やり直し。
+ 0162  2E: 89 16 0004 R	      C A2H16RR:MOV	CS:[pMML_File],DX	;
+ 0167  1F		      C 	POP	DS			;
+ 0168  5A		      C 	POP	DX			;
+ 0169  5B		      C 	POP	BX			;
+ 016A  C3		      C 	RET				;RETURN
+ 016B			      C A2H16R	endp
+			      C ;---------------------------------------------------------------|
+			      C ;		コンパイルデータ読み込み			|
+			      C ;---------------------------------------------------------------|
+			      C ;	引数							|
+			      C ;		CS:[pMML_File]：コンパイルアドレス		|
+			      C ;		ES←MML Dataのあるセグメント			|
+			      C ;	返り値							|
+			      C ;		AH	 　：データ				|
+			      C ;		CS:[pMML_File]：次のアドレス			|
+			      C ;---------------------------------------------------------------|
+ 016B			      C CREAD	proc	near	uses	si
+			      C 
+ 016B  56		   *	    push   si
+ 016C  E8 005A		      C 	call	COMMENT_CHK		;
+ 016F  2E: 8B 36 0004 R	      C 	MOV	si,CS:[pMML_File]	;BX←コンパイルするアドレス
+ 0174  26: 8A 24	      C 	mov	ah,es:[si]		;AH←そこのデータ
+ 0177  46		      C 	inc	si			;BX（ポインタ）を増加
+ 0178  2E: 89 36 0004 R	      C 	mov	cs:[pMML_File],si	;
+ 017D  2E: 39 36 0002 R	      C 	cmp	cs:[szMml_File],si	;ポインタがサイズを越えていたらCy←'H'
+			      C 
+			      C 	RET				;
+ 0182  5E		   *	    pop    si
+ 0183  C3		   *	    ret    00000h
+ 0184			      C CREAD	endp
+			      C ;---------------------------------------------------------------|
+ 0184			      C CREAD_L	proc	near	uses	si
+			      C 
+ 0184  56		   *	    push   si
+ 0185  E8 0041		      C 	call	COMMENT_CHK		;
+ 0188  2E: 8B 36 0004 R	      C 	MOV	si,CS:[pMML_File]	;si←コンパイルするアドレス
+ 018D  26: AC		      C 	lodsb	es:[si]			;AL←そこのデータ
+ 018F  2E: 89 36 0004 R	      C 	mov	cs:[pMML_File],si	;
+ 0194  2E: 39 36 0002 R	      C 	cmp	cs:[szMml_File],si	;ポインタがサイズを越えていたらCy←'H'
+			      C 
+			      C 	RET				;
+ 0199  5E		   *	    pop    si
+ 019A  C3		   *	    ret    00000h
+ 019B			      C CREAD_L	endp
+			      C ;---------------------------------------------------------------|
+			      C ;		コンパイルデータ書き込み			|
+			      C ;---------------------------------------------------------------|
+			      C ;	引数							|
+			      C ;		AH	 　：データ				|
+			      C ;		CS:[pWTD_File]：コンパイルアドレス		|
+			      C ;		DS←FSP データを書くセグメント			|
+			      C ;	返り値							|
+			      C ;		CS:[pWTD_File]：次のアドレス			|
+			      C ;---------------------------------------------------------------|
+ 019B			      C CSET	proc	near	uses	di
+ 019B  57		   *	    push   di
+ 019C  2E: 8B 3E 000C R	      C 	MOV	di,CS:[pWTD_File]	;di←コンパイルしたアドレス
+ 01A1  88 25		      C 	MOV	DS:[di],AH		;書き込み
+ 01A3  2E: FF 06 000C R	      C 	inc	CS:[pWTD_File]		;（ポインタ）増加
+			      C 	RET				;
+ 01A8  5F		   *	    pop    di
+ 01A9  C3		   *	    ret    00000h
+ 01AA			      C CSET	endp
+			      C ;---------------------------------------------------------------
+ 01AA			      C CSET_L	proc	near	uses	di
+ 01AA  57		   *	    push   di
+ 01AB  2E: 8B 3E 000C R	      C 	MOV	di,CS:[pWTD_File]	;di←コンパイルしたアドレス
+ 01B0  88 05		      C 	MOV	DS:[di],al		;書き込み
+ 01B2  2E: FF 06 000C R	      C 	inc	CS:[pWTD_File]		;（ポインタ）増加
+			      C 	RET				;
+ 01B7  5F		   *	    pop    di
+ 01B8  C3		   *	    ret    00000h
+ 01B9			      C CSET_L	endp
+			      C ;---------------------------------------------------------------
+ 01B9			      C CSET16	proc	near	uses	di
+ 01B9  57		   *	    push   di
+ 01BA  2E: 8B 3E 000C R	      C 	MOV	di,CS:[pWTD_File]	;di←コンパイルしたアドレス
+ 01BF  89 05		      C 	MOV	DS:[di],ax		;書き込み
+ 01C1  2E: 83 06 000C R	      C 	add	CS:[pWTD_File],2	;（ポインタ）増加
+       02
+			      C 	RET				;
+ 01C7  5F		   *	    pop    di
+ 01C8  C3		   *	    ret    00000h
+ 01C9			      C CSET16	endp
+			      C ;---------------------------------------------------------------|
+			      C ;		コメントチェック				|
+			      C ;---------------------------------------------------------------|
+ 01C9			      C COMMENT_CHK	proc	near	uses ax si
+ 01C9  50		   *	    push   ax
+ 01CA  56		   *	    push   si
+ 01CB  2E: 8B 36 0004 R	      C 	MOV	si,CS:[pMML_File]	;BX←コンパイル中アドレス
+ 01D0  26: 8A 04	      C 	MOV	al,ES:[si]		;AH←そこのデータ
+ 01D3  3C 3B		      C 	CMP	al,';'			;もしコメントがあったら改行までジャンプ
+ 01D5  75 03		      C 	JNZ	REMCHK			;
+ 01D7  E8 0003		      C 	CALL	CRJUMP			;
+ 01DA			      C REMCHK:	
+			      C 	RET				;
+ 01DA  5E		   *	    pop    si
+ 01DB  58		   *	    pop    ax
+ 01DC  C3		   *	    ret    00000h
+ 01DD			      C COMMENT_CHK	endp
+			      C ;---------------------------------------------------------------|
+			      C ;		改行まで飛ばす					|
+			      C ;---------------------------------------------------------------|
+ 01DD			      C CRJUMP	proc	near	uses	ax si
+			      C 
+ 01DD  50		   *	    push   ax
+ 01DE  56		   *	    push   si
+ 01DF  2E: 8B 36 0004 R	      C 	mov	si,CS:[pMML_File]	;BX←コンパイルするアドレス
+			      C 	.repeat
+ 01E4			   *@C0001:
+ 01E4  26: AC		      C 	lodsb	es:[si]			;AH←そこのデータ
+			      C 	.until	(al == 0dh)		;改行？
+ 01E6  3C 0D		   *	    cmp    al, 00Dh
+ 01E8  75 FA		   *	    jne    @C0001
+			      C 
+ 01EA  4E		      C 	dec	si
+ 01EB  2E: 89 36 0004 R	      C 	mov	CS:[pMML_File],si	;ポインタを増加
+			      C 
+			      C 	RET				;
+ 01F0  5E		   *	    pop    si
+ 01F1  58		   *	    pop    ax
+ 01F2  C3		   *	    ret    00000h
+ 01F3			      C CRJUMP	endp
+			      C 
+				include wtc_hed.asm	;Header
+			      C ;=======================================================================|
+			      C ;									|
+			      C ;		Wander Swan Total Sound Driver				|
+			      C ;				MML Compiler Program			|
+			      C ;				Heder Compile Routine			|
+			      C ;									|
+			      C ;					Programmed by			|
+			      C ;						A.Watanabe		|
+			      C ;									|
+			      C ;=======================================================================|
+			      C ;===============================================================|
+			      C ;		FX構造体（実体）				|
+			      C ;===============================================================|
+ 0001			      C .data
+ 0001 23 21 77 73	      C FX		db	23h,21h,77h,73h	;#!ws
+ 0005  003C [		      C 		db	60	Dup(0FFh)
+        FF
+       ]
+ 0041  0010 [		      C FX_filename	db	16	dup(0)	;ファイル名
+        00
+       ]
+ 0051  0018 [		      C FX_title	db	24	dup(0)	;タイトル
+        00
+       ]
+ 0069 FFFFFFFF		      C FX_fileadr	dd	0FFFFFFFFh	;ファイルのアドレス。
+ 006D 00000000		      C FX_filesize	dd	?		;ファイルサイズ
+ 0071 0000		      C FX_block	dw	?		;ブロック数
+ 0073 0006		      C FX_mode		dw	0006h		;モード
+ 0075 00000000		      C FX_data		dd	?		;年・時間
+ 0079 00000000		      C FX_type		dd	000000000h	;ファイルの種類
+ 007D FFFFFFFF		      C FX_resouce	dd	0FFFFFFFFh	;リソースの位置。
+			      C 
+			      C ;===============================================================|
+			      C ;		フラグ						|
+			      C ;===============================================================|
+ 0081 00		      C cHCD_FlagFx	db	00h		;フラグ FXファイル生成
+			      C 
+			      C ;===============================================================|
+			      C ;			命令	初期				|
+			      C ;===============================================================|
+ 0000			      C .const
+ 0000 000D		      C c_Head_Com_Adrs		dw	((offset c_Head_Com_Adr_E)-(offset c_Head_Com_Adr_S))/2 + 1
+ 0002 001C R		      C c_Head_Com_Adr_S	dw	offset cHCD_0		;TB
+ 0004  0026 R		      C 			dw	offset cHCD_1		;PA
+ 0006  0030 R		      C 			dw	offset cHCD_2		;FX
+ 0008  003A R		      C 			dw	offset cHCD_3		;TI
+ 000A  0043 R		      C 			dw	offset cHCD_4		;FI
+ 000C  004C R		      C 			dw	offset cHCD_5		;IN
+ 000E  0055 R		      C 			dw	offset cHCD_6		;#timebase
+ 0010  0064 R		      C 			dw	offset cHCD_7		;#part
+ 0012  006F R		      C 			dw	offset cHCD_8		;#version
+ 0014  0081 R		      C 			dw	offset cHCD_9		;#Switch
+ 0016  008E R		      C 			dw	offset cHCD_10		;#title
+ 0018  0099 R		      C 			dw	offset cHCD_11		;#filename
+ 001A 00A7 R		      C c_Head_Com_Adr_E	dw	offset cHCD_12		;#include
+			      C ;---------------------------------------------------------------|
+			      C ;	①コマンド文字列					|
+			      C ;		最後は24hで終わる				|
+			      C ;	②出力する場所						|
+			      C ;	    00h	終わり						|
+			      C ;	    1xh	CS	プログラム				|
+			      C ;		x	Segment		0:CS / 1:DS(WTD) / 2:ES(MML)
+			      C ;		word	Offset		Offset Address		|
+			      C ;		byte	Output Type	00h:Byte / 01:Word	|
+			      C ;					20h:文字列+24h		|
+			      C ;	    F0h	プログラム					|
+			      C ;		nnnn	Offset Address				|
+			      C ;---------------------------------------------------------------
+ 001C 0D 0A 54 42 24 11	      C cHCD_0	db	0dh,0ah,'TB',24h, 011h	;Seg = WTD
+ 0022  000B		      C 	dw	WTD_Mus_TimeBase	;Time base
+ 0024  00 00		      C 	db	00h,00h			;Byte , End
+ 0026 0D 0A 50 41 24 11	      C cHCD_1	db	0dh,0ah,'PA',24h, 011h	;Seg = WTD
+ 002C  000A		      C 	dw	WTD_Mus_Part		;Music Part count
+ 002E  00 00		      C 	db	00h,00h			;Byte , End
+ 0030 0D 0A 46 58 24 10	      C cHCD_2	db	0dh,0ah,'FX',24h, 010h	;Seg = CS
+ 0036  0081 R		      C 	dw	offset cHCD_FlagFx	;FX File Make
+ 0038  00 00		      C 	db	00h,00h			;Byte , End
+ 003A 0D 0A 54 49 24 F0	      C cHCD_3	db	0dh,0ah,'TI',24h, 0f0h	;
+ 0040  0229 R		      C 	dw	offset cHCD_Set_title	;
+ 0042  00		      C 	db	00h			;
+ 0043 0D 0A 46 49 24 F0	      C cHCD_4	db	0dh,0ah,'FI',24h, 0f0h	;
+ 0049  0232 R		      C 	dw	offset cHCD_Set_filename
+ 004B  00		      C 	db	00h			;
+ 004C 0D 0A 49 4E 24 F0	      C cHCD_5	db	0dh,0ah,'IN',24h, 0f0h	;
+ 0052  023B R		      C 	dw	offset cHCD_include	;
+ 0054  00		      C 	db	00h			;
+ 0055 23 74 69 6D 65 62	      C cHCD_6	db	'#timebase',24h, 11h	;Seg = WTD
+       61 73 65 24 11
+ 0060  000B		      C 	dw	WTD_Mus_TimeBase	;Time base
+ 0062  00 00		      C 	db	00h,00h			;Byte , End
+ 0064 23 70 61 72 74 24	      C cHCD_7	db	'#part',24h, 11h	;Seg = WTD
+       11
+ 006B  000A		      C 	dw	WTD_Mus_Part		;Music Part count
+ 006D  00 00		      C 	db	00h,00h			;Byte , End
+ 006F 23 76 65 72 73 69	      C cHCD_8	db	'#version',24h, 11h	;Seg = WTD
+       6F 6E 24 11
+ 0079  0004		      C 	dw	WTD_Mus_Version + 0	;Music Version
+ 007B  00 11		      C 	db	00h,11h			;Seg = WTD
+ 007D  0005		      C 	dw	WTD_Mus_Version + 1	;Music Version
+ 007F  00 00		      C 	db	00h,00h			;Byte , End
+ 0081 23 73 77 69 74 63	      C cHCD_9	db	'#switch',24h, 10h	;Seg = CS
+       68 24 10
+ 008A  0081 R		      C 	dw	cHCD_FlagFx		;FX File Make
+ 008C  00 00		      C 	db	00h,00h			;Byte , End
+ 008E 23 74 69 74 6C 65	      C cHCD_10	db	'#title',24h, 0f0h	;
+       24 F0
+ 0096  0229 R		      C 	dw	offset cHCD_Set_title	;
+ 0098  00		      C 	db	00h			;
+ 0099 23 66 69 6C 65 6E	      C cHCD_11	db	'#filename',24h, 0f0h	;
+       61 6D 65 24 F0
+ 00A4  0232 R		      C 	dw	offset cHCD_Set_filename;
+ 00A6  00		      C 	db	00h			;
+ 00A7 23 69 6E 63 6C 75	      C cHCD_12	db	'#include',24h, 0f0h	;
+       64 65 24 F0
+ 00B1  023B R		      C 	dw	offset cHCD_include	;
+ 00B3  00		      C 	db	0			;
+ 01F3			      C .code
+			      C ;---------------------------------------------------------------
+			      C ;	
+			      C ;---------------------------------------------------------------
+ 01F3			      C cHCD_Set_Loop	proc	near	uses ax cx di,
+			      C 		szBuff:word,
+			      C 		ptBuff:word
+			      C 
+ 01F3  55		   *	    push   bp
+ 01F4  8B EC		   *	    mov    bp, sp
+ 01F6  50		   *	    push   ax
+ 01F7  51		   *	    push   cx
+ 01F8  57		   *	    push   di
+			      C 	.repeat
+ 01F9			   *@C0003:
+ 01F9  E8 FF88		      C 	  call	cread_l			;空白のチェック
+			      C 	.until	(al>=21h)
+ 01FC  3C 21		   *	    cmp    al, 021h
+ 01FE  72 F9		   *	    jb     @C0003
+ 0200  2E: FF 0E 0004 R	      C 	dec	cs:[pMML_File]		;ポインタ・ディクリメント
+			      C 
+			      C 	;改行チェック
+ 0205  8B 4E 04		      C 	mov	cx,szBuff
+ 0208  8B 7E 06		      C 	mov	di,ptBuff
+			      C 	.repeat
+ 020B			   *@C0005:
+ 020B  E8 FF76		      C 		call	cread_l			;ah←データ
+ 020E  2E: FF 0E 0004 R	      C 		dec	cs:[pMML_File]		;ポインタ・ディクリメント
+			      C 		.break	.if	(al == 0dh)
+ 0213  3C 0D		   *	    cmp    al, 00Dh
+ 0215  74 0B		   *	    je     @C0007
+			      C 
+			      C 		;転送
+ 0217  2E: 88 05	      C 		mov	cs:[di],al		;文字の転送
+ 021A  47		      C 		inc	di			;
+			      C 	;	stosb
+			      C 
+			      C 		;文字数チェック
+ 021B  2E: FF 06 0004 R	      C 		inc	cs:[pMML_File]		;ポインタ・インクリメント
+			      C 	.untilcxz
+ 0220  E2 E9		   *	    loop   @C0005
+ 0222			   *@C0007:
+			      C 
+			      C 	ret				;
+ 0222  5F		   *	    pop    di
+ 0223  59		   *	    pop    cx
+ 0224  58		   *	    pop    ax
+ 0225  5D		   *	    pop    bp
+ 0226  C2 0004		   *	    ret    00004h
+ 0229			      C cHCD_Set_Loop	endp
+			      C ;---------------------------------------------------------------
+			      C ;	
+			      C ;---------------------------------------------------------------
+ 0229			      C cHCD_Set_title		proc	near
+			      C 
+			      C 	invoke	cHCD_Set_Loop,	24,	addr FX_title
+ 0229  68 0051 R	   *	    push   OFFSET FX_title
+ 022C  6A 18		   *	    push   +00018h
+ 022E  E8 FFC2		   *	    call   cHCD_Set_Loop
+			      C 
+ 0231  C3		      C 	ret
+ 0232			      C cHCD_Set_title	endp		;
+			      C ;---------------------------------------------------------------
+			      C ;	
+			      C ;---------------------------------------------------------------
+ 0232			      C cHCD_Set_filename	proc	near
+			      C 
+			      C 	invoke	cHCD_Set_Loop,	16,	addr FX_filename
+ 0232  68 0041 R	   *	    push   OFFSET FX_filename
+ 0235  6A 10		   *	    push   +00010h
+ 0237  E8 FFB9		   *	    call   cHCD_Set_Loop
+			      C 
+ 023A  C3		      C 	ret
+ 023B			      C cHCD_Set_filename	endp		;
+			      C ;---------------------------------------------------------------|
+			      C ;		インクルードファイルの挿入			|
+			      C ;---------------------------------------------------------------|
+ 023B			      C cHCD_include	proc	near	uses	ds es
+			      C 
+			      C 	local	cFilename[128]:BYTE	;
+			      C 
+ 023B  55		   *	    push   bp
+ 023C  8B EC		   *	    mov    bp, sp
+ 023E  83 C4 80		   *	    add    sp, 0FF80h
+ 0241  1E		   *	    push   ds
+ 0242  06		   *	    push   es
+ 0243  60		      C 	pusha
+			      C 
+			      C 	;-----------------------
+			      C 	;ファイル名までポインタを進ませる。
+			      C 	.repeat
+ 0244			   *@C0009:
+ 0244  E8 FF3D		      C 	    CALL	CREAD_L		;
+			      C 	.until	(al>20h)		;２０未満のコードは飛ばす
+ 0247  3C 20		   *	    cmp    al, 020h
+ 0249  76 F9		   *	    jbe    @C0009
+			      C 
+			      C 	;-----------------------
+			      C 	;ファイル名の取得
+ 024B  2E: FF 0E 0004 R	      C 	dec	CS:[pMML_File]		;
+ 0250  33 FF		      C 	xor	di,di			
+ 0252  B9 0080		      C 	mov	cx,128			;
+			      C 	.repeat				;
+ 0255			   *@C000B:
+ 0255  E8 FF2C		      C 	   CALL	CREAD_L			;
+			      C 	   .break  .if	(al==00dh)	;改行だったら格納終了
+ 0258  3C 0D		   *	    cmp    al, 00Dh
+ 025A  74 06		   *	    je     @C000D
+ 025C  88 43 80		      C 	   mov	cFilename[di],al	;
+ 025F  47		      C 	   inc	di			;
+			      C 	.untilcxz			;
+ 0260  E2 F3		   *	    loop   @C000B
+ 0262			   *@C000D:
+ 0262  C6 43 80 00	      C 	mov	cFilename[di],0		;
+ 0266  47		      C 	inc	di			;
+ 0267  C6 43 80 0D	      C 	mov	cFilename[di],0dh	;
+ 026B  47		      C 	inc	di			;
+ 026C  C6 43 80 0A	      C 	mov	cFilename[di],0ah	;
+ 0270  47		      C 	inc	di			;
+ 0271  C6 43 80 24	      C 	mov	cFilename[di],24h	;
+ 0275  E8 FF0C		      C 	CALL	CREAD_L			;ポインタを進ませる
+			      C 
+			      C 	;-----------------------
+			      C 	;ファイル・オープン
+			      C 	invoke	Memory_Open,0800h	;メモリ確保
+ 0278  68 0800		   *	    push   +00800h
+ 027B  E8 0000 E	   *	    call   Memory_Open
+ 027E  8E D8		      C 	mov	ds,ax			;
+			      C 	invoke	File_Open,	addr ss:cFilename,0	;インクルードファイル・オープン
+ 0280  6A 00		   *	    push   +00000h
+ 0282  16		   *	    push   ss
+ 0283  8D 46 80		   *	    lea    ax, byte  ptr ss:[bp]+080h
+ 0286  50		   *	    push   ax
+ 0287  E8 0000 E	   *	    call   File_Open
+ 028A  50		      C 	push	ax			;ハンドル保存
+			      C 	invoke	File_Load,	ax,addr ds:0		;インクルードファイル・ロード
+ 028B  1E		   *	    push   ds
+ 028C  6A 00		   *	    push   OFFSET ds:+00000h
+ 028E  50		   *	    push   ax
+ 028F  E8 0000 E	   *	    call   File_Load
+ 0292  8B C8		      C 	mov	cx,ax			;cx←インクルードファイルサイズ
+ 0294  58		      C 	pop	ax			;ax←ハンドル
+			      C 	invoke	File_Close,	ax	;インクルードファイル・クローズ
+ 0295  50		   *	    push   ax
+ 0296  E8 0000 E	   *	    call   File_Close
+			      C 
+			      C 
+			      C 	;-----------------------
+			      C 	;現MMLファイルを、インクルードファイル分ずらす
+ 0299  51		      C 	push	cx			;
+ 029A  1E		      C 	push	ds			;
+ 029B  FD		      C 	STD				;ブロック転送時ディクリメント
+ 029C  2E: A1 0006 R	      C 	mov	ax, cs:[segMml_File]	;
+ 02A0  2E: 8B 1E 0002 R	      C 	mov	bx, cs:[szMml_File]	;現MML最後尾
+ 02A5  8E D8		      C 	mov	ds, ax			;
+ 02A7  8D 77 FF		      C 	lea	si, [bx - 1]		;ds:si = 転送元
+ 02AA  8E C0		      C 	mov	es, ax			;
+ 02AC  8D 7F FF		      C 	lea	di, [bx - 1]		;es:di = 転送先
+ 02AF  03 F9		      C 	add	di, cx			;
+ 02B1  8B CB		      C 	mov	cx, bx			;
+ 02B3  2E: 2B 0E 0004 R	      C 	sub	cx, CS:[pMML_File]	;cx = 転送量
+ 02B8  F3/ A4		      C 	rep	MOVSB			;
+ 02BA  1F		      C 	pop	ds			;
+ 02BB  59		      C 	pop	cx			;
+			      C 
+			      C 	;-----------------------
+			      C 	;インクルードファイルの挿入
+ 02BC  51		      C 	push	cx			;
+ 02BD  FC		      C 	CLD				;ブロック転送時インクリメント
+ 02BE  33 F6		      C 	xor	si,si			;DS:SI ←転送元
+ 02C0  2E: 8E 06 0006 R	      C 	MOV	es,CS:[segMml_File]	;
+ 02C5  2E: 8B 3E 0004 R	      C 	MOV	di,CS:[pMML_File]	;ES:DI ←送り先
+ 02CA  F3/ A4		      C 	REP	MOVSB			;ブロック転送
+ 02CC  59		      C 	pop	cx			;
+			      C 
+			      C 	;-----------------------
+			      C 	;EOFを消す
+ 02CD  4F		      C 	DEC	DI			;
+			      C 	.if	(byte ptr es:[di]==01ah)
+ 02CE  26: 80 3D 1A	   *	    cmp    byte ptr es : [di], 01Ah
+ 02D2  75 04		   *	    jne    @C000F
+ 02D4  26: C6 05 20	      C 		MOV	byte ptr es:[di],020h	;
+			      C 	.endif
+ 02D8			   *@C000F:
+			      C 
+			      C 	;-----------------------
+			      C 	;サイズ分だけ大きくする。
+ 02D8  2E: 01 0E 0002 R	      C 	add	CS:[szMml_File],cx	;
+			      C 
+			      C 	;-----------------------
+			      C 	;割り当てたメモリの解放
+			      C 	invoke	Memory_Close,	ds
+ 02DD  1E		   *	    push   ds
+ 02DE  E8 0000 E	   *	    call   Memory_Close
+			      C 
+ 02E1  61		      C 	popa
+			      C 	RET				;
+ 02E2  07		   *	    pop    es
+ 02E3  1F		   *	    pop    ds
+ 02E4  8B E5		   *	    mov    sp, bp
+ 02E6  5D		   *	    pop    bp
+ 02E7  C3		   *	    ret    00000h
+ 02E8			      C cHCD_include	endp
+			      C ;---------------------------------------------------------------|
+			      C ;		ヘッダーコンパイル	初期			|
+			      C ;---------------------------------------------------------------|
+			      C ;	引数							|
+			      C ;		無し						|
+			      C ;	返り値							|
+			      C ;		無し						|
+			      C ;	使用レジスタ						|
+			      C ;		cx	コマンド数カウンタ			|
+			      C ;		di	c_Head_Com_Adrsポインタ			|
+			      C ;		si	c_Hear_Com_Dataポインタ			|
+			      C ;---------------------------------------------------------------|
+ 02E8			      C c_Head_first	proc	near	uses	ds
+			      C 
+ 02E8  1E		   *	    push   ds
+ 02E9  60		      C 	pusha
+			      C 
+			      C 	;ポインターを先頭にする。
+ 02EA  33 C0		      C 	xor	ax,ax			;
+ 02EC  2E: A3 0004 R	      C 	mov	cs:[pMML_File],ax	;
+ 02F0  2E: A3 000C R	      C 	mov	cs:[pWTD_File],ax	;ポインターを先頭にする。
+			      C 
+			      C 	;ヘッダー初期値の設定
+ 02F4  C7 06 0000 5457	      C 	mov	word ptr ds:[0].WTD_Mus_Name + 0	,5457h	;
+ 02FA  C7 06 0002 0044	      C 	mov	word ptr ds:[0].WTD_Mus_Name + 2	,0044h	;'WTD',00h
+ 0300  C7 06 0004 0100	      C 	mov	word ptr ds:[0].WTD_Mus_Version		,0100h	;Version
+ 0306  A3 0006		      C 	mov	word ptr ds:[0].WTD_Mus_Extr		,ax	;0
+ 0309  A2 0008		      C 	mov	byte ptr ds:[0].WTD_Mus_Emb		,al	;0
+ 030C  A2 0009		      C 	mov	byte ptr ds:[0].WTD_Mus_Voice		,al	;0
+ 030F  A2 000A		      C 	mov	byte ptr ds:[0].WTD_Mus_Part		,al	;0
+ 0312  C6 06 000B 30	      C 	mov	byte ptr ds:[0].WTD_Mus_TimeBase	,48	;
+ 0317  A3 000C		      C 	mov	word ptr ds:[0].WTD_Mus_ExtrAdr		,ax	;0
+ 031A  A3 000E		      C 	mov	word ptr ds:[0].WTD_Mus_DataAdr		,ax	;0
+			      C 
+ 031D  0E		      C 	push	cs			;
+ 031E  1F		      C 	pop	ds			;ds ← cs
+			      C 
+			      C 	.repeat
+ 031F			   *@C0011:
+			      C 
+			      C 	   ;コマンド検索
+			      C 	   ;コマンド数量の読み込み
+ 031F  33 FF		      C 	   xor	di,di				;di←変換定義アドレスのポインタ
+			      C 	   ;cx←コマンドの数量
+ 0321  2E: 8B 8D 0000 R	      C 	   mov	cx,cs:[offset c_Head_Com_Adrs + di]
+			      C 	   .repeat
+ 0326			   *@C0012:
+			      C 		;ポインタ読み込み
+ 0326  2E: FF 36 0004 R	      C 		push	cs:[pMML_File]		;ポインタ保存
+ 032B  83 C7 02		      C 		add	di,2			;ポインタインクリメント(Word)
+ 032E  2E: 8B B5 0000 R	      C 		mov	si,cs:[offset c_Head_Com_Adrs + di]	;si←変換定義アドレス
+			      C 		;命令一致チェック
+			      C 		.repeat
+ 0333			   *@C0013:
+ 0333  E8 FE35		      C 		   call	cread			;MMLファイルから１文字読み込み
+ 0336  AC		      C 		   lodsb
+			      C 		.until	(al != ah)		;文字一致ならば、次もチェック。
+ 0337  38 E0		   *	    cmp    al, ah
+ 0339  74 F8		   *	    je     @C0013
+			      C 		.if	(al == 24h)		;文字終了？
+ 033B  3C 24		   *	    cmp    al, 024h
+ 033D  75 61		   *	    jne    @C0015
+ 033F  58		      C 		   pop	ax			;ポインタの復帰(値は戻さず。)
+ 0340  2E: FF 0E 0004 R	      C 		   dec	cs:[pMML_File]		;ポインタ・ディクリメント
+			      C 						;ポインタはコマンドの次にある。
+			      C 		   ;コマンド処理。
+			      C 		   .repeat
+ 0345			   *@C0017:
+			      C 			;セグメントの設定
+ 0345  AC		      C 			lodsb
+			      C 			.if	(al==00h)		
+ 0346  0A C0		   *	    or	al, al
+ 0348  75 04		   *	    jne    @C0018
+			      C 				.break			;終了
+ 034A  EB 4B		   *	    jmp    @C001B
+			      C 			.elseif	(al==010h)
+ 034C  EB 25		   *	    jmp    @C001C
+ 034E			   *@C0018:
+ 034E  3C 10		   *	    cmp    al, 010h
+ 0350  75 04		   *	    jne    @C001D
+ 0352  8C C8		      C 				mov	ax,cs		;
+			      C 			.elseif	(al==011h)
+ 0354  EB 1D		   *	    jmp    @C001F
+ 0356			   *@C001D:
+ 0356  3C 11		   *	    cmp    al, 011h
+ 0358  75 06		   *	    jne    @C0020
+ 035A  2E: A1 000E R	      C 				mov	ax,cs:[segWTD_File]
+			      C 			.elseif	(al==012h)
+ 035E  EB 13		   *	    jmp    @C0022
+ 0360			   *@C0020:
+ 0360  3C 12		   *	    cmp    al, 012h
+ 0362  75 06		   *	    jne    @C0023
+ 0364  2E: A1 0006 R	      C 				mov	ax,cs:[segMML_File]
+			      C 			.elseif	(al==0f0h)
+ 0368  EB 09		   *	    jmp    @C0025
+ 036A			   *@C0023:
+ 036A  3C F0		   *	    cmp    al, 0F0h
+ 036C  75 05		   *	    jne    @C0026
+ 036E  AD		      C 				lodsw			;
+ 036F  FF D0		      C 				call	ax		;
+			      C 				.continue
+ 0371  EB 22		   *	    jmp    @C001A
+			      C 			.endif
+			      C 
+ 0373			   *@C0026:
+ 0373			   *@C0025:
+ 0373			   *@C0022:
+ 0373			   *@C001F:
+ 0373			   *@C001C:
+ 0373  1E		      C 			push	ds			;DS保存
+			      C 			;オフセットの設定
+ 0374  50		      C 			push	ax			;
+ 0375  AD		      C 			lodsw				;
+ 0376  8B D8		      C 			mov	bx,ax			;bx ← Offset Address
+ 0378  AC		      C 			lodsb				;al ← 制御コード
+ 0379  1F		      C 			pop	ds			;DS ← 保存先
+			      C 			;データの書き込み
+			      C 			.if	(al==000h)
+ 037A  0A C0		   *	    or	al, al
+ 037C  75 07		   *	    jne    @C0028
+ 037E  E8 FD9E		      C 				call	A2H8R		;
+ 0381  88 27		      C 				mov	ds:[bx],ah	;
+			      C 			.elseif	(al==001h)
+ 0383  EB 0F		   *	    jmp    @C002A
+ 0385			   *@C0028:
+ 0385  3C 01		   *	    cmp    al, 001h
+ 0387  75 07		   *	    jne    @C002B
+ 0389  E8 FDBC		      C 				call	A2H16R		;
+ 038C  89 07		      C 				mov	ds:[bx],ax	;
+			      C 			.elseif	(al==020h)
+ 038E  EB 04		   *	    jmp    @C002D
+ 0390			   *@C002B:
+ 0390  3C 20		   *	    cmp    al, 020h
+ 0392  75 00		   *	    jne    @C002E
+			      C 				;
+			      C 				;	文字列一括転送(未対応)
+			      C 				;
+			      C 			.endif
+ 0394			   *@C002E:
+ 0394			   *@C002D:
+ 0394			   *@C002A:
+ 0394  1F		      C 			pop	ds			;DS復帰
+			      C 		   .until	0
+ 0395			   *@C001A:
+ 0395  EB AE		   *	    jmp    @C0017
+ 0397			   *@C001B:
+ 0397  2E: FF 0E 0004 R	      C 		   dec	cs:[pMML_File]		;
+			      C 		   .break			;命令デコード終了
+ 039C  EB 0D		   *	    jmp    @C0032
+			      C 		.else
+ 039E  EB 05		   *	    jmp    @C0033
+ 03A0			   *@C0015:
+			      C 		   ;文字チェックで一致しなかった場合。
+ 03A0  2E: 8F 06 0004 R	      C 		   pop	cs:[pMML_File]		;ポインタ復帰
+			      C 		.endif
+ 03A5			   *@C0033:
+ 03A5  49		      C 		dec	cx
+			      C 	   .until	(zero?)			;次のコマンドで比較
+ 03A6  74 03 E9 FF7B	   *	    jne    @C0012
+ 03AB			   *@C0032:
+ 03AB  2E: FF 06 0004 R	      C 	   inc	CS:[pMML_File]			;ポインタ・インクリメント
+ 03B0  2E: A1 0002 R	      C 	   mov	ax,CS:[szMML_File]		;MMLファイルの終了チェック
+			      C 	.until	(ax < CS:[pMML_File])		;MMLファイルが[EOF]ならば終了
+ 03B4  2E: 3B 06 0004 R	   *	    cmp    ax, cs : [pMml_File]
+ 03B9  72 03 E9 FF61	   *	    jae    @C0011
+			      C 
+ 03BE  61		      C 	popa
+			      C 	ret				;
+ 03BF  1F		   *	    pop    ds
+ 03C0  C3		   *	    ret    00000h
+ 03C1			      C c_Head_first	endp
+			      C ;---------------------------------------------------------------|
+			      C ;		ヘッダーコンパイル	後期			|
+			      C ;---------------------------------------------------------------|
+			      C ;	引数							|
+			      C ;		無し						|
+			      C ;	返り値							|
+			      C ;		無し						|
+			      C ;	使用レジスタ						|
+			      C ;		cx	コマンド数カウンタ			|
+			      C ;		di	c_Head_Com_Adrsポインタ			|
+			      C ;		si	c_Hear_Com_Dataポインタ			|
+			      C ;---------------------------------------------------------------|
+			      C ;●文字列
+ 00B4			      C .const
+ 00B4 54 68 69 73 20 4D	      C c_Head_Version	db	'This Music Data is version $'
+       75 73 69 63 20 44
+       61 74 61 20 69 73
+       20 76 65 72 73 69
+       6F 6E 20 24
+ 00D0 0D 0A 24		      C c_Head_CR	db	0dh,0ah,24h
+ 00D3 46 69 6C 65 73 69	      C c_Head_Size	db	'Filesize = '     ,24h
+       7A 65 20 3D 20 24
+ 00DF 20 5B 42 79 74 65	      C c_Head_Byte	db	' [Byte]   ( $'
+       5D 20 20 20 28 20
+       24
+ 00EC 20 5B 42 6C 6F 63	      C c_Head_Block	db	' [Block] )',0dh,0ah,24h
+       6B 5D 20 29 0D 0A
+       24
+			      C ;---------------------------------------------------------------
+ 03C1			      C .code
+ 03C1			      C c_Head_end	proc	near	uses ds es
+ 03C1  1E		   *	    push   ds
+ 03C2  06		   *	    push   es
+ 03C3  60		      C 	pusha				;レジスタ保存
+			      C 
+ 03C4  1E		      C 	push	ds			;
+ 03C5  07		      C 	pop	es			;es←ds
+ 03C6  0E		      C 	push	cs			;
+ 03C7  1F		      C 	pop	ds			;ds←cs
+			      C ;---------------------------------------------------------------
+			      C ;バージョン情報の表示
+			      C 
+ 03C8  33 DB		      C 	xor	bx,bx			;ds:bx←WTD File Segment Address
+			      C 
+ 03CA  BA 00B4 R	      C 	mov	dx,offset c_Head_Version
+ 03CD  B4 09		      C 	mov	ah,09h			;
+ 03CF  CD 21		      C 	int	21h			;"This Music Data is Version "
+			      C 
+ 03D1  26: 8B 47 04	      C 	mov	ax,word ptr es:[bx].WTD_Mus_Version
+			      C 
+ 03D5  50		      C 	push	ax			;
+ 03D6  86 E0		      C 	xchg	ah,al			;
+ 03D8  E8 0000 E	      C 	call	HEX2ASC8		;
+ 03DB  B4 09		      C 	mov	ah,09h			;
+ 03DD  CD 21		      C 	int	21h			;数値の表示
+ 03DF  B2 2E		      C 	mov	dl,'.'
+ 03E1  B4 02		      C 	mov	ah,02h
+ 03E3  CD 21		      C 	int	21h			;「点」の表示
+ 03E5  58		      C 	pop	ax			;
+ 03E6  E8 0000 E	      C 	call	HEX2ASC8		;
+ 03E9  B4 09		      C 	mov	ah,09h			;
+ 03EB  CD 21		      C 	int	21h			;数値の表示
+ 03ED  BA 00D0 R	      C 	mov	dx,offset c_Head_CR	;
+ 03F0  B4 09		      C 	mov	ah,09h			;
+ 03F2  CD 21		      C 	int	21h			;改行の表示
+			      C 
+			      C ;---------------------------------------------------------------
+			      C ;FX形式ヘッダーの作成
+			      C ;※filename,titleは作成済み。
+			      C 
+			      C ;●ファイルサイズ・ブロック数
+ 03F4  BA 00D3 R	      C 	mov	dx,offset c_Head_Size	;
+ 03F7  B4 09		      C 	mov	ah,09h			;
+ 03F9  CD 21		      C 	int	21h			;"Filesize = "の表示
+			      C 
+ 03FB  33 D2		      C 	xor	dx,dx			;
+ 03FD  2E: A1 000C R	      C 	mov	ax,cs:[pWTD_File]	;
+ 0401  48		      C 	dec	ax			;dx:ax←ファイルサイズ。
+ 0402  2E: A3 006D R	      C 	mov	word ptr cs:[FX_filesize + 0],ax
+ 0406  2E: 89 16 006F R	      C 	mov	word ptr cs:[FX_filesize + 2],dx
+			      C 
+ 040B  50		      C 	push	ax			;
+ 040C  52		      C 	push	dx			;
+ 040D  E8 0000 E	      C 	call	HEX2ASC16		;
+ 0410  B4 09		      C 	mov	ah,09h			;
+ 0412  CD 21		      C 	int	21h			;数値の表示
+ 0414  BA 00DF R	      C 	mov	dx,offset c_Head_Byte	;
+ 0417  B4 09		      C 	mov	ah,09h			;
+ 0419  CD 21		      C 	int	21h			;" [Byte]"の表示
+ 041B  5A		      C 	pop	dx			;
+ 041C  58		      C 	pop	ax			;
+			      C 
+ 041D  B9 0080		      C 	mov	cx,128			;
+ 0420  F7 F1		      C 	div	cx			;128で割る。
+ 0422  83 FA 00		      C 	cmp	dx,0			;
+ 0425  74 01		      C 	jz	c_Head_end_Step0	;余りがあったら、
+ 0427  40		      C 	inc	ax			;解に１を足す。
+ 0428			      C c_Head_end_Step0:			;
+ 0428  2E: A3 0071 R	      C 	mov	word ptr cs:[FX_block],ax
+			      C 
+ 042C  E8 0000 E	      C 	call	HEX2ASC16		;数値の表示
+ 042F  B4 09		      C 	mov	ah,09h			;
+ 0431  CD 21		      C 	int	21h			;
+ 0433  BA 00EC R	      C 	mov	dx,offset c_Head_Block	;
+ 0436  B4 09		      C 	mov	ah,09h			;
+ 0438  CD 21		      C 	int	21h			;" [Byte]"の表示
+			      C 
+			      C ;---------------------------------------------------------------
+			      C ;●年・時間の作成
+			      C ;	bit 25-31	年-2000	(7)
+			      C ;	bit 21-24	月	(4)
+			      C ;	bit 16-20	日	(5)
+			      C ;	bit 11-15	時	(5)
+			      C ;	bit  5-10	分	(6)
+			      C ;	bit  0- 4	秒/2	(5)
+			      C 
+ 043A  B4 2A		      C 	mov	ah,02ah			;
+ 043C  CD 21		      C 	int	21h			;日付の取得
+ 043E  33 C0		      C 	xor	ax,ax			;
+			      C 
+ 0440  81 E9 07D0	      C 	sub	cx,2000			;年-2000
+ 0444  83 E1 7F		      C 	and	cx,007Fh		;
+ 0447  0B C1		      C 	or	ax,cx			;
+			      C 
+ 0449  C1 E0 04		      C 	shl	ax,4			;月
+ 044C  8B DA		      C 	mov	bx,dx			;
+ 044E  86 FB		      C 	xchg	bh,bl			;
+ 0450  83 E3 0F		      C 	and	bx,000fh		;
+ 0453  0B C3		      C 	or	ax,bx			;
+			      C 
+ 0455  C1 E0 05		      C 	shl	ax,5			;日
+ 0458  83 E2 1F		      C 	and	dx,001fh		;
+ 045B  0B C2		      C 	or	ax,dx			;
+			      C 
+ 045D  50		      C 	push	ax			;日付の保存
+			      C 
+ 045E  B4 2C		      C 	mov	ah,02ch			;
+ 0460  CD 21		      C 	int	21h			;時間の取得
+ 0462  33 C0		      C 	xor	ax,ax			;
+			      C 
+ 0464  8B D9		      C 	mov	bx,cx			;時
+ 0466  86 FB		      C 	xchg	bh,bl			;
+ 0468  83 E3 1F		      C 	and	bx,001fh		;
+ 046B  0B C3		      C 	or	ax,bx			;
+			      C 
+ 046D  C1 E0 06		      C 	shl	ax,6			;分
+ 0470  83 E1 3F		      C 	and	cx,003fh		;
+ 0473  0B C1		      C 	or	ax,cx			;
+			      C 
+ 0475  C1 E0 05		      C 	shl	ax,5			;秒/2
+ 0478  86 F2		      C 	xchg	dh,dl			;
+ 047A  D1 EA		      C 	shr	dx,1			;
+ 047C  83 E2 1F		      C 	and	dx,001fh		;
+ 047F  0B C2		      C 	or	ax,dx			;
+			      C 
+ 0481  5A		      C 	pop	dx			;日付の復帰
+			      C 
+ 0482  2E: A3 0075 R	      C 	mov	word ptr cs:[FX_data + 0],ax
+ 0486  2E: 89 16 0077 R	      C 	mov	word ptr cs:[FX_data + 2],dx
+			      C 
+			      C ;---------------------------------------------------------------
+			      C ;終了
+ 048B  61		      C 	popa				;
+			      C 	ret				;Return
+ 048C  07		   *	    pop    es
+ 048D  1F		   *	    pop    ds
+ 048E  C3		   *	    ret    00000h
+ 048F			      C c_Head_end	endp
+			      C 
+				include wtc_voi.asm	;Voice & Emb
+			      C ;=======================================================================|
+			      C ;									|
+			      C ;		Wander Swan Total Sound Driver				|
+			      C ;				MML Compiler Program			|
+			      C ;				Voice Compile Routine			|
+			      C ;									|
+			      C ;					Programmed by			|
+			      C ;						A.Watanabe		|
+			      C ;									|
+			      C ;=======================================================================|
+ 048F			      C c_Voice	proc	near
+			      C 
+			      C 	;コンパイル作業
+ 048F  E8 0004		      C 	call	c_Voice_Pcm_first	;
+ 0492  E8 015F		      C 	call	c_Voice_Emb_first	;
+			      C 
+ 0495  C3		      C 	ret				;終了
+ 0496			      C c_Voice	endp
+			      C ;---------------------------------------------------------------|
+			      C ;		音色コンパイル					|
+			      C ;---------------------------------------------------------------|
+			      C ;	引数							|
+			      C ;		無し						|
+			      C ;	返り値							|
+			      C ;		無し						|
+			      C ;	使用レジスタ						|
+			      C ;		cx	コマンド数カウンタ			|
+			      C ;		di	c_Voice_Pcm_Adrsポインタ		|
+			      C ;		si	c_Voice_Pcm_Dataポインタ		|
+			      C ;---------------------------------------------------------------|
+ 0496			      C c_Voice_Pcm_first	proc	near		;
+ 0496  60		      C 	pusha				;レジスタ保存
+			      C 
+			      C ;ヘッダー初期設定
+			      C 	;ポインターの設定及び、トラックアドレスの初期化をする。
+ 0497  33 DB		      C 	xor	bx,bx				;
+ 0499  2E: 89 1E 0004 R	      C 	mov	cs:[pMML_File],bx		;MMLファイルのポインタを先頭にする。
+ 049E  8A 4F 0A		      C 	mov	cl,ds:[bx].WTD_Mus_Part		;パート数を読み込み。
+			      C 	.if	(cl > MusicMaxPart)		;パート数チェック
+ 04A1  80 F9 14		   *	    cmp    cl, MusicMaxPart
+ 04A4  76 05		   *	    jbe    @C0036
+ 04A6  B1 14		      C 		mov	cl,MusicMaxPart		;
+ 04A8  88 4F 0A		      C 		mov	ds:[bx].WTD_Mus_Part,cl	;パート数を書き込み。
+			      C 	.endif					;
+ 04AB			   *@C0036:
+ 04AB  BB 0010		      C 	mov	bx,0010h			;
+			      C 	.repeat					;
+ 04AE			   *@C0038:
+ 04AE  80 E9 01		      C 		sub	cl,1			;カウンタ・ディクリメント
+			      C 		.break	.if	(carry?)	;
+ 04B1  72 09		   *	    jb     @C003A
+ 04B3  C7 07 0000	      C 		mov	word ptr ds:[bx],0000h	;トラックのアドレスの初期化
+ 04B7  83 C3 02		      C 		add	bx,2			;ポインタ・インクリメント
+			      C 	.until	0				;
+ 04BA  EB F2		   *	    jmp    @C0038
+ 04BC			   *@C003A:
+ 04BC  2E: 89 1E 000C R	      C 	mov	cs:[pWTD_File],bx		;WTDファイルのポインタを設定する。
+			      C 
+			      C 	;アドレス設定
+ 04C1  89 1E 000E	      C 	mov	word ptr ds:[0].WTD_Mus_DataAdr,bx
+			      C 
+			      C ;コマンド検索
+			      C ;コマンド数量の読み込み
+ 04C5			      C c_Voice_Pcm_first_Loop1:		;cx←コマンドの数量
+ 04C5  33 FF		      C 	xor	di,di			;di←変換定義アドレスのポインタ
+ 04C7  2E: 8B 8D 00F9 R	      C 	mov	cx,cs:[offset c_Voice_Pcm_Adrs + di]
+			      C 					;文字列チェックのカウンタ
+			      C ;ポインタ読み込み
+ 04CC			      C c_Voice_Pcm_first_Loop2:		;
+ 04CC  2E: FF 36 0004 R	      C 	push	cs:[pMML_File]		;ポインタ保存
+ 04D1  83 C7 02		      C 	add	di,2			;ポインタインクリメント(Word)
+ 04D4  2E: 8B B5 00F9 R	      C 	mov	si,cs:[offset c_Voice_Pcm_Adrs + di]	;si←変換定義アドレス
+			      C ;１文字読み込み
+ 04D9			      C c_Voice_Pcm_first_Loop3:		;
+ 04D9  E8 FC8F		      C 	call	cread			;MMLファイルから１文字読み込み
+ 04DC			      C c_Voice_Pcm_first_Step1:		;
+			      C ;１文字チェック（24h含む）
+ 04DC  2E: 8A 04	      C 	mov	al,cs:[si]		;
+ 04DF  46		      C 	inc	si			;
+ 04E0  3C 24		      C 	cmp	al,24h			;文字終了？
+ 04E2  74 20		      C 	jz	c_Voice_Pcm_first_Step2	;ならば、文字列一致で処理実行。
+ 04E4  38 C4		      C 	cmp	ah,al			;文字一致？
+ 04E6  74 F1		      C 	jz	c_Voice_Pcm_first_Loop3	;ならば、次もチェック。
+			      C ;文字チェックで一致しなかった場合。
+ 04E8  2E: 8F 06 0004 R	      C 	pop	cs:[pMML_File]		;ポインタ復帰
+ 04ED  83 E9 01		      C 	sub	cx,1			;カウンター・ディクリメント
+ 04F0  75 DA		      C 	jnz	c_Voice_Pcm_first_Loop2	;次のコマンドで比較
+ 04F2  2E: FF 06 0004 R	      C 	inc	CS:[pMML_File]		;ポインタ・インクリメント
+ 04F7  2E: A1 0002 R	      C 	mov	ax,CS:[szMML_File]	;
+ 04FB  2E: 3B 06 0004 R	      C 	cmp	ax,CS:[pMML_File]	;MMLファイルの終了チェック
+ 0500  73 C3		      C 	jnc	c_Voice_Pcm_first_Loop1	;文字列比較開始。
+ 0502  EB 6F		      C 	jmp	c_Voice_Pcm_first_End	;MMLファイルが[EOF]ならば終了
+			      C ;-----------------------------------------------------------------------
+			      C ;コマンド処理。
+ 0504			      C c_Voice_Pcm_first_Step2:			;
+ 0504  58		      C 	pop	ax			;ポインタの復帰(値は戻さず。)
+ 0505  1E		      C 	push	ds			;セグメントの保存
+			      C 
+			      C ;ポインタを元に戻す。
+ 0506  2E: FF 0E 0004 R	      C 	dec	cs:[pMML_File]		;ポインタ・ディクリメント
+			      C 
+			      C ;コマンド処理
+ 050B			      C c_Voice_Pcm_first_Loop4:		;
+ 050B  2E: 8A 04	      C 	mov	al,cs:[si]		;al←コマンド
+ 050E  46		      C 	inc	si			;
+ 050F  2E: 8A 0C	      C 	mov	cl,cs:[si]		;
+ 0512  46		      C 	inc	si			;
+ 0513  3C 00		      C 	cmp	al,00h			;終了
+ 0515  75 02		      C 	jnz	c_Voice_Pcm_first_Step3	;
+ 0517  EB 52		      C 	jmp	c_Voice_Pcm_first_Step99
+ 0519			      C c_Voice_Pcm_first_Step3:		;
+ 0519  3C 10		      C 	cmp	al,010h			;4bit × 2
+ 051B  75 1D		      C 	jnz	c_Voice_Pcm_first_Step4	;
+ 051D			      C c_Voice_Pcm_first_Step3_Loop:		;
+ 051D  E8 FBFF		      C 	call	A2H8R			;
+ 0520  80 E4 0F		      C 	and	ah,0fh			;
+ 0523  8A C4		      C 	mov	al,ah			;
+ 0525  E8 FBF7		      C 	call	A2H8R			;
+ 0528  80 E4 0F		      C 	and	ah,0fh			;
+ 052B  C0 E4 04		      C 	shl	ah,4			;
+ 052E  0A E0		      C 	or	ah,al			;
+ 0530  E8 FC68		      C 	call	cset			;
+ 0533  80 E9 01		      C 	sub	cl,1			;
+ 0536  75 E5		      C 	jnz	c_Voice_Pcm_first_Step3_Loop
+ 0538  EB D1		      C 	jmp	c_Voice_Pcm_first_Loop4	;
+ 053A			      C c_Voice_Pcm_first_Step4:		;
+ 053A  3C 11		      C 	cmp	al,011h			;Byte
+ 053C  75 0D		      C 	jnz	c_Voice_Pcm_first_Step5	;
+ 053E			      C c_Voice_Pcm_first_Step4_Loop:		;
+ 053E  E8 FBDE		      C 	call	A2H8R			;
+ 0541  E8 FC57		      C 	call	CSET			;
+ 0544  80 E9 01		      C 	sub	cl,1			;
+ 0547  75 F5		      C 	jnz	c_Voice_Pcm_first_Step4_Loop
+ 0549  EB C0		      C 	jmp	c_Voice_Pcm_first_Loop4	;
+ 054B			      C c_Voice_Pcm_first_Step5:		;
+ 054B  3C 12		      C 	cmp	al,012h			;Word
+ 054D  75 0D		      C 	jnz	c_Voice_Pcm_first_Step6	;
+ 054F			      C c_Voice_Pcm_first_Step5_Loop:		;
+ 054F  E8 FBF6		      C 	call	A2H16R			;
+ 0552  E8 FC64		      C 	call	CSET16			;
+ 0555  80 E9 01		      C 	sub	cl,1			;
+ 0558  75 F5		      C 	jnz	c_Voice_Pcm_first_Step5_Loop
+ 055A  EB AF		      C 	jmp	c_Voice_Pcm_first_Loop4	;
+ 055C			      C c_Voice_Pcm_first_Step6:		;
+ 055C  3C F0		      C 	cmp	al,0F0h			;Call (Other Program)
+ 055E  75 09		      C 	jnz	c_Voice_Pcm_first_Step7	;
+			      C 
+ 0560  4E		      C 	dec	si			;Countは無いので、siを戻す。
+ 0561  2E: 8B 14	      C 	mov	dx,cs:[si]		;
+ 0564  83 C6 02		      C 	add	si,2			;
+ 0567  FF D2		      C 	call	dx			;
+			      C ;	jmp	c_Voice_Pcm_first_Loop4	;
+ 0569			      C c_Voice_Pcm_first_Step7:		;
+			      C 
+			      C ;コンパイル処理ループ
+ 0569  EB A0		      C 	jmp	c_Voice_Pcm_first_Loop4	;
+			      C 
+			      C ;命令コンパイル処理終了
+ 056B			      C c_Voice_Pcm_first_Step99:		;
+			      C 
+			      C ;カウンタインクリメント
+ 056B  FE 06 0009	      C 	inc	byte ptr ds:[0].WTD_Mus_Voice
+			      C 
+			      C ;戻る
+ 056F  1F		      C 	pop	ds			;セグメントの復帰
+ 0570  E9 FF52		      C 	jmp	c_Voice_Pcm_first_Loop1	;文字列比較開始。
+			      C ;-----------------------------------------------------------------------
+			      C ;終了
+ 0573			      C c_Voice_Pcm_first_End:			;
+ 0573  61		      C 	popa				;レジスタ復帰
+ 0574  C3		      C 	ret				;
+ 0575			      C c_Voice_Pcm_first	endp
+			      C ;===============================================================|
+			      C ;			命令					|
+			      C ;===============================================================|
+ 00F9			      C .const
+ 00F9 0003		      C c_Voice_Pcm_Adrs	dw	((offset c_Voice_Pcm_Adrs_E)-(offset c_Voice_Pcm_Adrs_S))/2 + 1
+ 00FB 0101 R		      C c_Voice_Pcm_Adrs_S	dw	offset cVPD_0		;#Voice
+ 00FD  010D R		      C 			dw	offset cVPD_1		;@F
+ 00FF 0118 R		      C c_Voice_Pcm_Adrs_E	dw	offset cVPD_2		;@
+			      C ;---------------------------------------------------------------|
+			      C ;	①コマンド文字列					|
+			      C ;		最後は24hで終わる				|
+			      C ;	②出力する場所						|
+			      C ;	    00h	終わり						|
+			      C ;	    1xh		データ書き込み				|
+			      C ;		x	0:4bit×2 / 1:Byte / 2:Word		|
+			      C ;		byte	Count					|
+			      C ;	    F0h	プログラム					|
+			      C ;		nnnn	Offset Address				|
+			      C ;---------------------------------------------------------------
+ 0101 23 76 6F 69 63 65	      C cVPD_0	db	'#voice'    ,24h, 011h,1, 010h,16, 00h
+       24 11 01 10 10 00
+ 010D 0D 0A 40 46 24 11	      C cVPD_1	db	0dh,0ah,'@F',24h, 011h,1, 0F0h	;@の前にある事！！
+       01 F0
+ 0115  0575 R		      C 	dw	offset c_Voice_Pcm_File
+ 0117  00		      C 	db	00h
+ 0118 0D 0A 40 24 11 01	      C cVPD_2	db	0dh,0ah,'@' ,24h, 011h,1, 010h,16, 00h
+       10 10 00
+ 0575			      C .code
+			      C ;---------------------------------------------------------------|
+			      C ;●ファイルからの読み込み		;
+ 0575			      C c_Voice_Pcm_File	proc	near
+			      C 
+			      C 	local	cFilename[128]:BYTE	;[BP+80h]
+			      C 
+ 0575  55		   *	    push   bp
+ 0576  8B EC		   *	    mov    bp, sp
+ 0578  83 C4 80		   *	    add    sp, 0FF80h
+ 057B  60		      C 	pusha				;レジスタ保存
+			      C 
+ 057C  E8 FBA0		      C 	call	A2H8R			;音色番号読み込み
+ 057F  50		      C 	push	ax			;番号保存
+			      C 
+			      C 	;ファイル名文字列先頭の検索
+			      C 	.repeat
+ 0580			   *@C003D:
+ 0580  E8 FC01		      C 	    CALL	CREAD_L		;
+			      C 	.until	(al>20h)		;２０未満のコードは飛ばす
+ 0583  3C 20		   *	    cmp    al, 020h
+ 0585  76 F9		   *	    jbe    @C003D
+			      C 
+			      C 	;ファイル名文字列をピックアップ
+ 0587  2E: FF 0E 0004 R	      C 	dec	cs:[pMML_File]		;ポインタを一つ戻す。
+ 058C  33 FF		      C 	xor	di,di			;
+ 058E  B9 0080		      C 	mov	cx,128			;cl←ファイル名の最大文字数
+			      C 	.repeat				;
+ 0591			   *@C003F:
+ 0591  E8 FBF0		      C 	   CALL	CREAD_L			;
+			      C 	   .break   .if	(al == 00dh)	;改行だったら格納終了
+ 0594  3C 0D		   *	    cmp    al, 00Dh
+ 0596  74 06		   *	    je     @C0041
+ 0598  88 43 80		      C 	   mov	cFilename[di],al	;mov [BP + DI + 80h],ah
+ 059B  47		      C 	   inc	di			;
+			      C 	.untilcxz			;
+ 059C  E2 F3		   *	    loop   @C003F
+ 059E			   *@C0041:
+ 059E  C6 43 80 00	      C 	mov	cFilename[di],0		;
+ 05A2  47		      C 	inc	di			;
+ 05A3  C6 43 80 0D	      C 	mov	cFilename[di],0dh	;
+ 05A7  47		      C 	inc	di			;
+ 05A8  C6 43 80 0A	      C 	mov	cFilename[di],0ah	;
+ 05AC  47		      C 	inc	di			;
+ 05AD  C6 43 80 24	      C 	mov	cFilename[di],24h	;
+			      C 
+			      C 	;音色の転送
+ 05B1  5B		      C 	pop	bx			;音色番号の復帰
+ 05B2  8A DF		      C 	mov	bl,bh			;
+ 05B4  32 FF		      C 	xor	bh,bh			;
+ 05B6  C1 E3 04		      C 	shl	bx,4			;bx ← 音色ファイルのオフセット
+			      C 
+			      C 	;ファイルの読み込み
+			      C 	;音色ファイル用メモリオープン
+ 05B9  06		      C 	push	es			;
+			      C 	invoke	Memory_Open,	0800h	;
+ 05BA  68 0800		   *	    push   +00800h
+ 05BD  E8 0000 E	   *	    call   Memory_Open
+ 05C0  8E C0		      C 	mov	es,ax			;es ← 音色ファイル
+			      C 	invoke	File_Open,	addr ss:cFilename,0
+ 05C2  6A 00		   *	    push   +00000h
+ 05C4  16		   *	    push   ss
+ 05C5  8D 46 80		   *	    lea    ax, byte  ptr ss:[bp]+080h
+ 05C8  50		   *	    push   ax
+ 05C9  E8 0000 E	   *	    call   File_Open
+ 05CC  50		      C 	push	ax			;ハンドル保存
+			      C 	invoke	File_Load,	ax,addr es:0
+ 05CD  06		   *	    push   es
+ 05CE  6A 00		   *	    push   OFFSET es:+00000h
+ 05D0  50		   *	    push   ax
+ 05D1  E8 0000 E	   *	    call   File_Load
+ 05D4  58		      C 	pop	ax			;ハンドル復帰
+			      C 	invoke	File_Close,	ax	;ファイルクローズ
+ 05D5  50		   *	    push   ax
+ 05D6  E8 0000 E	   *	    call   File_Close
+			      C 
+ 05D9  B9 0010		      C 	mov	cx,16			;cx ← 転送数
+			      C 	.repeat
+ 05DC			   *@C0043:
+ 05DC  26: 8A 27	      C 		mov	ah,es:[bx]	;
+ 05DF  43		      C 		inc	bx		;
+ 05E0  E8 FBB8		      C 		call	CSET		;
+			      C 	.untilcxz
+ 05E3  E2 F7		   *	    loop   @C0043
+			      C 
+			      C 	invoke	Memory_Close,	es	;メモリの解放
+ 05E5  06		   *	    push   es
+ 05E6  E8 0000 E	   *	    call   Memory_Close
+ 05E9  07		      C 	pop	es			;
+			      C 
+ 05EA  2E: FF 0E 0004 R	      C 	dec	cs:[pMML_File]		;ポインタ１つ戻す。
+			      C 
+ 05EF  61		      C 	popa				;レジスタ復帰
+			      C 	ret				;
+ 05F0  8B E5		   *	    mov    sp, bp
+ 05F2  5D		   *	    pop    bp
+ 05F3  C3		   *	    ret    00000h
+ 05F4			      C c_Voice_Pcm_File	endp
+			      C ;---------------------------------------------------------------|
+			      C ;		音色コンパイル					|
+			      C ;---------------------------------------------------------------|
+			      C ;	引数							|
+			      C ;		無し						|
+			      C ;	返り値							|
+			      C ;		無し						|
+			      C ;	使用レジスタ						|
+			      C ;		cx	コマンド数カウンタ			|
+			      C ;		di	c_Voice_Emb_Adrsポインタ		|
+			      C ;		si	c_Voice_Emb_Dataポインタ		|
+			      C ;---------------------------------------------------------------|
+ 05F4			      C c_Voice_Emb_first	proc	near		;
+ 05F4  60		      C 	pusha				;レジスタ保存
+			      C 
+			      C ;ヘッダー初期設定
+			      C 	;ポインターの設定。
+ 05F5  2E: C7 06 0004 R	      C 	mov	cs:[pMML_File],0	;MMLファイルのポインタを先頭にする。
+       0000
+			      C 
+			      C ;コマンド検索
+			      C ;コマンド数量の読み込み
+ 05FC			      C c_Voice_Emb_first_Loop1:		;cx←コマンドの数量
+ 05FC  33 FF		      C 	xor	di,di			;di←変換定義アドレスのポインタ
+ 05FE  2E: 8B 8D 0121 R	      C 	mov	cx,cs:[offset c_Voice_Emb_Adrs + di]
+			      C 					;文字列チェックのカウンタ
+			      C ;ポインタ読み込み
+ 0603			      C c_Voice_Emb_first_Loop2:		;
+ 0603  2E: FF 36 0004 R	      C 	push	cs:[pMML_File]		;ポインタ保存
+ 0608  83 C7 02		      C 	add	di,2			;ポインタインクリメント(Word)
+ 060B  2E: 8B B5 0121 R	      C 	mov	si,cs:[offset c_Voice_Emb_Adrs + di]	;si←変換定義アドレス
+			      C ;１文字読み込み
+ 0610			      C c_Voice_Emb_first_Loop3:		;
+ 0610  E8 FB58		      C 	call	cread			;MMLファイルから１文字読み込み
+ 0613			      C c_Voice_Emb_first_Step1:		;
+			      C ;１文字チェック（24h含む）
+ 0613  2E: 8A 04	      C 	mov	al,cs:[si]		;
+ 0616  46		      C 	inc	si			;
+ 0617  3C 24		      C 	cmp	al,24h			;文字終了？
+ 0619  74 20		      C 	jz	c_Voice_Emb_first_Step2	;ならば、文字列一致で処理実行。
+ 061B  38 C4		      C 	cmp	ah,al			;文字一致？
+ 061D  74 F1		      C 	jz	c_Voice_Emb_first_Loop3	;ならば、次もチェック。
+			      C ;文字チェックで一致しなかった場合。
+ 061F  2E: 8F 06 0004 R	      C 	pop	cs:[pMML_File]		;ポインタ復帰
+ 0624  83 E9 01		      C 	sub	cx,1			;カウンター・ディクリメント
+ 0627  75 DA		      C 	jnz	c_Voice_Emb_first_Loop2	;次のコマンドで比較
+ 0629  2E: FF 06 0004 R	      C 	inc	CS:[pMML_File]		;ポインタ・インクリメント
+ 062E  2E: A1 0002 R	      C 	mov	ax,CS:[szMML_File]	;
+ 0632  2E: 3B 06 0004 R	      C 	cmp	ax,CS:[pMML_File]	;MMLファイルの終了チェック
+ 0637  73 C3		      C 	jnc	c_Voice_Emb_first_Loop1	;文字列比較開始。
+ 0639  EB 55		      C 	jmp	c_Voice_Emb_first_End	;MMLファイルが[EOF]ならば終了
+			      C ;-----------------------------------------------------------------------
+			      C ;コマンド処理。
+ 063B			      C c_Voice_Emb_first_Step2:			;
+ 063B  58		      C 	pop	ax			;ポインタの復帰(値は戻さず。)
+ 063C  1E		      C 	push	ds			;セグメントの保存
+			      C 
+			      C ;ポインタを元に戻す。
+ 063D  2E: FF 0E 0004 R	      C 	dec	cs:[pMML_File]		;ポインタ・ディクリメント
+			      C 
+			      C ;コマンド処理
+ 0642			      C c_Voice_Emb_first_Loop4:		;
+ 0642  2E: 8A 04	      C 	mov	al,cs:[si]		;al←コマンド
+ 0645  46		      C 	inc	si			;
+ 0646  3C FF		      C 	cmp	al,0FFh			;終了
+ 0648  75 02		      C 	jnz	c_Voice_Emb_first_Step3	;
+ 064A  EB 36		      C 	jmp	c_Voice_Emb_first_Step99
+ 064C			      C c_Voice_Emb_first_Step3:		;
+ 064C  3C F0		      C 	cmp	al,0F0h			;Call (Other Program)
+ 064E  75 0A		      C 	jnz	c_Voice_Emb_first_Step7	;
+ 0650  2E: 8B 14	      C 	mov	dx,cs:[si]		;
+ 0653  83 C6 02		      C 	add	si,2			;
+ 0656  FF D2		      C 	call	dx			;
+ 0658  EB E8		      C 	jmp	c_Voice_Emb_first_Loop4	;
+ 065A			      C c_Voice_Emb_first_Step7:		;
+ 065A  3C 10		      C 	cmp	al,010h			;
+ 065C  75 08		      C 	jnz	c_Voice_Emb_first_Step4	;
+ 065E  E8 FABE		      C 	call	A2H8R			;
+ 0661  E8 FB37		      C 	call	CSET			;
+ 0664  EB DC		      C 	jmp	c_Voice_Emb_first_Loop4	;
+ 0666			      C c_Voice_Emb_first_Step4:		;
+ 0666  33 DB		      C 	xor	bx,bx			;
+ 0668  8A D8		      C 	mov	bl,al			;
+ 066A  D0 C3		      C 	rol	bl,1			;
+ 066C  D0 EB		      C 	shr	bl,1			;Bit 7 Reset & Bit 7 -> Cy Flag
+ 066E  72 05		      C 	jc	c_Voice_Emb_first_Step5	;
+ 0670  E8 FAAC		      C 	call	A2H8R			;al←データ(MML File)
+ 0673  EB 04		      C 	jmp	c_Voice_Emb_first_Step6	;
+ 0675			      C c_Voice_Emb_first_Step5:		;
+ 0675  2E: 8A 24	      C 	mov	ah,cs:[si]		;al←データ(設定値)
+ 0678  46		      C 	inc	si			;
+ 0679			      C c_Voice_Emb_first_Step6:		;
+ 0679  2E: 03 1E 000C R	      C 	add	bx,cs:[pWTD_File]	;
+ 067E  88 27		      C 	mov	byte ptr ds:[bx],ah	;データ書き込み
+			      C 
+			      C ;コンパイル処理ループ
+ 0680  EB C0		      C 	jmp	c_Voice_Emb_first_Loop4	;
+			      C 
+			      C ;命令コンパイル処理終了
+ 0682			      C c_Voice_Emb_first_Step99:		;
+			      C 
+			      C ;カウンタインクリメント
+ 0682  FE 06 0008	      C 	inc	byte ptr ds:[0].WTD_Mus_Emb
+			      C ;ポインタ増加
+ 0686  2E: 83 06 000C R	      C 	add	cs:[pWTD_File],16	;16Byte分増加(直書きしている為)
+       10
+			      C 
+			      C ;戻る
+ 068C  1F		      C 	pop	ds			;セグメントの復帰
+ 068D  E9 FF6C		      C 	jmp	c_Voice_Emb_first_Loop1	;文字列比較開始。
+			      C ;-----------------------------------------------------------------------
+			      C ;終了
+ 0690			      C c_Voice_Emb_first_End:			;
+ 0690  61		      C 	popa				;レジスタ復帰
+ 0691  C3		      C 	ret				;
+ 0692			      C c_Voice_Emb_first	endp
+			      C ;===============================================================|
+			      C ;			命令					|
+			      C ;===============================================================|
+ 0121			      C .const
+ 0121 0002		      C c_Voice_Emb_Adrs	dw	((offset c_Voice_Emb_Adrs_E)-(offset c_Voice_Emb_Adrs_S))/2 + 1
+ 0123 0127 R		      C c_Voice_Emb_Adrs_S	dw	offset cVED_0		;E
+ 0125 013B R		      C c_Voice_Emb_Adrs_E	dw	offset cVED_1		;Ex
+			      C ;---------------------------------------------------------------|
+			      C ;	①コマンド文字列					|
+			      C ;		最後は24hで終わる				|
+			      C ;	②出力する場所						|
+			      C ;	    0xh		Address (Emb.Sturc)			|
+			      C ;	    8xh		Address (Emb.Sturc)			|
+			      C ;		byte	Data					|
+			      C ;	    F0h	プログラム					|
+			      C ;		nnnn	Offset Address				|
+			      C ;	    FFh	終わり						|
+			      C ;---------------------------------------------------------------
+ 0127 0D 0A 45 78 24 10	      C cVED_0	db	0dh,0ah,'Ex',24h,10h
+ 012D  03		      C 	db	WTD_Emb_FL
+ 012E  00		      C 	db	WTD_Emb_AR
+ 012F  01		      C 	db	WTD_Emb_AS
+ 0130  02		      C 	db	WTD_Emb_AL
+ 0131  04		      C 	db	WTD_Emb_DR
+ 0132  05		      C 	db	WTD_Emb_DS
+ 0133  06		      C 	db	WTD_Emb_DL
+ 0134  08		      C 	db	WTD_Emb_SR
+ 0135  09		      C 	db	WTD_Emb_SS
+ 0136  0A		      C 	db	WTD_Emb_SL
+ 0137  0C		      C 	db	WTD_Emb_RR
+ 0138  0D		      C 	db	WTD_Emb_RS
+ 0139  0E		      C 	db	WTD_Emb_RL
+ 013A  FF		      C 	db	0FFh
+ 013B 0D 0A 45 24 10	      C cVED_1	db	0dh,0ah,'E', 24h,10h
+ 0140  03		      C 	db	WTD_Emb_FL
+ 0141  00		      C 	db	WTD_Emb_AR
+ 0142  81 01		      C 	db	WTD_Emb_AS + 80h,001h
+ 0144  82 FF		      C 	db	WTD_Emb_AL + 80h,0ffh
+ 0146  04		      C 	db	WTD_Emb_DR
+ 0147  85 FF		      C 	db	WTD_Emb_DS + 80h,0ffh
+ 0149  06		      C 	db	WTD_Emb_DL
+ 014A  08		      C 	db	WTD_Emb_SR
+ 014B  89 FF		      C 	db	WTD_Emb_SS + 80h,0ffh
+ 014D  8A 00		      C 	db	WTD_Emb_SL + 80h,000h
+ 014F  0C		      C 	db	WTD_Emb_RR
+ 0150  8D FF		      C 	db	WTD_Emb_RS + 80h,0ffh
+ 0152  8E 00		      C 	db	WTD_Emb_RL + 80h,000h
+ 0154  FF		      C 	db	0FFh
+ 0692			      C .code
+			      C 
+				include wtc_com.asm	;Command
+			      C ;=======================================================================|
+			      C ;									|
+			      C ;		Wander Swan Total Sound Driver				|
+			      C ;				MML Compiler Program			|
+			      C ;				Command Compile Routine			|
+			      C ;									|
+			      C ;					Programmed by			|
+			      C ;						A.Watanabe		|
+			      C ;									|
+			      C ;=======================================================================|
+			      C ;===============================================================|
+			      C ;		構造体定義　（コンパイル制御用）		|
+			      C ;===============================================================|
+ 003A			      C cMCD		struc
+ 0000  00		      C cMCD_ChannelWTD	db	?		;現在コンパイル中のチャンネル。
+ 0001  00		      C cMCD_ChannelMML	db	?		;現在コンパイル中のチャンネル。
+ 0002  0000		      C cMCD_DefLength	dw	?		;デフォルト音長記憶
+ 0004  0000		      C cMCD_LoopL	dw	?		;無限ループアドレス
+ 0006  0000		      C cMCD_LoopCount	dw	?		;リピート(スタック)
+ 0008  0008 [		      C cMCD_LoopEnd	dw	8	dup(?)	;リピート(終了点記憶用)
+        0000
+       ]
+ 0018  0008 [		      C cMCD_LoopJump	dw	8	dup(?)	;リピート()
+        0000
+       ]
+ 0028  0000		      C cMCD_MacroCount	dw	?		;マクロのスタックポインタ
+ 002A  0008 [		      C cMCD_MacroAdr	dw	8	dup(?)	;マクロのスタックエリア
+        0000
+       ]
+			      C cMCD		ends
+			      C 
+			      C ;===============================================================|
+			      C ;		命令定義　（コンパイル情報）			|
+			      C ;===============================================================|
+			      C ;コマンド・データのアドレス。
+ 0155			      C .const
+ 0155 0055		      C c_Command_Adrs		dw	((offset c_Command_Adrs_E)-(offset c_Command_Adrs_S))/2 + 1
+ 0157 0201 R		      C c_Command_Adrs_S	dw	offset cMCD_0		;<CR+LF>+"C"
+ 0159  020C R		      C 			dw	offset cMCD_1		;<CR+LF>+"!"
+ 015B  0216 R		      C 			dw	offset cMCD_2		;<CR+LF>
+ 015D  021F R		      C 			dw	offset cMCD_3		;a	ラ
+ 015F  0226 R		      C 			dw	offset cMCD_4		;b	シ
+ 0161  022D R		      C 			dw	offset cMCD_5		;c	ド
+ 0163  0234 R		      C 			dw	offset cMCD_6		;d	レ
+ 0165  023B R		      C 			dw	offset cMCD_7		;e	ミ
+ 0167  0242 R		      C 			dw	offset cMCD_8		;f	ファ
+ 0169  0249 R		      C 			dw	offset cMCD_9		;g	ソ
+ 016B  0250 R		      C 			dw	offset cMCD_10		;h	
+ 016D  0256 R		      C 			dw	offset cMCD_11		;i	
+ 016F  025C R		      C 			dw	offset cMCD_12		;j	
+ 0171  0262 R		      C 			dw	offset cMCD_13		;k	
+ 0173  026A R		      C 			dw	offset cMCD_14		;l	
+ 0175  0273 R		      C 			dw	offset cMCD_15		;n	
+ 0177  027B R		      C 			dw	offset cMCD_16		;m	
+ 0179  0287 R		      C 			dw	offset cMCD_17		;o	
+ 017B  028F R		      C 			dw	offset cMCD_18		;p	
+ 017D  0299 R		      C 			dw	offset cMCD_19		;q	
+ 017F  02A1 R		      C 			dw	offset cMCD_20		;r	
+ 0181  02A8 R		      C 			dw	offset cMCD_21		;s	
+ 0183  02B1 R		      C 			dw	offset cMCD_22		;t	
+ 0185  02BB R		      C 			dw	offset cMCD_23		;u	
+ 0187  02C3 R		      C 			dw	offset cMCD_24		;v	
+ 0189  02CD R		      C 			dw	offset cMCD_25		;w	
+ 018B  02D3 R		      C 			dw	offset cMCD_26		;x	
+ 018D  02DB R		      C 			dw	offset cMCD_27		;y	
+ 018F  02E4 R		      C 			dw	offset cMCD_28		;z	
+ 0191  02EA R		      C 			dw	offset cMCD_29		;A	
+ 0193  02F0 R		      C 			dw	offset cMCD_30		;B	
+ 0195  02FA R		      C 			dw	offset cMCD_31		;C	
+ 0197  0302 R		      C 			dw	offset cMCD_32		;D	
+ 0199  030A R		      C 			dw	offset cMCD_33		;E	
+ 019B  0313 R		      C 			dw	offset cMCD_34		;F	
+ 019D  031B R		      C 			dw	offset cMCD_35		;G	
+ 019F  0323 R		      C 			dw	offset cMCD_36		;H	
+ 01A1  032C R		      C 			dw	offset cMCD_37		;I	
+ 01A3  0332 R		      C 			dw	offset cMCD_38		;J	
+ 01A5  0338 R		      C 			dw	offset cMCD_39		;K	
+ 01A7  0340 R		      C 			dw	offset cMCD_40		;L	
+ 01A9  0349 R		      C 			dw	offset cMCD_41		;N	
+ 01AB  0351 R		      C 			dw	offset cMCD_42		;M	
+ 01AD  035A R		      C 			dw	offset cMCD_43		;O	
+ 01AF  0362 R		      C 			dw	offset cMCD_44		;P	
+ 01B1  036A R		      C 			dw	offset cMCD_45		;Q	
+ 01B3  0372 R		      C 			dw	offset cMCD_46		;R	
+ 01B5  037A R		      C 			dw	offset cMCD_47		;S	
+ 01B7  0382 R		      C 			dw	offset cMCD_48		;T	
+ 01B9  038A R		      C 			dw	offset cMCD_49		;U	
+ 01BB  0392 R		      C 			dw	offset cMCD_50		;V	
+ 01BD  039A R		      C 			dw	offset cMCD_51		;W	
+ 01BF  03A2 R		      C 			dw	offset cMCD_52		;X	
+ 01C1  03AC R		      C 			dw	offset cMCD_53		;Y	
+ 01C3  03B2 R		      C 			dw	offset cMCD_54		;Z	
+ 01C5  03BC R		      C 			dw	offset cMCD_55		;!	
+ 01C7  03C3 R		      C 			dw	offset cMCD_56		;"	
+ 01C9  03CB R		      C 			dw	offset cMCD_57		;'	
+ 01CB  03D3 R		      C 			dw	offset cMCD_58		;(	
+ 01CD  03DA R		      C 			dw	offset cMCD_59		;)	
+ 01CF  03E1 R		      C 			dw	offset cMCD_60		;0	
+ 01D1  03EA R		      C 			dw	offset cMCD_61		;1	
+ 01D3  03F3 R		      C 			dw	offset cMCD_62		;2	
+ 01D5  03FC R		      C 			dw	offset cMCD_63		;3	
+ 01D7  0405 R		      C 			dw	offset cMCD_64		;4	
+ 01D9  040E R		      C 			dw	offset cMCD_65		;5	
+ 01DB  0417 R		      C 			dw	offset cMCD_66		;6	
+ 01DD  0420 R		      C 			dw	offset cMCD_67		;7	
+ 01DF  0429 R		      C 			dw	offset cMCD_68		;8	
+ 01E1  0432 R		      C 			dw	offset cMCD_69		;9	
+ 01E3  043B R		      C 			dw	offset cMCD_70		;*	
+ 01E5  0444 R		      C 			dw	offset cMCD_71		;/	
+ 01E7  044D R		      C 			dw	offset cMCD_72		;:	
+ 01E9  0457 R		      C 			dw	offset cMCD_73		;	
+ 01EB  0462 R		      C 			dw	offset cMCD_74		;[	
+ 01ED  046C R		      C 			dw	offset cMCD_75		;]	
+ 01EF  0476 R		      C 			dw	offset cMCD_76		;<	
+ 01F1  047D R		      C 			dw	offset cMCD_77		;>	
+ 01F3  0484 R		      C 			dw	offset cMCD_78		;@F	
+ 01F5  048E R		      C 			dw	offset cMCD_79		;@S	
+ 01F7  0499 R		      C 			dw	offset cMCD_80		;@R	
+ 01F9  04A3 R		      C 			dw	offset cMCD_81		;@D	
+ 01FB  04AE R		      C 			dw	offset cMCD_82		;@	
+ 01FD  04B6 R		      C 			dw	offset cMCD_83		;_	
+ 01FF 04BE R		      C c_Command_Adrs_E	dw	offset cMCD_84		;{	
+			      C ;c_Command_Adrs_E:
+			      C ;---------------------------------------------------------------|
+			      C ;	①コマンド文字列					|
+			      C ;		最後は00hで終わる				|
+			      C ;	②バージョン						|
+			      C ;		byte	整数部	／	byte	少数部		|
+			      C ;	③出力文字列。						|
+			      C ;		最後は00hで終わる				|
+			      C ;	④出力する場所						|
+			      C ;	    00h	終わり						|
+			      C ;	    1xh データ読み込み＆書き込み			|
+			      C ;		x	0:4bit×2 / 1:Byte / 2:Word		|
+			      C ;	    20h 音長用数値書き込み。				|(変更未)
+			      C ;		「Zenlen÷(読み込み)」を書き込む。		|
+			      C ;		（'%'指定だったら、そのままの数値。）		|
+			      C ;		（付点もチェックする。）			|
+			      C ;		01	lコマンドの場合指定する。		|
+			      C ;		01以外	lコマンド以外。				|
+			      C ;	    8xh	音階書き込み					|(変更未)
+			      C ;		x	0・・・休符				|
+			      C ;			1・・・ド　／　7・・・シ		|
+			      C ;		('#','+','-','&'のチェック。)			|
+			      C ;		(次に、数値があるかチェック。→'20h'と同じ処理)	|
+			      C ;	    F0h	プログラム					|
+			      C ;		nnnn	Offset Address				|
+			      C ;---------------------------------------------------------------|
+			      C ;		MML		WTD	Output	param
+			      C ;		Strings		Version	Strings	Command
+ 0201 0D 0A 43 00 00 01	      C cMCD_0	db	0dh,0ah,'C',0,	0,1,	0,	0f0h	;<CR+LF>+'C'
+       00 F0
+ 0209  06BC R		      C 	dw		offset cMCD_CH			;
+ 020B  00		      C 	db		0				;
+ 020C 0D 0A 00 00 01 00	      C cMCD_1	db	0dh,0ah,0,	0,1,	0,	0f0h	;<CR+LF>改行
+       F0
+ 0213  06A3 R		      C 	dw		offset cMCD_CR			;
+ 0215  00		      C 	db		0				;－最初に改行チェック
+ 0216 24 00 00 01 00 F0	      C cMCD_2	db	'$',0,		0,1,	0,	0f0h	;<CR+LF>+'$'
+ 021C  06DC R		      C 	dw		offset cMCD_Macro		;
+ 021E  00		      C 	db		0				;
+ 021F 61 00 00 01 00 86	      C cMCD_3	db	'a',0,		0,1,	0,	86h,0	;a	ラ
+       00
+ 0226 62 00 00 01 00 87	      C cMCD_4	db	'b',0,		0,1,	0,	87h,0	;b	シ
+       00
+ 022D 63 00 00 01 00 81	      C cMCD_5	db	'c',0,		0,1,	0,	81h,0	;c	ド
+       00
+ 0234 64 00 00 01 00 82	      C cMCD_6	db	'd',0,		0,1,	0,	82h,0	;d	レ
+       00
+ 023B 65 00 00 01 00 83	      C cMCD_7	db	'e',0,		0,1,	0,	83h,0	;e	ミ
+       00
+ 0242 66 00 00 01 00 84	      C cMCD_8	db	'f',0,		0,1,	0,	84h,0	;f	ファ
+       00
+ 0249 67 00 00 01 00 85	      C cMCD_9	db	'g',0,		0,1,	0,	85h,0	;g	ソ
+       00
+ 0250 68 00 00 00 00 00	      C cMCD_10	db	'h',0,		0,0,	0,	0	;h
+ 0256 69 00 00 00 00 00	      C cMCD_11	db	'i',0,		0,0,	0,	0	;i
+ 025C 6A 00 00 00 00 00	      C cMCD_12	db	'j',0,		0,0,	0,	0	;j
+ 0262 6B 00 00 01 6B 00	      C cMCD_13	db	'k',0,		0,1,	'k',0,	11h,0	;k	Velocity
+       11 00
+ 026A 6C 00 00 01 6C 00	      C cMCD_14	db	'l',0,		0,1,	'l',0,	20h,1,0	;l	Lengs
+       20 01 00
+ 0273 6E 00 00 01 6E 00	      C cMCD_15	db	'n',0,		0,1,	'n',0,	11h,0	;n	Noise mode
+       11 00
+ 027B 6D 00 00 04 6D 00	      C cMCD_16	db	'm',0,		0,4,	'm',0,	11h,11h,11h,12h,11h,0	;m
+       11 11 11 12 11 00
+ 0287 6F 00 00 01 6F 00	      C cMCD_17	db	'o',0,		0,1,	'o',0,	11h,0	;o	Octave
+       11 00
+ 028F 70 00 01 07 70 00	      C cMCD_18	db	'p',0,		1,7,	'p',0,	0f0h	;p	Pan
+       F0
+ 0296  0799 R		      C 	dw		offset cMCD_sp
+ 0298  00		      C 	db		0
+ 0299 71 00 00 01 71 00	      C cMCD_19	db	'q',0,		0,1,	'q',0,	12h,0	;q	Gate Step
+       12 00
+ 02A1 72 00 00 01 00 80	      C cMCD_20	db	'r',0,		0,1,	0,	80h,0	;r	休符
+       00
+ 02A8 73 00 00 05 73 00	      C cMCD_21	db	's',0,		0,5,	's',0,	11h,11h,0   ;s	Sweep
+       11 11 00
+ 02B1 74 00 00 02 74 00	      C cMCD_22	db	't',0,		0,2,	't',0,	0f0h	;t	Tempo
+       F0
+ 02B8  0827 R		      C 	dw		offset cMCD_st
+ 02BA  00		      C 	db		0
+ 02BB 75 00 00 01 75 00	      C cMCD_23	db	'u',0,		0,1,	'u',0,	12h,0	;u	Gate Step
+       12 00
+ 02C3 76 00 00 01 76 00	      C cMCD_24	db	'v',0,		0,1,	'v',0,	0f0h	;v	Volume
+       F0
+ 02CA  07E3 R		      C 	dw		offset cMCD_sv
+ 02CC  00		      C 	db		0
+ 02CD 77 00 00 00 00 00	      C cMCD_25	db	'w',0,		0,0,	0,	0	;w
+ 02D3 78 00 00 05 78 00	      C cMCD_26	db	'x',0,		0,5,	'x',0,	11h,0	;x	Volume UpDown
+       11 00
+ 02DB 79 00 00 05 79 00	      C cMCD_27	db	'y',0,		0,5,	'y',0,	11h,11h,0   ;y	Conroll Change
+       11 11 00
+ 02E4 7A 00 00 00 00 00	      C cMCD_28	db	'z',0,		0,0,	0,	0	;z
+ 02EA 41 00 00 00 00 00	      C cMCD_29	db	'A',0,		0,0,	0,	0	;A
+ 02F0 42 00 00 08 42 00	      C cMCD_30	db	'B',0,		0,8,	'B',0,	0f0h	;B	Bend
+       F0
+ 02F7  085E R		      C 	dw		offset cMCD_lb
+ 02F9  00		      C 	db		0
+ 02FA 43 00 00 01 43 00	      C cMCD_31	db	'C',0,		0,1,	'C',0,	11h,0	;C	Channel
+       11 00
+ 0302 44 00 00 01 44 00	      C cMCD_32	db	'D',0,		0,1,	'D',0,	12h,0	;D	Detune
+       12 00
+ 030A 45 00 00 05 45 00	      C cMCD_33	db	'E',0,		0,5,	'E',0,	11h,11h,0   ;E	Emb
+       11 11 00
+ 0313 46 00 00 08 46 00	      C cMCD_34	db	'F',0,		0,8,	'F',0,	11h,0	;F	Volume
+       11 00
+ 031B 47 00 00 08 47 00	      C cMCD_35	db	'G',0,		0,8,	'G',0,	11h,0	;G	Plessior
+       11 00
+ 0323 48 00 00 08 48 00	      C cMCD_36	db	'H',0,		0,8,	'H',0,	11h,11h,0   ;H	Bank
+       11 11 00
+ 032C 49 00 00 00 00 00	      C cMCD_37	db	'I',0,		0,0,	0,	0	;I
+ 0332 4A 00 00 00 00 00	      C cMCD_38	db	'J',0,		0,0,	0,	0	;J
+ 0338 4B 00 00 01 4B 00	      C cMCD_39	db	'K',0,		0,1,	'K',0,	12h,0	;K	KeyDelay
+       12 00
+ 0340 4C 00 00 03 00 F0	      C cMCD_40	db	'L',0,		0,3,	0,	0f0h	;L	Loop
+ 0346  088D R		      C 	dw		offset cMCD_lL			;
+ 0348  00		      C 	db		0				;
+ 0349 4E 00 00 08 4E 00	      C cMCD_41	db	'N',0,		0,8,	'N',0,	11h,0	;N	NPR
+       11 00
+ 0351 4D 00 00 0A 4D 00	      C cMCD_42	db	'M',0,		0,0ah,	'M',0,	12h,11h,0   ;M	Mod
+       12 11 00
+ 035A 4F 00 00 08 4F 00	      C cMCD_43	db	'O',0,		0,8,	'O',0,	11h,0	;O	Son
+       11 00
+ 0362 50 00 00 03 50 00	      C cMCD_44	db	'P',0,		0,3,	'P',0,	11h,0	;P	Switch
+       11 00
+ 036A 51 00 00 01 51 00	      C cMCD_45	db	'Q',0,		0,1,	'Q',0,	11h,0	;Q	Gate time
+       11 00
+ 0372 52 00 00 08 52 00	      C cMCD_46	db	'R',0,		0,8,	'R',0,	11h,0	;R	Bless
+       11 00
+ 037A 53 00 00 08 53 00	      C cMCD_47	db	'S',0,		0,8,	'S',0,	11h,0	;S	Soft
+       11 00
+ 0382 54 00 00 08 54 00	      C cMCD_48	db	'T',0,		0,8,	'T',0,	11h,0	;T	Foot
+       11 00
+ 038A 55 00 00 01 55 00	      C cMCD_49	db	'U',0,		0,1,	'U',0,	11h,0	;U	Gate time
+       11 00
+ 0392 56 00 00 01 56 00	      C cMCD_50	db	'V',0,		0,1,	'V',0,	12h,0	;V	V dev
+       12 00
+ 039A 57 00 00 08 57 00	      C cMCD_51	db	'W',0,		0,8,	'W',0,	11h,0	;W	Blance
+       11 00
+ 03A2 58 00 00 05 58 00	      C cMCD_52	db	'X',0,		0,5,	'X',0,	0f0h	;X
+       F0
+ 03A9  0898 R		      C 	dw		offset cMCD_lX			;
+ 03AB  00		      C 	db		0				;
+ 03AC 59 00 00 00 00 00	      C cMCD_53	db	'Y',0,		0,0,	0,	0	;Y
+ 03B2 5A 00 00 05 5A 00	      C cMCD_54	db	'Z',0,		0,5,	'Z',0,	0f0h	;Z
+       F0
+ 03B9  0907 R		      C 	dw		offset cMCD_lZ			;
+ 03BB  00		      C 	db		0				;
+ 03BC 21 00 00 01 21 00	      C cMCD_55	db	'!',0,		0,1,	'!',0,	0	;!	Work Sw
+       00
+ 03C3 22 00 00 01 22 00	      C cMCD_56	db	'"',0,		0,1,	'"',0,	11h,0	;"	Work Add
+       11 00
+ 03CB 27 00 00 01 27 00	      C cMCD_57	db	27h,0,		0,1,	27h,0,	11h,0	;'	Acsent
+       11 00
+ 03D3 28 00 00 01 28 00	      C cMCD_58	db	'(',0,		0,1,	'(',0,	0	;(	Volume Down
+       00
+ 03DA 29 00 00 01 29 00	      C cMCD_59	db	')',0,		0,1,	')',0,	0	;)	Volume Up
+       00
+ 03E1 30 00 01 00 30 00	      C cMCD_60	db	'0',0,		1,0,	'0',0,	11h,11h,0   ;0	ld
+       11 11 00
+ 03EA 31 00 01 00 31 00	      C cMCD_61	db	'1',0,		1,0,	'1',0,	11h,11h,0   ;1	add
+       11 11 00
+ 03F3 32 00 01 00 32 00	      C cMCD_62	db	'2',0,		1,0,	'2',0,	11h,11h,0   ;2	sub
+       11 11 00
+ 03FC 33 00 01 00 33 00	      C cMCD_63	db	'3',0,		1,0,	'3',0,	11h,11h,0   ;3	and
+       11 11 00
+ 0405 34 00 01 00 34 00	      C cMCD_64	db	'4',0,		1,0,	'4',0,	11h,11h,0   ;4	or
+       11 11 00
+ 040E 35 00 01 00 35 00	      C cMCD_65	db	'5',0,		1,0,	'5',0,	11h,11h,0   ;5	xor
+       11 11 00
+ 0417 36 00 01 00 36 00	      C cMCD_66	db	'6',0,		1,0,	'6',0,	11h,11h,0   ;6	set
+       11 11 00
+ 0420 37 00 01 00 37 00	      C cMCD_67	db	'7',0,		1,0,	'7',0,	11h,11h,0   ;7	reset
+       11 11 00
+ 0429 38 00 01 00 38 00	      C cMCD_68	db	'8',0,		1,0,	'8',0,	11h,11h,0   ;8	cmp
+       11 11 00
+ 0432 39 00 01 00 39 00	      C cMCD_69	db	'9',0,		1,0,	'9',0,	11h,11h,0   ;9	test
+       11 11 00
+ 043B 2A 00 00 04 2A 00	      C cMCD_70	db	'*',0,		0,4,	'*',0,	11h,11h,0   ;*	LFO Switch
+       11 11 00
+ 0444 2F 00 00 05 2F 00	      C cMCD_71	db	'/',0,		0,5,	'/',0,	11h,11h,0   ;/	Emb Switch
+       11 11 00
+ 044D 3A 00 00 03 3A 00	      C cMCD_72	db	':',0,		0,3,	':',0,	0f0h	;:	Loop Jump
+       F0
+ 0454  09C6 R		      C 	dw		offset cMCD_Loop_Jump		;
+ 0456  00		      C 	db		0				;
+ 0457 3B 00 01 00 3B 00	      C cMCD_73	db	3bh,0,		1,0,	3bh,0,	11h,0f0h    ;;	Loop Flag
+       11 F0
+ 045F  09C6 R		      C 	dw		offset cMCD_Loop_Jump		;
+ 0461  00		      C 	db		0				;
+ 0462 5B 00 00 03 5B 00	      C cMCD_74	db	'[',0,		0,3,	'[',0,	0f0h	;[	Loop Start
+       F0
+ 0469  0944 R		      C 	dw		offset cMCD_Loop_Start		;
+ 046B  00		      C 	db		0				;
+ 046C 5D 00 00 03 5D 00	      C cMCD_75	db	']',0,		0,3,	']',0,	0f0h	;]	Loop End
+       F0
+ 0473  096A R		      C 	dw		offset cMCD_Loop_End		;
+ 0475  00		      C 	db		0				;
+ 0476 3C 00 00 01 3C 00	      C cMCD_76	db	'<',0,		0,1,	'<',0,	0	;<
+       00
+ 047D 3E 00 00 01 3E 00	      C cMCD_77	db	'>',0,		0,1,	'>',0,	0	;>
+       00
+ 0484 40 46 00 01 05 40	      C cMCD_78	db	'@F',0,		1,05,	'@',80h,0,    11h,0	;@F
+       80 00 11 00
+ 048E 40 53 00 01 05 40	      C cMCD_79	db	'@S',0,		1,05,	'@',81h,0,    11h,12h,0	;@S
+       81 00 11 12 00
+ 0499 40 52 00 01 05 40	      C cMCD_80	db	'@R',0,		1,05,	'@',82h,0,    11h,0	;@R
+       82 00 11 00
+ 04A3 40 44 00 01 0D 40	      C cMCD_81	db	'@D',0,		1,0dh,	'@',83h,0,    11h,12h,0	;@S
+       83 00 11 12 00
+ 04AE 40 00 00 01 40 00	      C cMCD_82	db	'@',0,		0,01,	'@',0,	11h,0	;@
+       11 00
+ 04B6 5F 00 00 01 5F 00	      C cMCD_83	db	'_',0,		0,01,	'_',0,	11h,0	;_
+       11 00
+ 04BE 7B 00 00 08 7B 00	      C cMCD_84	db	'{',0,		0,08,	'{',0,	0f0h	;{
+       F0
+ 04C5  09E5 R		      C 	dw		offset cMCD_trance		;
+ 04C7  00		      C 	db		0				;
+ 0692			      C .code
+			      C 
+			      C ;---------------------------------------------------------------
+			      C ;	改行の直前までポインタを進める
+			      C ;---------------------------------------------------------------
+ 0692			      C cMCD_CRS	proc	near	uses ax	;Serach
+			      C 
+ 0692  50		   *	    push   ax
+			      C 	.repeat
+ 0693			   *@C0044:
+ 0693  E8 FAEE		      C 	   call	CREAD_L			;ファイル終了だったら、終わり。
+ 0696  72 09		      C 	   jc	cMCD_CRS_END		;（このとき、ポインタは改行の次。）
+			      C 	.until	(al == 0dh)		;改行があった。
+ 0698  3C 0D		   *	    cmp    al, 00Dh
+ 069A  75 F7		   *	    jne    @C0044
+			      C 
+			      C 	;ポインタを改行直前に戻す。
+ 069C  2E: FF 0E 0004 R	      C 	dec	cs:[pMML_File]		;
+			      C 
+ 06A1			      C cMCD_CRS_END:
+			      C 	ret				;
+ 06A1  58		   *	    pop    ax
+ 06A2  C3		   *	    ret    00000h
+ 06A3			      C cMCD_CRS	endp
+			      C ;---------------------------------------------------------------
+			      C ;	改行があった場合の処理
+			      C ;---------------------------------------------------------------
+			      C ;	処理１：マクロ中の場合
+			      C ;		マクロを終了する。
+			      C ;
+			      C ;	処理２：マクロ中でない場合
+			      C ;		行先頭がスペース or 制御コードかチェックし、
+			      C ;		それ以外であれば、改行の直前までポインタを進める。
+			      C ;---------------------------------------------------------------
+ 06A3			      C cMCD_CR		proc	near	uses ax
+ 06A3  50		   *	    push   ax
+ 06A4  E8 00D6		      C 	call	cMCD_MacroEndChk	;マクロ中かチェック＆マクロ終了。
+			      C 	.if	(!carry?)
+ 06A7  72 11		   *	    jb     @C0046
+			      C 	   ;-------
+			      C 	   ;マクロ中じゃなかった場合	;スペース or 制御文字であるかチェックし、
+ 06A9  E8 FAD8		      C 	   call	CREAD_L			;そうでなかったら、改行検査を行う。
+			      C 	   .if	(al >= 21h)		;制御文字以外だったら、改行検査から。
+ 06AC  3C 21		   *	    cmp    al, 021h
+ 06AE  72 05		   *	    jb     @C0048
+ 06B0  E8 FFDF		      C 		call	cMCD_CRS	;次の改行まで進める。
+			      C 	   .else
+ 06B3  EB 05		   *	    jmp    @C004A
+ 06B5			   *@C0048:
+ 06B5  2E: FF 0E 0004 R	      C 		dec	cs:[pMML_File]	;
+			      C 	   .endif
+			      C 	.endif
+ 06BA			   *@C004A:
+ 06BA			   *@C0046:
+			      C 	ret				;
+ 06BA  58		   *	    pop    ax
+ 06BB  C3		   *	    ret    00000h
+ 06BC			      C cMCD_CR		endp
+			      C ;---------------------------------------------------------------
+			      C ;	改行＋"C"があった場合の処理	チャンネル設定
+			      C ;---------------------------------------------------------------
+ 06BC			      C cMCD_CH		proc	near	uses ax
+ 06BC  50		   *	    push   ax
+ 06BD  E8 00BD		      C 	call	cMCD_MacroEndChk	;マクロの終了かどうかをチェック
+			      C 	.if	(!carry?)
+ 06C0  72 18		   *	    jb     @C004B
+ 06C2  36: C6 45 01 FF	      C 		mov	ss:[di].cMCD_ChannelMML,0ffh	;ダミーの設定
+			      C 
+			      C 		.repeat
+ 06C7			   *@C004D:
+ 06C7  E8 FA55		      C 		   call	A2H8R		;読み込み
+			      C 		   .if	(ah == ss:[di].cMCD_ChannelWTD)
+ 06CA  36: 3A 25	   *	    cmp    ah, ss : [di] . cMCD_ChannelWTD
+ 06CD  75 04		   *	    jne    @C004E
+ 06CF  36: 88 65 01	      C 			mov	ss:[di].cMCD_ChannelMML,ah
+			      C 		   .endif
+ 06D3			   *@C004E:
+ 06D3  E8 FAAE		      C 		   call	CREAD_L		;カンマがあったら、
+			      C 		.until	(al != ',')	;トラックの複数指定。
+ 06D6  3C 2C		   *	    cmp    al, ','
+ 06D8  74 ED		   *	    je     @C004D
+			      C 	.endif
+ 06DA			   *@C004B:
+			      C 	ret				;
+ 06DA  58		   *	    pop    ax
+ 06DB  C3		   *	    ret    00000h
+ 06DC			      C cMCD_CH		endp
+			      C ;---------------------------------------------------------------
+			      C ;	マクロ呼び出し
+			      C ;---------------------------------------------------------------
+ 04C8			      C .const
+ 04C8 83 7D 83 4E 83 8D	      C cMCD_Macro_Err	db	'マクロが定義されていません。',0DH,0AH,'$'
+       82 AA 92 E8 8B 60
+       82 B3 82 EA 82 C4
+       82 A2 82 DC 82 B9
+       82 F1 81 42 0D 0A
+       24
+ 04E7 83 7D 83 4E 83 8D	      C cMCD_Macro_Err2	db	'マクロのネストが８回を超えました。',0DH,0AH,'$'
+       82 CC 83 6C 83 58
+       83 67 82 AA 82 57
+       89 F1 82 F0 92 B4
+       82 A6 82 DC 82 B5
+       82 BD 81 42 0D 0A
+       24
+ 06DC			      C .code
+ 06DC			      C cMCD_Macro	proc	near	uses ax bx cx dx	;マクロ
+			      C 
+			      C 	local	ptMacroSearch:word		;ポインタ
+			      C 
+			      C 	;●マクロ名の取得
+ 06DC  55		   *	    push   bp
+ 06DD  8B EC		   *	    mov    bp, sp
+ 06DF  83 C4 FE		   *	    add    sp, 0FFFEh
+ 06E2  50		   *	    push   ax
+ 06E3  53		   *	    push   bx
+ 06E4  51		   *	    push   cx
+ 06E5  52		   *	    push   dx
+ 06E6  33 DB		      C 	xor	bx,bx				;
+ 06E8  E8 FA99		      C 	call	CREAD_L				;
+ 06EB  8A D8		      C 	mov	bl,al				;bl ← マクロ文字
+ 06ED  2E: FF 36 0004 R	      C 	push	cs:[pMML_File]			;
+ 06F2  E8 FA8F		      C 	call	CREAD_L				;
+ 06F5  2E: 8F 06 0004 R	      C 	pop	cs:[pMML_File]			;ah ← 引数先頭文字
+			      C 	.if	((al >= 30h) && (al < 3Ah))
+ 06FA  3C 30		   *	    cmp    al, 030h
+ 06FC  72 09		   *	    jb     @C0051
+ 06FE  3C 3A		   *	    cmp    al, 03Ah
+ 0700  73 05		   *	    jae    @C0051
+ 0702  E8 FA1A		      C 		call	A2H8R			;
+ 0705  8A FC		      C 		mov	bh,ah			;bh ← マクロ引数
+			      C 	.endif					;bx ← マクロ番号（文字と番号）
+ 0707			   *@C0051:
+			      C 
+			      C 	;●マクロの検索
+ 0707  2E: 8B 16 0004 R	      C 	mov	dx,cs:[pMML_File]		;dx←MMLのポインタ（保存）
+ 070C  C7 46 FE 0000	      C 	mov	ptMacroSearch,0			;ポインタを先頭に
+			      C 	.repeat
+ 0711			   *@C0054:
+ 0711  33 C9		      C 		xor	cx,cx			;cx←マクロ番号
+			      C 
+ 0713  8B 46 FE		      C 		mov	ax,ptMacroSearch	;今のポインタ
+ 0716  2E: A3 0004 R	      C 		mov	cs:[pMML_File],ax	;
+ 071A  FF 46 FE		      C 		inc	ptMacroSearch		;サーチポインタをインクリメント
+			      C 
+			      C 		;CR+LF+'$'があるかを、先ずチェック
+ 071D  E8 FA64		      C 		call	cread_l			;
+			      C 		.if	(carry?)		;EOFになったら、
+ 0720  73 06		   *	    jae    @C0055
+ 0722  BA 04C8 R	      C 			mov	dx,offset cMCD_Macro_Err
+ 0725  E9 F9EC		      C 			jmp	PRINT_ERR
+			      C 		.endif
+			      C 		.continue	.if	(al != 0dh)
+ 0728			   *@C0055:
+ 0728  3C 0D		   *	    cmp    al, 00Dh
+ 072A  75 2D		   *	    jne    @C0057
+ 072C  E8 FA55		      C 		call	cread_l			;
+			      C 		.continue	.if	(al != 0ah)
+ 072F  3C 0A		   *	    cmp    al, 00Ah
+ 0731  75 26		   *	    jne    @C0057
+ 0733  E8 FA4E		      C 		call	cread_l			;
+			      C 		.continue	.if	(al != '$')
+ 0736  3C 24		   *	    cmp    al, '$'
+ 0738  75 1F		   *	    jne    @C0057
+			      C 
+			      C 		;同一名のマクロかチェック
+ 073A  E8 FA47		      C 		call	CREAD_L			;
+ 073D  8A C8		      C 		mov	cl,al			;cl←マクロ文字
+ 073F  2E: FF 36 0004 R	      C 		push	cs:[pMML_File]		;ポインタ復帰
+ 0744  E8 FA3D		      C 		call	CREAD_L			;
+ 0747  2E: 8F 06 0004 R	      C 		pop	cs:[pMML_File]		;ポインタ復帰
+			      C 		.if	((al >= 30h) && (al < 3Ah))
+ 074C  3C 30		   *	    cmp    al, 030h
+ 074E  72 09		   *	    jb     @C005C
+ 0750  3C 3A		   *	    cmp    al, 03Ah
+ 0752  73 05		   *	    jae    @C005C
+ 0754  E8 F9C8		      C 			call	A2H8R		;
+ 0757  8A EC		      C 			mov	ch,ah		;ch←番号
+			      C 		.endif
+			      C 	.until	(cx == bx)
+ 0759			   *@C005C:
+ 0759			   *@C0057:
+ 0759  3B CB		   *	    cmp    cx, bx
+ 075B  75 B4		   *	    jne    @C0054
+			      C 
+			      C 	;●マクロ
+ 075D  36: 83 45 28 02	      C 	add	ss:[di].cMCD_MacroCount,2	;
+ 0762  36: 8B 5D 28	      C 	mov	bx,ss:[di].cMCD_MacroCount	;マクロのポインタ
+			      C 	.if	(bx >= 16)
+ 0766  83 FB 10		   *	    cmp    bx, 010h
+ 0769  72 06		   *	    jb     @C0060
+ 076B  BA 04E7 R	      C 		mov	dx,offset cMCD_Macro_Err2
+ 076E  E9 F9A3		      C 		jmp	PRINT_ERR
+			      C 	.endif
+ 0771			   *@C0060:
+ 0771  36: 89 51 2A	      C 	mov	ss:[di].cMCD_MacroAdr[bx],dx	;復帰時のポインタ
+			      C 
+			      C 	ret					;
+ 0775  5A		   *	    pop    dx
+ 0776  59		   *	    pop    cx
+ 0777  5B		   *	    pop    bx
+ 0778  58		   *	    pop    ax
+ 0779  8B E5		   *	    mov    sp, bp
+ 077B  5D		   *	    pop    bp
+ 077C  C3		   *	    ret    00000h
+ 077D			      C cMCD_Macro	endp
+			      C ;---------------------------------------------------------------
+			      C ;	マクロ中かチェック＆マクロの終了
+			      C ;---------------------------------------------------------------
+			      C ;	◆返値
+			      C ;		cy='L'	マクロ中じゃない。そのままリターン
+			      C ;		cy='H'	マクロを終了した。
+			      C ;			cs:[pMML_File]	元のポインタ
+			      C ;---------------------------------------------------------------
+ 077D			      C cMCD_MacroEndChk	proc	near	uses ax bx
+			      C 
+ 077D  50		   *	    push   ax
+ 077E  53		   *	    push   bx
+ 077F  36: 8B 5D 28	      C 	mov	bx,ss:[di].cMCD_MacroCount		;マクロのポインタ
+			      C 	.if	(bx != -2)
+ 0783  83 FB FE		   *	    cmp    bx, - 002h
+ 0786  74 0E		   *	    je     @C0062
+ 0788  36: 83 6D 28 02	      C 		sub	ss:[di].cMCD_MacroCount,2	;
+ 078D  36: 8B 41 2A	      C 		mov	ax,ss:[di].cMCD_MacroAdr[bx]	;
+ 0791  2E: A3 0004 R	      C 		mov	cs:[pMML_File],ax		;
+ 0795  F9		      C 		stc					;Cy←'h'
+			      C 	.endif
+ 0796			   *@C0062:
+			      C 
+			      C 	ret				;
+ 0796  5B		   *	    pop    bx
+ 0797  58		   *	    pop    ax
+ 0798  C3		   *	    ret    00000h
+ 0799			      C cMCD_MacroEndChk	endp
+			      C ;---------------------------------------------------------------
+			      C ;	パンポット
+			      C ;---------------------------------------------------------------
+ 0799			      C cMCD_sp		proc	near	uses ax	bx
+			      C 
+ 0799  50		   *	    push   ax
+ 079A  53		   *	    push   bx
+ 079B  2E: FF 36 0004 R	      C 	push	cs:[pMML_File]		;
+ 07A0  E8 F9E1		      C 	call	CREAD_L			;%があったら、
+ 07A3  2E: 8F 06 0004 R	      C 	pop	cs:[pMML_File]		;
+ 07A8  E8 F974		      C 	call	A2H8R	
+			      C 	.if	(al == '%')
+ 07AB  3C 25		   *	    cmp    al, '%'
+ 07AD  75 0C		   *	    jne    @C0064
+			      C 	   .if	(ah < 32)		;%があった場合
+ 07AF  80 FC 20		   *	    cmp    ah, 020h
+ 07B2  73 05		   *	    jae    @C0066
+ 07B4  C0 E4 02		      C 		shl	ah,2		;それ以外は４倍にする。
+			      C 	   .else
+ 07B7  EB 02		   *	    jmp    @C0068
+ 07B9			   *@C0066:
+ 07B9  B4 7F		      C 		mov	ah,127		;もし32以上だったら127
+			      C 	   .endif
+			      C 	.endif
+ 07BB			   *@C0068:
+ 07BB			   *@C0064:
+ 07BB  E8 F9DD		      C 	call	CSET			;
+			      C 
+ 07BE  2E: FF 36 0004 R	      C 	push	cs:[pMML_File]		;
+ 07C3  E8 F9BE		      C 	call	CREAD_L			;カンマがあったら、
+ 07C6  2E: 8F 06 0004 R	      C 	pop	cs:[pMML_File]		;
+			      C 	.if	(al == ',')
+ 07CB  3C 2C		   *	    cmp    al, ','
+ 07CD  75 11		   *	    jne    @C0069
+ 07CF  E8 F94D		      C 	call	A2H8R			;引数を読む
+			      C 	   .if	(ah >= 1)
+ 07D2  80 FC 01		   *	    cmp    ah, 001h
+ 07D5  72 09		   *	    jb     @C006B
+ 07D7  2E: 8B 1E 000C R	      C 		mov	bx,CS:[pWTD_File]	;
+ 07DC  4B		      C 		dec	bx			;
+ 07DD  80 0F 80		      C 		or	byte ptr ds:[bx],80h	;
+			      C 	   .endif
+			      C 	.endif
+ 07E0			   *@C006B:
+ 07E0			   *@C0069:
+			      C 
+			      C 	ret				;
+ 07E0  5B		   *	    pop    bx
+ 07E1  58		   *	    pop    ax
+ 07E2  C3		   *	    ret    00000h
+ 07E3			      C cMCD_sp		endp
+			      C ;---------------------------------------------------------------
+			      C ;	音量
+			      C ;---------------------------------------------------------------
+ 07E3			      C cMCD_sv		proc	near	uses ax	bx;
+			      C 
+ 07E3  50		   *	    push   ax
+ 07E4  53		   *	    push   bx
+ 07E5  2E: FF 36 0004 R	      C 	push	cs:[pMML_File]		;
+ 07EA  E8 F997		      C 	call	CREAD_L			;%があったら、
+ 07ED  2E: 8F 06 0004 R	      C 	pop	cs:[pMML_File]		;
+			      C 
+ 07F2  33 DB		      C 	xor	bx, bx
+			      C 	.if	(al == 'R')
+ 07F4  3C 52		   *	    cmp    al, 'R'
+ 07F6  75 14		   *	    jne    @C006D
+ 07F8  B7 80		      C 		mov	bh, 80h
+ 07FA  2E: FF 06 0004 R	      C 		inc	cs:[pMML_File]
+ 07FF  2E: FF 36 0004 R	      C 		push	cs:[pMML_File]		;Rがあったら、
+ 0804  E8 F97D		      C 		call	CREAD_L			;もう一回読んでおく。
+ 0807  2E: 8F 06 0004 R	      C 		pop	cs:[pMML_File]		;
+			      C 	.endif
+ 080C			   *@C006D:
+			      C 
+ 080C  E8 F910		      C 	call	A2H8R	
+			      C 	.if	(al == '%')
+ 080F  3C 25		   *	    cmp    al, '%'
+ 0811  75 0C		   *	    jne    @C006F
+			      C 	   .if	(ah < 16)		;%があった場合
+ 0813  80 FC 10		   *	    cmp    ah, 010h
+ 0816  73 05		   *	    jae    @C0071
+ 0818  C0 E4 03		      C 		shl	ah,3		;それ以外は8倍にする。
+			      C 	   .else
+ 081B  EB 02		   *	    jmp    @C0073
+ 081D			   *@C0071:
+ 081D  B4 7F		      C 		mov	ah,127		;もし16以上だったら127
+			      C 	   .endif
+			      C 	.endif
+ 081F			   *@C0073:
+ 081F			   *@C006F:
+ 081F  0A E7		      C 	or	ah, bh
+ 0821  E8 F977		      C 	call	CSET			;
+			      C 
+			      C 	ret				;
+ 0824  5B		   *	    pop    bx
+ 0825  58		   *	    pop    ax
+ 0826  C3		   *	    ret    00000h
+ 0827			      C cMCD_sv		endp
+			      C ;---------------------------------------------------------------
+			      C ;	テンポ
+			      C ;---------------------------------------------------------------
+ 0827			      C cMCD_st		proc	near	uses ax bx cx dx
+ 0827  50		   *	    push   ax
+ 0828  53		   *	    push   bx
+ 0829  51		   *	    push   cx
+ 082A  52		   *	    push   dx
+ 082B  2E: FF 36 0004 R	      C 	push	cs:[pMML_File]		;
+ 0830  E8 F951		      C 	call	CREAD_L			;
+ 0833  2E: 8F 06 0004 R	      C 	pop	cs:[pMML_File]		;
+ 0838  8A C8		      C 	mov	cl,al			;
+ 083A  E8 F90B		      C 	call	A2H16R			;
+			      C 	.if	(cl != '%')		;%が無かったら
+ 083D  80 F9 25		   *	    cmp    cl, '%'
+ 0840  74 14		   *	    je     @C0074
+			      C 		;数値読み込み		;
+ 0842  8B C8		      C 		mov	cx,ax		;cx ← 読み込んだ値
+ 0844  33 DB		      C 		xor	bx,bx		;bx ← TimeBase
+ 0846  8A 1E 000B	      C 		mov	bl,ds:[0].WTD_Mus_TimeBase
+			      C 		;演算
+ 084A  BA 000A		      C 		mov	dx,0000ah	;
+ 084D  B8 FC80		      C 		mov	ax,0fc80h	;
+ 0850  F7 F3		      C 		div	bx		;
+ 0852  33 D2		      C 		xor	dx,dx		;
+ 0854  F7 F1		      C 		div	cx		;ax←12000 * 60 / (Tempo * TimeBase)
+			      C 	.endif
+ 0856			   *@C0074:
+ 0856  E8 F960		      C 	call	CSET16			;書き込み
+			      C 
+			      C 	;終了
+			      C 	ret				;
+ 0859  5A		   *	    pop    dx
+ 085A  59		   *	    pop    cx
+ 085B  5B		   *	    pop    bx
+ 085C  58		   *	    pop    ax
+ 085D  C3		   *	    ret    00000h
+ 085E			      C cMCD_st		endp
+			      C ;---------------------------------------------------------------
+			      C ;	ピッチベンド
+			      C ;---------------------------------------------------------------
+ 085E			      C cMCD_lB		proc	near	uses ax bx	;'B'コマンド
+			      C 	
+ 085E  50		   *	    push   ax
+ 085F  53		   *	    push   bx
+ 0860  E8 F8E5		      C 	call	A2H16R				;
+ 0863  E8 F953		      C 	call	CSET16				;
+			      C 
+ 0866  2E: FF 36 0004 R	      C 	push	cs:[pMML_File]			;
+ 086B  E8 F916		      C 	call	CREAD_L				;
+ 086E  2E: 8F 06 0004 R	      C 	pop	cs:[pMML_File]			;
+			      C 	.if	(al == ',')			;カンマがあったら、ベンドレンジ
+ 0873  3C 2C		   *	    cmp    al, ','
+ 0875  75 13		   *	    jne    @C0076
+ 0877  53		      C 		push	bx			;ビットセット
+ 0878  2E: 8B 1E 000C R	      C 		mov	bx,CS:[pWTD_File]	;
+ 087D  4B		      C 		dec	bx			;
+ 087E  4B		      C 		dec	bx			;
+ 087F  81 0F 8000	      C 		or	word ptr ds:[bx],8000h	;
+ 0883  5B		      C 		pop	bx			;
+ 0884  E8 F898		      C 		call	A2H8R			;
+ 0887  E8 F911		      C 		call	CSET			;
+			      C 	.endif
+ 088A			   *@C0076:
+			      C 
+			      C 	ret				;
+ 088A  5B		   *	    pop    bx
+ 088B  58		   *	    pop    ax
+ 088C  C3		   *	    ret    00000h
+ 088D			      C cMCD_lB		endp
+			      C ;---------------------------------------------------------------
+			      C ;	無限ループのポインタセット
+			      C ;---------------------------------------------------------------
+ 088D			      C cMCD_lL		proc	near	uses ax	;'L'コマンド
+			      C 	
+ 088D  50		   *	    push   ax
+ 088E  2E: A1 000C R	      C 	mov	ax,cs:[pWTD_File]	;
+ 0892  36: 89 45 04	      C 	mov	ss:[di].cMCD_LoopL,ax	;
+			      C 	
+			      C 	ret				;
+ 0896  58		   *	    pop    ax
+ 0897  C3		   *	    ret    00000h
+ 0898			      C cMCD_lL		endp
+			      C ;---------------------------------------------------------------
+			      C ;	エクスクルーシブ
+			      C ;---------------------------------------------------------------
+ 0898			      C cMCD_lX		proc	near	uses ax	;'X'コマンド
+			      C 
+			      C 	local	cCRC:BYTE		;Roland GS音源のチェックサム計算用
+			      C 	local	cFlag:BYTE		;チェックサム計算中か？
+			      C 
+ 0898  55		   *	    push   bp
+ 0899  8B EC		   *	    mov    bp, sp
+ 089B  83 C4 FE		   *	    add    sp, 0FFFEh
+ 089E  50		   *	    push   ax
+ 089F  C6 46 FF 00	      C 	mov	cCRC,0			;CRCを0x00にする。
+ 08A3  C6 46 FE 00	      C 	mov	cFlag,0			;Flagを0x00にする。
+			      C 
+ 08A7  B4 F0		      C 	mov	ah,0f0h			;エクスクルーシブ開始
+ 08A9  E8 F8EF		      C 	call	cset			;
+			      C 	.repeat
+ 08AC			   *@C0078:
+ 08AC  2E: FF 36 0004 R	      C 		push	cs:[pMML_File]		;
+ 08B1  E8 F8D0		      C 		call	CREAD_L			;
+ 08B4  2E: 8F 06 0004 R	      C 		pop	cs:[pMML_File]		;
+			      C 		.break	.if	(al == '}')	;
+ 08B9  3C 7D		   *	    cmp    al, '}'
+ 08BB  74 40		   *	    je     @C007A
+			      C 		.if		(al == '(')	;
+ 08BD  3C 28		   *	    cmp    al, '('
+ 08BF  75 06		   *	    jne    @C007C
+ 08C1  C6 46 FE 01	      C 			mov	cFlag,1		;Flagを0x01にする。
+			      C 		.elseif		(al == ')')	;
+ 08C5  EB 2F		   *	    jmp    @C007E
+ 08C7			   *@C007C:
+ 08C7  3C 29		   *	    cmp    al, ')'
+ 08C9  75 12		   *	    jne    @C007F
+ 08CB  C6 46 FE 00	      C 			mov	cFlag,0		;Flagを0x00にする。
+ 08CF  8A 46 FF		      C 			mov	al,cCRC		;
+ 08D2  24 7F		      C 			and	al,07fh		;
+ 08D4  B4 80		      C 			mov	ah,128		;
+ 08D6  2A E0		      C 			sub	ah,al		;
+ 08D8  E8 F8C0		      C 			call	CSET		;CRCの出力
+			      C 		.elseif	((al >= 30h) && (al < 3Ah))
+ 08DB  EB 19		   *	    jmp    @C0081
+ 08DD			   *@C007F:
+ 08DD  3C 30		   *	    cmp    al, 030h
+ 08DF  72 15		   *	    jb     @C0082
+ 08E1  3C 3A		   *	    cmp    al, 03Ah
+ 08E3  73 11		   *	    jae    @C0082
+ 08E5  E8 F837		      C 			call	A2H8R		;読み込み
+ 08E8  E8 F8B0		      C 			call	CSET		;
+			      C 			.if	(cFlag == 1)	;
+ 08EB  80 7E FE 01	   *	    cmp    cFlag, 001h
+ 08EF  75 03		   *	    jne    @C0085
+ 08F1  00 66 FF		      C 			   add	cCRC,ah		;
+			      C 			.endif
+			      C 			.continue
+ 08F4			   *@C0085:
+ 08F4  EB 05		   *	    jmp    @C0079
+			      C 		.endif
+ 08F6			   *@C0082:
+ 08F6			   *@C0081:
+ 08F6			   *@C007E:
+ 08F6  2E: FF 06 0004 R	      C 		inc	cs:[pMML_File]		;
+			      C 	.until	0
+ 08FB			   *@C0079:
+ 08FB  EB AF		   *	    jmp    @C0078
+ 08FD			   *@C007A:
+			      C 
+ 08FD  B0 F7		      C 	mov	al,0f7h			;エクスクルーシブ終了
+ 08FF  E8 F8A8		      C 	call	cset_l			;
+			      C 
+			      C 	ret				;
+ 0902  58		   *	    pop    ax
+ 0903  8B E5		   *	    mov    sp, bp
+ 0905  5D		   *	    pop    bp
+ 0906  C3		   *	    ret    00000h
+ 0907			      C cMCD_lX		endp
+			      C ;---------------------------------------------------------------
+			      C ;	MIDIイベント直書き込み
+			      C ;---------------------------------------------------------------
+ 0907			      C cMCD_lZ		proc	near	uses ax bx cx	;'Z'コマンド
+			      C 
+ 0907  50		   *	    push   ax
+ 0908  53		   *	    push   bx
+ 0909  51		   *	    push   cx
+ 090A  2E: 8B 1E 000C R	      C 	mov	bx,cs:[pWTD_File]	;一時保存
+ 090F  33 C9		      C 	xor	cx,cx			;
+ 0911  E8 F887		      C 	call	CSET			;ポインタ移動
+			      C 
+			      C 	.repeat
+ 0914			   *@C0088:
+ 0914  41		      C 		inc	cx		;
+ 0915  E8 F807		      C 		call	A2H8R		;読み込み
+ 0918  E8 F880		      C 		call	CSET		;
+			      C 
+ 091B  2E: FF 36 0004 R	      C 		push	cs:[pMML_File]	;
+ 0920  E8 F861		      C 		call	CREAD_L		;
+ 0923  2E: 8F 06 0004 R	      C 		pop	cs:[pMML_File]	;
+			      C 	.until	(al == '}')
+ 0928  3C 7D		   *	    cmp    al, '}'
+ 092A  75 E8		   *	    jne    @C0088
+			      C 
+ 092C  2E: FF 36 000C R	      C 	push	cs:[pWTD_File]		;
+ 0931  2E: 89 1E 000C R	      C 	mov	cs:[pWTD_File],bx	;
+ 0936  8A C1		      C 	mov	al,cl			;
+ 0938  E8 F86F		      C 	call	CSET_L			;
+ 093B  2E: 8F 06 000C R	      C 	pop	cs:[pWTD_File]		;
+			      C 
+			      C 	ret				;
+ 0940  59		   *	    pop    cx
+ 0941  5B		   *	    pop    bx
+ 0942  58		   *	    pop    ax
+ 0943  C3		   *	    ret    00000h
+ 0944			      C cMCD_lZ		endp
+			      C ;---------------------------------------------------------------
+			      C ;	ループ開始点
+			      C ;---------------------------------------------------------------
+ 050C			      C .const
+ 050C 83 8A 83 73 81 5B	      C cMCD_Loop_Err1	db	"リピート[]のネストが８回を超えました。",0DH,0AH,24h
+       83 67 5B 5D 82 CC
+       83 6C 83 58 83 67
+       82 AA 82 57 89 F1
+       82 F0 92 B4 82 A6
+       82 DC 82 B5 82 BD
+       81 42 0D 0A 24
+ 0535 83 8A 83 73 81 5B	      C cMCD_Loop_Err2	db	"リピート開始'['がありません。",0DH,0AH,24h
+       83 67 8A 4A 8E 6E
+       27 5B 27 82 AA 82
+       A0 82 E8 82 DC 82
+       B9 82 F1 81 42 0D
+       0A 24
+ 0555 83 8A 83 73 81 5B	      C cMCD_Loop_Err3	db	"リピート終了']'がありません。",0DH,0AH,24h
+       83 67 8F 49 97 B9
+       27 5D 27 82 AA 82
+       A0 82 E8 82 DC 82
+       B9 82 F1 81 42 0D
+       0A 24
+			      C 
+ 0575 0D 0A 24		      C cMCD_Err_00	db	0DH,0AH,24h
+ 0578 83 60 83 83 83 93	      C cMCD_Err_01	db	"チャンネル＝",24h
+       83 6C 83 8B 81 81
+       24
+ 0585 83 7C 83 43 83 93	      C cMCD_Err_02	db	"ポインタ　＝",24h
+       83 5E 81 40 81 81
+       24
+ 0944			      C .code
+ 0944			      C cMCD_Loop_Start	proc	near	uses ax bx	;
+			      C 
+ 0944  50		   *	    push   ax
+ 0945  53		   *	    push   bx
+ 0946  36: 83 45 06 02	      C 	add	ss:[di].cMCD_LoopCount,2	;ポインタ・インクリメント
+ 094B  36: 8B 5D 06	      C 	mov	bx,ss:[di].cMCD_LoopCount	
+			      C 	.if	(bx >= 16)			;ネスト８回超えた？
+ 094F  83 FB 10		   *	    cmp    bx, 010h
+ 0952  72 06		   *	    jb     @C008A
+ 0954  BA 050C R	      C 		mov	dx,offset cMCD_Loop_Err1
+ 0957  E9 F7BA		      C 		jmp	PRINT_ERR
+			      C 	.endif
+ 095A			   *@C008A:
+ 095A  2E: A1 000C R	      C 	mov	ax,cs:[pWTD_File]		;ポインタ読み込み。
+ 095E  36: 89 41 08	      C 	mov	ss:[di].cMCD_LoopEnd[bx],ax
+ 0962  B4 02		      C 	mov	ah,2				;とりあえず、２を書き込み。
+ 0964  E8 F834		      C 	call	cset				;
+			      C 
+			      C 	ret					;
+ 0967  5B		   *	    pop    bx
+ 0968  58		   *	    pop    ax
+ 0969  C3		   *	    ret    00000h
+ 096A			      C cMCD_Loop_Start	endp
+			      C ;---------------------------------------------------------------
+			      C ;	ループ終了点
+			      C ;---------------------------------------------------------------
+ 096A			      C cMCD_Loop_End	proc	near	uses ax bx
+			      C 
+ 096A  50		   *	    push   ax
+ 096B  53		   *	    push   bx
+ 096C  36: 8B 5D 06	      C 	mov	bx,ss:[di].cMCD_LoopCount	;bx ← ポインタ読み込み。
+			      C 	.if	(bx == -2)
+ 0970  83 FB FE		   *	    cmp    bx, - 002h
+ 0973  75 06		   *	    jne    @C008C
+ 0975  BA 0535 R	      C 		mov	dx,offset cMCD_Loop_Err2
+ 0978  E9 F799		      C 		jmp	PRINT_ERR
+			      C 	.endif
+ 097B			   *@C008C:
+ 097B  36: 8B 41 08	      C 	mov	ax,ss:[di].cMCD_LoopEnd[bx]	;ax ← 戻り先アドレス
+ 097F  40		      C 	inc	ax				;1つ進んだ場所を書き込み。
+ 0980  E8 F836		      C 	call	cset16				;戻りアドレスの書き込み。
+ 0983  48		      C 	dec	ax				;
+			      C 
+ 0984  2E: FF 36 000C R	      C 	push	cs:[pWTD_File]			;
+ 0989  2E: A3 000C R	      C 	mov	cs:[pWTD_File],ax		;
+ 098D  E8 F78F		      C 	call	A2H8R				;
+ 0990  E8 F808		      C 	call	CSET				;ループ回数
+ 0993  2E: 8F 06 000C R	      C 	pop	cs:[pWTD_File]			;
+			      C 
+ 0998  36: 8B 41 18	      C 	mov	ax,ss:[di].cMCD_LoopJump[bx]
+			      C 	.if	(ax != 0)			;ループアドレス
+ 099C  0B C0		   *	    or	ax, ax
+ 099E  74 12		   *	    je     @C008E
+ 09A0  2E: FF 36 000C R	      C 		push	cs:[pWTD_File]		;
+ 09A5  2E: 87 06 000C R	      C 		xchg	ax,cs:[pWTD_File]	;ax ← Loop Break先のアドレス
+ 09AA  E8 F80C		      C 		call	cset16			;
+ 09AD  2E: 8F 06 000C R	      C 		pop	cs:[pWTD_File]		;
+			      C 	.endif
+ 09B2			   *@C008E:
+ 09B2  33 C0		      C 	xor	ax,ax				;ax←0
+ 09B4  36: 89 41 18	      C 	mov	ss:[di].cMCD_LoopJump[bx],ax	;
+ 09B8  36: 89 41 08	      C 	mov	ss:[di].cMCD_LoopEnd[bx],ax	;
+ 09BC  83 EB 02		      C 	sub	bx,2				;
+ 09BF  36: 89 5D 06	      C 	mov	ss:[di].cMCD_LoopCount,bx	;ポインタ書き込み
+			      C 
+			      C 	ret				;
+ 09C3  5B		   *	    pop    bx
+ 09C4  58		   *	    pop    ax
+ 09C5  C3		   *	    ret    00000h
+ 09C6			      C cMCD_Loop_End	endp
+			      C ;---------------------------------------------------------------
+			      C ;	ループ抜け点
+			      C ;---------------------------------------------------------------
+ 09C6			      C cMCD_Loop_Jump	proc	near	uses ax bx	;
+			      C 
+ 09C6  50		   *	    push   ax
+ 09C7  53		   *	    push   bx
+ 09C8  36: 8B 5D 06	      C 	mov	bx,ss:[di].cMCD_LoopCount	;
+			      C 	.if	(bx == -2)
+ 09CC  83 FB FE		   *	    cmp    bx, - 002h
+ 09CF  75 06		   *	    jne    @C0090
+ 09D1  BA 0535 R	      C 		mov	dx,offset cMCD_Loop_Err2
+ 09D4  E9 F73D		      C 		jmp	PRINT_ERR
+			      C 	.endif
+ 09D7			   *@C0090:
+ 09D7  2E: A1 000C R	      C 	mov	ax,cs:[pWTD_File]		;ポインタ読み込み。
+ 09DB  36: 89 41 18	      C 	mov	ss:[di].cMCD_LoopJump[bx],ax	;
+ 09DF  E8 F7D7		      C 	call	cset16				;
+			      C 
+			      C 	ret				;
+ 09E2  5B		   *	    pop    bx
+ 09E3  58		   *	    pop    ax
+ 09E4  C3		   *	    ret    00000h
+ 09E5			      C cMCD_Loop_Jump	endp
+			      C ;---------------------------------------------------------------
+			      C ;	転調
+			      C ;---------------------------------------------------------------
+ 0592			      C .const
+ 0592 7B 83 52 83 7D 83	      C cMCD_trance_Err		db	'{コマンドにて不正な半音記号が指定されました。',0dh,0ah,24h
+       93 83 68 82 C9 82
+       C4 95 73 90 B3 82
+       C8 94 BC 89 B9 8B
+       4C 8D 86 82 AA 8E
+       77 92 E8 82 B3 82
+       EA 82 DC 82 B5 82
+       BD 81 42 0D 0A 24
+ 09E5			      C .code
+ 09E5			      C cMCD_trance	proc	near	uses ax cx
+			      C 
+			      C 	local	cPara:BYTE
+			      C 
+ 09E5  55		   *	    push   bp
+ 09E6  8B EC		   *	    mov    bp, sp
+ 09E8  83 C4 FE		   *	    add    sp, 0FFFEh
+ 09EB  50		   *	    push   ax
+ 09EC  51		   *	    push   cx
+ 09ED  C6 46 FF 00	      C 	mov	cPara,000h			;初期化
+			      C 
+ 09F1  E8 F790		      C 	call	CREAD_L				;読み込み
+			      C 	.if	(al == '=')			;■ハ長調 or イ短調 の場合
+ 09F4  3C 3D		   *	    cmp    al, '='
+ 09F6  75 09		   *	    jne    @C0092
+			      C 	   .repeat				;
+ 09F8			   *@C0094:
+ 09F8  E8 F789		      C 		call	CREAD_L			;
+			      C 	   .until	(al == '}')		;}まで進む。
+ 09FB  3C 7D		   *	    cmp    al, '}'
+ 09FD  75 F9		   *	    jne    @C0094
+			      C 
+			      C 	.else					;■ハ長調 and イ短調 以外の場合
+ 09FF  EB 3A		   *	    jmp    @C0096
+ 0A01			   *@C0092:
+			      C 	   .if		((al == '-')||(al == 'b'))
+ 0A01  3C 2D		   *	    cmp    al, '-'
+ 0A03  74 04		   *	    je     @C0098
+ 0A05  3C 62		   *	    cmp    al, 'b'
+ 0A07  75 06		   *	    jne    @C0097
+ 0A09			   *@C0098:
+ 0A09  C6 46 FF 80	      C 		mov	cPara,080h		;
+			      C 	   .elseif	((al == '+')||(al == '#'))
+ 0A0D  EB 10		   *	    jmp    @C009A
+ 0A0F			   *@C0097:
+ 0A0F  3C 2B		   *	    cmp    al, '+'
+ 0A11  74 04		   *	    je     @C009C
+ 0A13  3C 23		   *	    cmp    al, '#'
+ 0A15  75 02		   *	    jne    @C009B
+ 0A17			   *@C009C:
+			      C 	   .else				;
+ 0A17  EB 06		   *	    jmp    @C009E
+ 0A19			   *@C009B:
+ 0A19  BA 0592 R	      C 		mov	dx,offset cMCD_trance_Err
+ 0A1C  E9 F6F5		      C 		jmp	PRINT_ERR		;
+			      C 	   .endif				;
+			      C 	   .repeat				;
+ 0A1F			   *@C009E:
+ 0A1F			   *@C009A:
+ 0A1F			   *@C009F:
+ 0A1F  E8 F762		      C 		call	CREAD_L			;
+			      C 		.break	.if	(al == '}')	;
+ 0A22  3C 7D		   *	    cmp    al, '}'
+ 0A24  74 15		   *	    je     @C00A1
+ 0A26  2C 63		      C 		sub	al,'c'			;
+			      C 		.if	(carry?)		;
+ 0A28  73 02		   *	    jae    @C00A3
+ 0A2A  04 07		      C 		   add	al,7			;
+			      C 		.endif				;
+ 0A2C			   *@C00A3:
+ 0A2C  8A C8		      C 		mov	cl,al			;
+ 0A2E  B0 01		      C 		mov	al,01h			;
+			      C 		.if	(cl != 0)		;
+ 0A30  0A C9		   *	    or	cl, cl
+ 0A32  74 02		   *	    je     @C00A5
+ 0A34  D2 E0		      C 		   shl	al,cl			;
+			      C 		.endif				;
+ 0A36			   *@C00A5:
+ 0A36  08 46 FF		      C 		or	cPara,al		;
+			      C 	   .until	0			;
+ 0A39  EB E4		   *	    jmp    @C009F
+			      C 	.endif					;
+ 0A3B			   *@C00A1:
+ 0A3B			   *@C0096:
+			      C 
+ 0A3B  8A 46 FF		      C 	mov	al,cPara		;
+ 0A3E  E8 F769		      C 	call	CSET_L			;
+			      C 
+			      C 	ret
+ 0A41  59		   *	    pop    cx
+ 0A42  58		   *	    pop    ax
+ 0A43  8B E5		   *	    mov    sp, bp
+ 0A45  5D		   *	    pop    bp
+ 0A46  C3		   *	    ret    00000h
+ 0A47			      C cMCD_trance	endp
+			      C ;===============================================================|
+			      C ;			コマンド・コンパイル			|
+			      C ;===============================================================|
+ 0A47			      C .code
+ 0A47			      C c_Command	proc	near		;パートコンパイル
+			      C 
+			      C 	local	cMCDinfo:cMCD		;コンパイル情報
+			      C 
+			      C 	local	iLength:WORD		;音長計算用
+			      C 	local	cOpcode:BYTE		;Op-Code計算用
+			      C 
+ 0A47  55		   *	    push   bp
+ 0A48  8B EC		   *	    mov    bp, sp
+ 0A4A  83 C4 C2		   *	    add    sp, 0FFC2h
+ 0A4D  60		      C 	pusha				;レジスタ保存
+			      C 
+			      C ;パート数読み込み
+ 0A4E  33 C9		      C 	xor	cx,cx			;
+ 0A50  8A 0E 000A	      C 	mov	cl,byte ptr ds:[0].WTD_Mus_Part
+			      C 
+			      C ;-----------------------------------------------------------------------
+			      C ;トラックコンパイル開始
+			      C 
+			      C     .repeat				;トラック数繰り返す。
+ 0A54			   *@C00A8:
+			      C 
+ 0A54  51		      C 	push	cx			;レジスタ保存
+			      C 
+			      C 	;---------------
+			      C 	;メンバー変数・初期設定
+			      C 	;コンパイル中のチャンネル関連
+ 0A55  33 C0		      C 	xor	ax,ax
+			      C 
+			      C 	;MMLファイルのポインタを先頭に設定。
+ 0A57  2E: A3 0004 R	      C 	mov	cs:[pMML_File],ax	;
+			      C 	;チャンネル情報
+ 0A5B  88 6E C6		      C 	mov	cMCDinfo.cMCD_ChannelWTD,ch
+ 0A5E  C6 46 C7 FF	      C 	mov	cMCDinfo.cMCD_ChannelMML,0ffh
+			      C 	;デフォルト音長
+ 0A62  C7 46 C8 0030	      C 	mov	cMCDinfo.cMCD_DefLength,48
+			      C 	;無限ループアドレス
+ 0A67  89 46 CA		      C 	mov	cMCDinfo.cMCD_LoopL,ax
+			      C 	;ループ・マクロ
+ 0A6A  C7 46 CC FFFE	      C 	mov	cMCDinfo.cMCD_LoopCount,-2
+ 0A6F  C7 46 EE FFFE	      C 	mov	cMCDinfo.cMCD_MacroCount,-2
+ 0A74  33 FF		      C 	xor	di,di			;
+ 0A76  B9 0008		      C 	mov	cx,8
+			      C 	.repeat
+ 0A79			   *@C00A9:
+ 0A79  89 43 CE		      C 	   mov	cMCDinfo.cMCD_LoopEnd[di],ax
+ 0A7C  89 43 DE		      C 	   mov	cMCDinfo.cMCD_LoopJump[di],ax
+ 0A7F  89 43 F0		      C 	   mov	cMCDinfo.cMCD_MacroAdr[di],ax
+ 0A82  83 C7 02		      C 	   add	di,2		;
+			      C 	.untilcxz
+ 0A85  E2 F2		   *	    loop   @C00A9
+			      C 
+			      C 	;---------------
+			      C 	;トラック先頭アドレス保存
+ 0A87  2E: A1 000C R	      C 	mov	ax,cs:[pWTD_File]	;
+ 0A8B  33 DB		      C 	xor	bx,bx			;
+ 0A8D  8A 5E C6		      C 	mov	bl,cMCDinfo.cMCD_ChannelWTD
+ 0A90  D1 E3		      C 	shl	bx,1			;
+ 0A92  83 C3 10		      C 	add	bx,WTD_Mus_PartAdr	;
+ 0A95  89 07		      C 	mov	ds:[bx],ax		;
+			      C 
+			      C 	;---------------
+			      C 	;コマンド検索
+			      C 	;コマンド数量の読み込み
+			      C 	;EOFまで繰り返す。
+			      C 	.repeat
+ 0A97			   *@C00AA:
+			      C 
+ 0A97  8A 66 C7		      C 		mov	ah,cMCDinfo.cMCD_ChannelMML
+ 0A9A  8A 46 C6		      C 		mov	al,cMCDinfo.cMCD_ChannelWTD
+			      C 		.if	(al != ah)		;チャンネルが一致しなかったら、
+ 0A9D  38 E0		   *	    cmp    al, ah
+ 0A9F  74 03		   *	    je     @C00AB
+ 0AA1  E8 FBEE		      C 		  call	cMCD_CRS		;改行を探す。
+			      C 		.endif
+			      C 
+ 0AA4			   *@C00AB:
+ 0AA4  33 FF		      C 		xor	di,di			;di←変換定義アドレスのポインタ
+ 0AA6  2E: 8B 8D 0155 R	      C 		mov	cx,cs:[offset c_Command_Adrs + di]
+			      C 
+			      C 		;コマンドの数だけ繰り返す。
+			      C 		.repeat
+ 0AAB			   *@C00AD:
+ 0AAB  2E: FF 36 0004 R	      C 		   push	cs:[pMML_File]			;ポインタ保存
+ 0AB0  83 C7 02		      C 		   add	di,2				;ポインタインクリメント(Word)
+ 0AB3  2E: 8B B5 0155 R	      C 		   mov	si,cs:[offset c_Command_Adrs + di]	;si←変換定義アドレス
+			      C 		   ;１文字読み込み
+			      C 		   .repeat
+ 0AB8			   *@C00AE:
+ 0AB8  E8 F6B0		      C 			call	cread			;MMLファイルから１文字読み込み
+ 0ABB  2E: AC		      C 			lodsb	cs:[si]			;１文字チェック（00h含む）
+			      C 		   .until	(al != ah)		;文字一致ならば、次もチェック。
+ 0ABD  38 E0		   *	    cmp    al, ah
+ 0ABF  74 F7		   *	    je     @C00AE
+			      C 		   .if		(al == 00h)		;文字終了？
+ 0AC1  0A C0		   *	    or	al, al
+ 0AC3  74 03 E9 01A0	   *	    jne    @C00B0
+			      C 			;コマンド処理。
+ 0AC8  58		      C 			pop	ax			;'pMML_File'ポインタの復帰(値は戻さず)
+ 0AC9  2E: FF 0E 0004 R	      C 			dec	cs:[pMML_File]		;ポインタを元に戻す。
+			      C 
+			      C 			;バージョン比較
+ 0ACE  2E: AD		      C 			lodsw	cs:[si]			;
+ 0AD0  8B 0E 0004	      C 			mov	cx,ds:[0].WTD_Mus_Version
+ 0AD4  86 E0		      C 			xchg	ah,al			;逆に入っている。
+ 0AD6  86 E9		      C 			xchg	ch,cl			;(80形式ではないWord)
+			      C 			.if	(cx < ax)		;比較。
+ 0AD8  3B C8		   *	    cmp    cx, ax
+ 0ADA  73 05		   *	    jae    @C00B2
+ 0ADC  86 E0		      C 			  xchg	ah,al			;このコマンドのバージョンの方が
+ 0ADE  A3 0004		      C 			  mov	ds:[0].WTD_Mus_Version,ax
+			      C 			.endif				;高ければ、数値セット。
+			      C 
+			      C 			;コマンド出力
+			      C 			.repeat
+ 0AE1			   *@C00B2:
+ 0AE1			   *@C00B4:
+ 0AE1  2E: AC		      C 			  lodsb	cs:[si]			;al←コマンド
+			      C 			  .break  .if	(al == 0)	;０ならば終了。
+ 0AE3  0A C0		   *	    or	al, al
+ 0AE5  74 07		   *	    je     @C00B6
+ 0AE7  8A E0		      C 			  mov	ah,al			;
+ 0AE9  E8 F6AF		      C 			  call	CSET			;
+			      C 			.until	0			;
+ 0AEC  EB F3		   *	    jmp    @C00B4
+			      C 
+			      C 			;コマンド処理
+			      C 			.repeat
+ 0AEE			   *@C00B6:
+ 0AEE			   *@C00B9:
+ 0AEE  2E: AC		      C 			    lodsb	cs:[si]			;al←コマンド
+			      C 			   ;------------------------------------
+			      C 			   .break .if	(al == 000h)		;０ならば終了。
+ 0AF0  0A C0		   *	    or	al, al
+ 0AF2  75 03 E9 0168	   *	    je     @C00BB
+			      C 			   ;------------------------------------
+			      C 			   .if		(al == 010h)		;4bit × 2
+ 0AF7  3C 10		   *	    cmp    al, 010h
+ 0AF9  75 19		   *	    jne    @C00BD
+ 0AFB  E8 F621		      C 				call	A2H8R			;
+ 0AFE  80 E4 0F		      C 				and	ah,0fh			;
+ 0B01  8A C4		      C 				mov	al,ah			;
+ 0B03  E8 F619		      C 				call	A2H8R			;
+ 0B06  80 E4 0F		      C 				and	ah,0fh			;
+ 0B09  C0 E4 04		      C 				shl	ah,4			;
+ 0B0C  0A E0		      C 				or	ah,al			;
+ 0B0E  E8 F68A		      C 				call	cset			;
+			      C 			   ;------------------------------------
+			      C 			   .elseif	(al == 011h)		;Byte
+ 0B11  E9 0148		   *	    jmp    @C00BF
+ 0B14			   *@C00BD:
+ 0B14  3C 11		   *	    cmp    al, 011h
+ 0B16  75 09		   *	    jne    @C00C0
+ 0B18  E8 F604		      C 				call	A2H8R			;
+ 0B1B  E8 F67D		      C 				call	CSET			;
+			      C 			   ;------------------------------------
+			      C 			   .elseif	(al == 012h)		;Word
+ 0B1E  E9 013B		   *	    jmp    @C00C2
+ 0B21			   *@C00C0:
+ 0B21  3C 12		   *	    cmp    al, 012h
+ 0B23  75 09		   *	    jne    @C00C3
+ 0B25  E8 F620		      C 				call	A2H16R			;
+ 0B28  E8 F68E		      C 				call	CSET16			;
+			      C 			   ;------------------------------------
+			      C 			   .elseif	(al == 020h)		;Step 書き込み
+ 0B2B  E9 012E		   *	    jmp    @C00C5
+ 0B2E			   *@C00C3:
+ 0B2E  3C 20		   *	    cmp    al, 020h
+ 0B30  75 5B		   *	    jne    @C00C6
+ 0B32  E8 F636		      C 				call	cread			;
+ 0B35  8A CC		      C 				mov	cl,ah			;cl ← 1文字読み込み。
+ 0B37  2E: FF 0E 0004 R	      C 				dec	cs:[pMML_File]		;(ポインタは、ずらさない。)
+ 0B3C  E8 F609		      C 				call	A2H16R			;
+ 0B3F  91		      C 				xchg	ax,cx			;cx←音長を保存。
+			      C 				.if	(al != '%')		;数値の前に'%'が書いてある？
+ 0B40  3C 25		   *	    cmp    al, '%'
+ 0B42  74 0E		   *	    je     @C00C8
+ 0B44  33 D2		      C 				  xor	dx,dx			;
+ 0B46  33 C0		      C 				  xor	ax,ax			;
+ 0B48  A0 000B		      C 				  mov	al,ds:[0].WTD_Mus_TimeBase
+ 0B4B  C1 E0 02		      C 				  shl	ax,2			;dx:ax←４部音符の分割数。
+ 0B4E  F7 F1		      C 				  div	cx			;
+ 0B50  8B C8		      C 				  mov	cx,ax			;cx←Step数。
+			      C 				.endif				;
+ 0B52			   *@C00C8:
+ 0B52  8B D1		      C 				mov	dx, cx
+			      C 
+			      C 				;-------
+			      C 				;音長（付点）の処理
+ 0B54  E8 F62D		      C 				call	CREAD_L			;読み込み。
+			      C 				.while	(al == '.')
+ 0B57  EB 07		   *	    jmp    @C00CA
+ 0B59			   *@C00CB:
+ 0B59  D1 EA		      C 					shr	dx, 1		;
+ 0B5B  03 CA		      C 					add	cx, dx		;
+ 0B5D  E8 F624		      C 					call	CREAD_L		;読み込み。
+			      C 				.endw
+ 0B60			   *@C00CA:
+ 0B60  3C 2E		   *	    cmp    al, '.'
+ 0B62  74 F5		   *	    je     @C00CB
+ 0B64  2E: FF 0E 0004 R	      C 				dec	cs:[pMML_File]		;(ポインタは、ずらさない。)
+			      C 
+ 0B69  2E: AC		      C 				lodsb	cs:[si]			;al←コマンド
+			      C 				.if	(al == 01h)		;
+ 0B6B  3C 01		   *	    cmp    al, 001h
+ 0B6D  75 03		   *	    jne    @C00CD
+ 0B6F  89 4E C8		      C 				  mov	cMCDinfo.cMCD_DefLength,cx
+			      C 				.endif				;
+			      C 				.if	(cx < 0FFh)		;
+ 0B72			   *@C00CD:
+ 0B72  81 F9 00FF	   *	    cmp    cx, 0FFh
+ 0B76  73 08		   *	    jae    @C00CF
+ 0B78  8A E1		      C 				  mov	ah,cl			;
+ 0B7A  E8 F61E		      C 				  call	cset			;
+			      C 				.else				;
+ 0B7D  E9 00DC		   *	    jmp    @C00D1
+ 0B80			   *@C00CF:
+ 0B80  B4 FF		      C 				  mov	ah,0ffh			;
+ 0B82  E8 F616		      C 				  call	cset			;
+ 0B85  8B C1		      C 				  mov	ax,cx			;
+ 0B87  E8 F62F		      C 				  call	cset16			;
+			      C 				.endif				;
+			      C 			   ;------------------------------------
+			      C 			   .elseif	((al >= 080h) && (al < 88h))
+ 0B8A  E9 00CF		   *	    jmp    @C00D2
+ 0B8D			   *@C00C6:
+ 0B8D  3C 80		   *	    cmp    al, 080h
+ 0B8F  73 03 E9 00BB	   *	    jb     @C00D3
+ 0B94  3C 88		   *	    cmp    al, 088h
+ 0B96  72 03 E9 00B4	   *	    jae    @C00D3
+ 0B9B  88 46 C3		      C 				mov	cOpcode,al		;コマンドの保存。
+ 0B9E  8B 56 C8		      C 				mov	dx,cMCDinfo.cMCD_DefLength
+ 0BA1  89 56 C4		      C 				mov	iLength,dx		;iLength←デフォルト音長。
+			      C 				;-------
+			      C 				;臨時記号の処理
+ 0BA4  E8 F5DD		      C 				call	CREAD_L			;読み込み。
+			      C 				.if	((al == '#')||(al == '+'))
+ 0BA7  3C 23		   *	    cmp    al, '#'
+ 0BA9  74 04		   *	    je     @C00D7
+ 0BAB  3C 2B		   *	    cmp    al, '+'
+ 0BAD  75 09		   *	    jne    @C00D6
+ 0BAF			   *@C00D7:
+ 0BAF  80 4E C3 08	      C 					or	cOpcode,008h	;
+ 0BB3  E8 F5CE		      C 					call	CREAD_L		;読み込み。
+			      C 				.elseif	(al == '-')
+ 0BB6  EB 18		   *	    jmp    @C00D9
+ 0BB8			   *@C00D6:
+ 0BB8  3C 2D		   *	    cmp    al, '-'
+ 0BBA  75 09		   *	    jne    @C00DA
+ 0BBC  80 4E C3 10	      C 					or	cOpcode,010h	;
+ 0BC0  E8 F5C1		      C 					call	CREAD_L		;読み込み。
+			      C 				.elseif	(al == '=')
+ 0BC3  EB 0B		   *	    jmp    @C00DC
+ 0BC5			   *@C00DA:
+ 0BC5  3C 3D		   *	    cmp    al, '='
+ 0BC7  75 07		   *	    jne    @C00DD
+ 0BC9  80 4E C3 18	      C 					or	cOpcode,018h	;
+ 0BCD  E8 F5B4		      C 					call	CREAD_L		;読み込み。
+			      C 				.endif
+			      C 
+			      C 				;-------
+			      C 				;音長（数字）の処理
+			      C 				.if	((al == '%') || ((al >= '0')&&(al <= '9')))
+ 0BD0			   *@C00DD:
+ 0BD0			   *@C00DC:
+ 0BD0			   *@C00D9:
+ 0BD0  3C 25		   *	    cmp    al, '%'
+ 0BD2  74 08		   *	    je     @C00E0
+ 0BD4  3C 30		   *	    cmp    al, '0'
+ 0BD6  72 2D		   *	    jb     @C00DF
+ 0BD8  3C 39		   *	    cmp    al, '9'
+ 0BDA  77 29		   *	    ja     @C00DF
+ 0BDC			   *@C00E0:
+ 0BDC  8B C8		      C 				  mov	cx,ax			;cl ← 文字読み込み結果
+ 0BDE  2E: FF 0E 0004 R	      C 				  dec	cs:[pMML_File]		;(ポインタを戻す)
+ 0BE3  E8 F562		      C 				  call	A2H16R			;ax ← 音長
+			      C 				  .if	((ax != 0) && (cl != '%'))
+ 0BE6  0B C0		   *	    or	ax, ax
+ 0BE8  74 13		   *	    je     @C00E3
+ 0BEA  80 F9 25		   *	    cmp    cl, '%'
+ 0BED  74 0E		   *	    je     @C00E3
+ 0BEF  8B C8		      C 					mov	cx,ax		;cx ← 音長
+ 0BF1  33 D2		      C 					xor	dx,dx		;
+ 0BF3  33 C0		      C 					xor	ax,ax		;dx:ax = WTD_Mus_TimeBase
+ 0BF5  A0 000B		      C 					mov	al,ds:[0].WTD_Mus_TimeBase
+ 0BF8  C1 E0 02		      C 					shl	ax,2		;dx:ax←４部音符の分割数。
+ 0BFB  F7 F1		      C 					div	cx		;ax←Step数。
+			      C 				  .endif
+ 0BFD			   *@C00E3:
+ 0BFD  89 46 C4		      C 				  mov	iLength,ax		;
+ 0C00  8B D0		      C 				  mov	dx,ax			;dx←音長
+ 0C02  E8 F57F		      C 				  call	CREAD_L			;読み込み。
+			      C 				.endif
+			      C 
+			      C 				;-------
+			      C 				;音長（付点）の処理
+			      C 				.while	(al == '.')
+ 0C05			   *@C00DF:
+ 0C05  EB 09		   *	    jmp    @C00E6
+ 0C07			   *@C00E7:
+ 0C07  D1 6E C4		      C 					shr	iLength,1	;
+ 0C0A  03 56 C4		      C 					add	dx,iLength	;
+ 0C0D  E8 F574		      C 					call	CREAD_L		;読み込み。
+			      C 				.endw
+ 0C10			   *@C00E6:
+ 0C10  3C 2E		   *	    cmp    al, '.'
+ 0C12  74 F3		   *	    je     @C00E7
+ 0C14  2E: FF 0E 0004 R	      C 				dec	cs:[pMML_File]		;(ポインタは、ずらさない。)
+			      C 
+			      C 				;-------
+			      C 				;タイ・スラーの処理
+			      C 				.if	(al == '&')
+ 0C19  3C 26		   *	    cmp    al, '&'
+ 0C1B  75 04		   *	    jne    @C00E9
+ 0C1D  80 4E C3 20	      C 					or	cOpcode,020h	;
+			      C 				.endif
+			      C 
+			      C 				;-------
+			      C 				;音長は、lコマンドの指定値と同じ？
+			      C 				.if	(dx != cMCDinfo.cMCD_DefLength)
+ 0C21			   *@C00E9:
+ 0C21  3B 56 C8		   *	    cmp    dx, cMCDinfo . cMCD_DefLength
+ 0C24  74 04		   *	    je     @C00EB
+ 0C26  80 4E C3 40	      C 					or	cOpcode,040h	;
+			      C 				.endif
+			      C 
+			      C 				;-------
+			      C 				;コマンドを書き込み
+ 0C2A			   *@C00EB:
+ 0C2A  8A 46 C3		      C 				mov	al,cOpcode		;
+ 0C2D  E8 F57A		      C 				call	CSET_L			;書き込み。
+			      C 				.if	(cOpcode & 040h)
+ 0C30  F6 46 C3 40	   *	    test   cOpcode, 040h
+ 0C34  74 26		   *	    je     @C00ED
+			      C 				   .if	(dx < 00FFh)
+ 0C36  81 FA 00FF	   *	    cmp    dx, 0FFh
+ 0C3A  73 07		   *	    jae    @C00EF
+ 0C3C  8A C2		      C 					mov	al,dl		;
+ 0C3E  E8 F569		      C 					call	cset_L		;
+			      C 				   .else
+ 0C41  EB 0A		   *	    jmp    @C00F1
+ 0C43			   *@C00EF:
+ 0C43  B0 FF		      C 					mov	al,0ffh		;
+ 0C45  E8 F562		      C 					call	cset_l		;
+ 0C48  8B C2		      C 					mov	ax,dx		;
+ 0C4A  E8 F56C		      C 					call	cset16		;
+			      C 				   .endif
+			      C 				.endif
+ 0C4D			   *@C00F1:
+			      C 			   ;------------------------------------
+			      C 			   .elseif	(al == 0F0h)		;Call (Other Program)
+ 0C4D  EB 0D		   *	    jmp    @C00F2
+ 0C4F			   *@C00D3:
+ 0C4F  3C F0		   *	    cmp    al, 0F0h
+ 0C51  75 09		   *	    jne    @C00F3
+ 0C53  57		      C 				push	di			;引数（レジスタ渡し）として、
+ 0C54  8D 7E C6		      C 				lea	di,cMCDinfo		;ss:di ← "cMCDinfo"のポインタ
+ 0C57  2E: AD		      C 				lodsw	cs:[si]			;
+ 0C59  FF D0		      C 				call	ax			;関数呼び出し
+ 0C5B  5F		      C 				pop	di			;
+			      C 			   .endif
+			      C 			   ;------------------------------------
+			      C 			.until	0			;コンパイル処理ループ
+ 0C5C			   *@C00F3:
+ 0C5C			   *@C00F2:
+ 0C5C			   *@C00D2:
+ 0C5C			   *@C00C5:
+ 0C5C			   *@C00C2:
+ 0C5C			   *@C00BF:
+ 0C5C			   *@C00D1:
+ 0C5C			   *@C00ED:
+ 0C5C  E9 FE8F		   *	    jmp    @C00B9
+ 0C5F			   *@C00BB:
+ 0C5F  2E: FF 0E 0004 R	      C 			dec	cs:[pMML_File]		;命令コンパイル処理終了
+			      C 			.break				;命令デコード終了
+ 0C64  EB 0D		   *	    jmp    @C00F7
+			      C 		   .else
+ 0C66  EB 05		   *	    jmp    @C00F8
+ 0C68			   *@C00B0:
+			      C 			;文字チェックで一致しなかった場合。
+ 0C68  2E: 8F 06 0004 R	      C 			pop	cs:[pMML_File]	;ポインタ復帰
+			      C 		   .endif
+ 0C6D			   *@C00F8:
+ 0C6D  49		      C 		   dec	cx
+			      C 		.until	(zero?)			;次のコマンドで比較
+ 0C6E  74 03 E9 FE38	   *	    jne    @C00AD
+ 0C73			   *@C00F7:
+ 0C73  2E: FF 06 0004 R	      C 		inc	CS:[pMML_File]		;ポインタ・インクリメント
+ 0C78  2E: A1 0002 R	      C 		mov	ax,CS:[szMML_File]	;
+			      C 	.until	(ax < CS:[pMML_File])		;MMLファイルが[EOF]ならば終了
+ 0C7C  2E: 3B 06 0004 R	   *	    cmp    ax, cs : [pMml_File]
+ 0C81  72 03 E9 FE11	   *	    jae    @C00AA
+			      C ;-----------------------------------------------------------------------
+			      C ;トラック終了
+			      C 
+			      C 	;エラーチェック
+			      C 	.if	(cMCDinfo.cMCD_LoopCount != -2)		;
+ 0C86  83 7E CC FE	   *	    cmp    cMCDinfo . cMCD_LoopCount, - 002h
+ 0C8A  74 06		   *	    je     @C00FB
+ 0C8C  BA 0555 R	      C 		mov	dx,offset cMCD_Loop_Err3	;
+ 0C8F  E9 F482		      C 		jmp	PRINT_ERR			;リピート命令 '[' を ']' で閉じてるか？
+			      C 	.endif
+			      C 
+			      C 	;トラック終了の書き込み
+ 0C92			   *@C00FB:
+ 0C92  B4 4C		      C 	mov	ah,'L'			;
+ 0C94  E8 F504		      C 	call	cset			;
+ 0C97  8B 46 CA		      C 	mov	ax,cMCDinfo.cMCD_LoopL	;
+ 0C9A  E8 F51C		      C 	call	cset16			;
+			      C 
+ 0C9D  59		      C 	pop	cx			;
+ 0C9E  FE C5		      C 	inc	ch			;
+ 0CA0  FE C9		      C 	dec	cl			;
+			      C     .until	(zero?)
+ 0CA2  74 03 E9 FDAD	   *	    jne    @C00A8
+			      C 
+			      C ;-----------------------------------------------------------------------
+			      C ;終了
+ 0CA7  61		      C 	popa				;レジスタ復帰
+			      C 	ret				;
+ 0CA8  8B E5		   *	    mov    sp, bp
+ 0CAA  5D		   *	    pop    bp
+ 0CAB  C3		   *	    ret    00000h
+ 0CAC			      C c_Command	endp
+			      C 
+
+				;===============================================================|
+				;								|
+				;		オプション処理					|
+				;								|
+				;===============================================================|
+				;****************************************************************
+				;*		オプションフラグ立て				*
+				;****************************************************************
+ 05C2				.const
+ 05C2 83 49 83 76 83 56		OPTION_ERROR_MSG	db	'オプションが不正です。',0dh,0ah,24h
+       83 87 83 93 82 AA
+       95 73 90 B3 82 C5
+       82 B7 81 42 0D 0A
+       24
+ 0CAC				.code
+ 0CAC				OPTION_ERROR	proc	near
+ 0CAC  8D 16 05C2 R			lea	dx,[OPTION_ERROR_MSG]
+ 0CB0  E9 F461				jmp	PRINT_ERR
+ 0CB3				OPTION_ERROR	endp
+				;****************************************************************
+				;*		オプションフラグ立て				*
+				;****************************************************************
+ 05DB				.const
+ 05DB 0D 0A			OP_HELP		DB	0DH,0AH
+ 05DD  57 6F 6E 64 65 72			DB	'Wonder Swan Total Souund Driver',0Dh,0Ah
+       20 53 77 61 6E 20
+       54 6F 74 61 6C 20
+       53 6F 75 75 6E 64
+       20 44 72 69 76 65
+       72 0D 0A
+ 05FE  56 65 72 73 69 6F			DB	'Version ', WtdIL_Version
+       6E 20 31 2E 30 64
+       00
+ 060B  0D 0A					DB	0DH,0AH
+ 060D  0D 0A					DB	0DH,0AH
+ 060F  57 54 43 20 5B 2F			DB	"WTC [/?] [filename]",0DH,0AH
+       3F 5D 20 5B 66 69
+       6C 65 6E 61 6D 65
+       5D 0D 0A
+ 0624  0D 0A					DB	0DH,0AH
+ 0626  20 20 20 66 69 6C			DB	"   filename	Source MML filename",0DH,0AH
+       65 6E 61 6D 65 09
+       53 6F 75 72 63 65
+       20 4D 4D 4C 20 66
+       69 6C 65 6E 61 6D
+       65 0D 0A
+				;		DB	"  /D		Set the debug mode (0 to 255)",0DH,0AH
+				;		db	"  mode		 bit0(+  1) : reserve",0DH,0AH
+				;		db	"		 bit2(+  4) : reserve",0DH,0AH
+				;		db	"		 bit3(+  8) : reserve",0DH,0AH
+				;		db	"		 bit4(+ 16) : reserve",0DH,0AH
+				;		db	"		 bit5(+ 32) : reserve",0DH,0AH
+				;		db	"		 bit6(+ 64) : reserve",0DH,0AH
+				;		db	"		 bit7(+128) : インクルード展開後のMMLを出力する。",0DH,0AH
+				;		db	"		 default = 0",0dh,0ah
+ 0647  20 20 2F 3F 09 09			DB	"  /?		Display help",0DH,0AH
+       44 69 73 70 6C 61
+       79 20 68 65 6C 70
+       0D 0A
+ 065B  24					DB	024H
+ 0CB3				.code
+ 0CB3				OPTION_HELP	proc	near
+ 0CB3  0E				push	cs
+ 0CB4  1F				pop	ds
+ 0CB5  8D 16 05DB R			lea	DX,[OP_HELP]		;表示
+ 0CB9  B4 09				MOV	AH,09H			;
+ 0CBB  CD 21				INT	21H			;
+					.exit	0
+ 0CBD  B8 4C00		   *	    mov    ax, 04C00h
+ 0CC0  CD 21		   *	    int    021h
+ 0CC2				OPTION_HELP	endp			;
+				;****************************************************************
+				;*		オプション処理					*
+				;****************************************************************
+				;●引数								*
+				;	ptFilename	ファイル名を入れるポインタ		*
+				;●返り値							*
+				;	ptFilename[]	オプション文字列で指定されたファイル名	*
+				;●使用レジスタ							*
+				;	ds:si		オプション文字列アドレス		*
+				;	es:di		ptFilename				*
+				;	ax		汎用					*
+				;	cx		オプション文字列最終アドレス＋１	*
+				;****************************************************************
+ 0CC2				.code
+ 0CC2				Op_	proc	near	uses ds es,
+						ptFilename:DWORD	;ファイル名を入れるポインタ
+
+					local	cDebug:BYTE		;デバッグの設定有無
+					local	cHelp:BYTE		;ヘルプ表示の有無
+					local	dotFlag:BYTE		;ファイル名の拡張子の有無
+
+ 0CC2  55		   *	    push   bp
+ 0CC3  8B EC		   *	    mov    bp, sp
+ 0CC5  83 C4 FC		   *	    add    sp, 0FFFCh
+ 0CC8  1E		   *	    push   ds
+ 0CC9  06		   *	    push   es
+ 0CCA  60				pusha
+
+					;-----------------------
+					;フラグ立て
+ 0CCB  33 C0				xor	ax,ax			;ax ← 0
+ 0CCD  C4 7E 04				les	di,ptFilename		;
+ 0CD0  AA				stosb				;先頭にだけ、0を入れておく。
+ 0CD1  88 46 FF				mov	cDebug,al		;
+ 0CD4  88 46 FE				mov	cHelp,al		;
+ 0CD7  88 46 FD				mov	dotFlag,al		;
+
+ 0CDA  0E				push	cs			;
+ 0CDB  1F				pop	ds			;DS←CS
+ 0CDC  BE 0080				MOV	si,0080H		;BX←オプション文字列先頭アドレス－１
+ 0CDF  AC				lodsb				;AL←オプション文字数
+ 0CE0  03 C6				ADD	ax,si			;
+ 0CE2  8B C8				MOV	cx,ax			;CX←オープション文字列最終番地
+
+				    .while	(cx>=si)
+ 0CE4  E9 008F		   *	    jmp    @C00FE
+ 0CE7			   *@C00FF:
+
+ 0CE7  AC				lodsb
+
+					.if	(al<21h)
+ 0CE8  3C 21		   *	    cmp    al, 021h
+ 0CEA  73 06		   *	    jae    @C0100
+						.continue
+ 0CEC  E9 0087		   *	    jmp    @C00FE
+
+					.elseif	((al=='/')||(al=='-'))
+ 0CEF  E9 0084		   *	    jmp    @C0103
+ 0CF2			   *@C0100:
+ 0CF2  3C 2F		   *	    cmp    al, '/'
+ 0CF4  74 04		   *	    je     @C0105
+ 0CF6  3C 2D		   *	    cmp    al, '-'
+ 0CF8  75 3A		   *	    jne    @C0104
+ 0CFA			   *@C0105:
+						.if	(cx<si)
+ 0CFA  3B CE		   *	    cmp    cx, si
+ 0CFC  73 02		   *	    jae    @C0107
+ 0CFE  EB AC						JMP	OPTION_ERROR	;だったらエラー
+						.endif
+
+ 0D00			   *@C0107:
+ 0D00  AC					lodsb
+						.if	((al=='h')||(al=='H')||(al=='?'))
+ 0D01  3C 68		   *	    cmp    al, 'h'
+ 0D03  74 08		   *	    je     @C010A
+ 0D05  3C 48		   *	    cmp    al, 'H'
+ 0D07  74 04		   *	    je     @C010A
+ 0D09  3C 3F		   *	    cmp    al, '?'
+ 0D0B  75 06		   *	    jne    @C0109
+ 0D0D			   *@C010A:
+ 0D0D  C6 46 FE FF					mov	cHelp,0FFh
+						.elseif	((al=='d')||(al=='D'))
+ 0D11  EB 63		   *	    jmp    @C010D
+ 0D13			   *@C0109:
+ 0D13  3C 64		   *	    cmp    al, 'd'
+ 0D15  74 04		   *	    je     @C010F
+ 0D17  3C 44		   *	    cmp    al, 'D'
+ 0D19  75 14		   *	    jne    @C010E
+ 0D1B			   *@C010F:
+						   .repeat
+ 0D1B			   *@C0111:
+ 0D1B  8B D6						mov	dx,si		;DX←オプションアドレス
+							.if	(cx<dx)		;無かったらエラー
+ 0D1D  3B CA		   *	    cmp    cx, dx
+ 0D1F  73 02		   *	    jae    @C0112
+ 0D21  EB 89							JMP	OPTION_ERROR
+							.endif
+ 0D23			   *@C0112:
+ 0D23  E8 0000 E					CALL	ASC2HEX8	;AH←文字列（数値）
+ 0D26  8B F3						mov	si,bx
+						   .until	(!(Carry?))
+ 0D28  72 F1		   *	    jb     @C0111
+ 0D2A  88 66 FF					   mov	cDebug,ah
+						.else
+ 0D2D  EB 47		   *	    jmp    @C0115
+ 0D2F			   *@C010E:
+ 0D2F  E9 FF7A						JMP	OPTION_ERROR	;無かったらエラー
+						.endif
+
+					.else
+ 0D32  EB 42		   *	    jmp    @C0116
+ 0D34			   *@C0104:
+ 0D34  C4 7E 04					les	di,ptFilename		;ファイル名を入れるポインタ
+						.if	(byte ptr es:[di] != 0)
+ 0D37  26: 80 3D 00	   *	    cmp    byte ptr es : [di], 000h
+ 0D3B  74 03		   *	    je     @C0117
+ 0D3D  E9 FF6C						JMP	OPTION_ERROR	;ファイル名が２つ書いてあるよぉ～
+						.endif
+
+ 0D40			   *@C0117:
+ 0D40  4E					dec	si			;ポインタ一つ戻す
+ 0D41  C6 46 FD 00				mov	dotFlag,0
+						.while	(cx>=si)
+ 0D45  EB 13		   *	    jmp    @C0119
+ 0D47			   *@C011A:
+ 0D47  AC						lodsb
+							.if	(al == '.')
+ 0D48  3C 2E		   *	    cmp    al, '.'
+ 0D4A  75 06		   *	    jne    @C011B
+ 0D4C  C6 46 FD 01						mov	dotFlag,1
+							.elseif	(al < 21h)
+ 0D50  EB 07		   *	    jmp    @C011D
+ 0D52			   *@C011B:
+ 0D52  3C 21		   *	    cmp    al, 021h
+ 0D54  73 03		   *	    jae    @C011E
+ 0D56  4E							dec	si
+								.break		;21h未満だったら終わり。
+ 0D57  EB 05		   *	    jmp    @C0120
+							.endif
+ 0D59			   *@C011E:
+ 0D59			   *@C011D:
+ 0D59  AA						stosb			;ファイル名セット
+						.endw
+ 0D5A			   *@C0119:
+ 0D5A  3B CE		   *	    cmp    cx, si
+ 0D5C  73 E9		   *	    jae    @C011A
+
+						.if	(dotFlag==0)		;拡張子が定義されなかったら定義
+ 0D5E			   *@C0120:
+ 0D5E  80 7E FD 00	   *	    cmp    dotFlag, 000h
+ 0D62  75 0C		   *	    jne    @C0122
+ 0D64  B0 2E						mov	al,'.'
+ 0D66  AA						stosb
+ 0D67  B0 4D						mov	al,'M'		;".MML"にする。一応、大文字で。
+ 0D69  AA						stosb
+ 0D6A  B0 4D						mov	al,'M'
+ 0D6C  AA						stosb
+ 0D6D  B0 4C						mov	al,'L'
+ 0D6F  AA						stosb
+						.endif
+
+ 0D70			   *@C0122:
+ 0D70  B0 00					mov	al,0			;
+ 0D72  AA					stosb
+ 0D73  B0 24					mov	al,24h			;
+ 0D75  AA					stosb
+					.endif
+
+				    .endw
+ 0D76			   *@C0116:
+ 0D76			   *@C0103:
+ 0D76			   *@C0115:
+ 0D76			   *@C010D:
+ 0D76			   *@C00FE:
+ 0D76  3B CE		   *	    cmp    cx, si
+ 0D78  72 03 E9 FF6A	   *	    jae    @C00FF
+
+					;-----------------------
+					;フラグに応じた処理
+					;●デバッグ
+					.if	(cDebug != 0)
+ 0D7D  80 7E FF 00	   *	    cmp    cDebug, 000h
+ 0D81  74 07		   *	    je     @C0125
+ 0D83  8A 46 FF					mov	al,cDebug
+ 0D86  2E: A2 0000 R				mov	CS:[D_Debug],AL		;設定
+					.endif
+ 0D8A			   *@C0125:
+
+					;●ヘルプ
+					.if	(cHelp != 0)
+ 0D8A  80 7E FE 00	   *	    cmp    cHelp, 000h
+ 0D8E  74 03		   *	    je     @C0127
+ 0D90  E9 FF20					jmp	OPTION_HELP		;
+					.endif
+ 0D93			   *@C0127:
+
+					;●ファイル処理
+ 0D93  C4 7E 04				les	di,ptFilename			;ファイル名があるポインタ
+					.if	(byte ptr es:[di] != 0)
+ 0D96  26: 80 3D 00	   *	    cmp    byte ptr es : [di], 000h
+ 0D9A  74 35		   *	    je     @C0129
+						invoke	Change_Current_Directory,	addr es:[di]
+ 0D9C  06		   *	    push   es
+ 0D9D  8D 05		   *	    lea    ax,  es:[+di]
+ 0D9F  50		   *	    push   ax
+ 0DA0  E8 0000 E	   *	    call   Change_Current_Directory
+
+						;オープン
+						invoke	File_Open,			addr es:[di],	0
+ 0DA3  6A 00		   *	    push   +00000h
+ 0DA5  06		   *	    push   es
+ 0DA6  8D 05		   *	    lea    ax,  es:[+di]
+ 0DA8  50		   *	    push   ax
+ 0DA9  E8 0000 E	   *	    call   File_Open
+ 0DAC  2E: A3 0000 R				mov	word ptr cs:[hMml_File],ax
+ 0DB0  50					push	ax
+
+						;ロード
+ 0DB1  2E: 8E 1E 0006 R				mov	ds,word ptr CS:[segMml_File]
+ 0DB6  33 DB					xor	bx,bx			;
+ 0DB8  C7 07 0A0D				mov	ds:[bx],0a0dh		;ファイル先頭に改行を挿入
+						invoke	File_Load,	ax,addr ds:2
+ 0DBC  1E		   *	    push   ds
+ 0DBD  6A 02		   *	    push   OFFSET ds:+00002h
+ 0DBF  50		   *	    push   ax
+ 0DC0  E8 0000 E	   *	    call   File_Load
+ 0DC3  83 C0 02					add	ax,2			;
+ 0DC6  2E: A3 0002 R				mov	word ptr CS:[szMml_File],ax
+
+						;クローズ
+ 0DCA  58					pop	ax
+						invoke	File_Close,	ax
+ 0DCB  50		   *	    push   ax
+ 0DCC  E8 0000 E	   *	    call   File_Close
+					.else
+ 0DCF  EB 03		   *	    jmp    @C012B
+ 0DD1			   *@C0129:
+ 0DD1  E9 FEDF					jmp	OPTION_HELP	;ファイル名の指定が無ければ、
+					.endif
+ 0DD4			   *@C012B:
+
+ 0DD4  61				popa
+					RET				;RETURN
+ 0DD5  07		   *	    pop    es
+ 0DD6  1F		   *	    pop    ds
+ 0DD7  8B E5		   *	    mov    sp, bp
+ 0DD9  5D		   *	    pop    bp
+ 0DDA  C2 0004		   *	    ret    00004h
+ 0DDD				Op_	endp
+				;=======================================================================|
+				;									|
+				;		Wander Swan Total Sound Driver				|
+				;				MML Compiler Program			|
+				;				Main Routine				|
+				;									|
+				;					Programmed by			|
+				;						A.Watanabe		|
+				;									|
+				;=======================================================================|
+				;●レジスタ使用								|
+				;	ds	WTDファイルを処理する為に確保したメモリ・セグメント	|
+				;	es	MMLファイルを処理する為に確保したメモリ・セグメント	|
+				;	ax	セーブ用のファイルハンドル				|
+				;=======================================================================|
+ 0DDD				.code
+ 0DDD				_main	proc	near
+
+					local	Ext[3]:BYTE		;拡張子　変更用
+					local	cFilename[134]:BYTE	;ファイル名
+
+					;-------------------------------
+					;■メモリオープン
+ 0DDD  55		   *	    push   bp
+ 0DDE  8B EC		   *	    mov    bp, sp
+ 0DE0  81 C4 FF76	   *	    add    sp, 0FF76h
+					invoke	Memory_Open,	01000h	;
+ 0DE4  68 1000		   *	    push   +01000h
+ 0DE7  E8 0000 E	   *	    call   Memory_Open
+ 0DEA  2E: A3 0006 R			mov	word ptr cs:[segMml_File],ax
+ 0DEE  8E C0				mov	es,ax			;ES←MML SEGMENT
+					invoke	Memory_Open,	01000h	;
+ 0DF0  68 1000		   *	    push   +01000h
+ 0DF3  E8 0000 E	   *	    call   Memory_Open
+ 0DF6  2E: A3 000E R			mov	word ptr cs:[segWtd_File],ax
+ 0DFA  8E D8				mov	ds,ax			;DS←WTD SEGMENT
+
+					;-------------------------------
+					;■オプション処理
+					invoke	Op_,	addr ss:cFilename	;オプションに記述されたファイル名を取得する。
+ 0DFC  16		   *	    push   ss
+ 0DFD  8D 86 FF77	   *	    lea    ax, byte  ptr ss:[bp]+077h
+ 0E01  50		   *	    push   ax
+ 0E02  E8 FEBD		   *	    call   Op_
+
+					;-------------------------------
+					;■コンパイル
+					invoke	c_Head_first		;ヘッダー ＆ インクルードファイルの挿入処理
+ 0E05  E8 F4E0		   *	    call   c_Head_first
+					invoke	c_voice			;音色転送
+ 0E08  E8 F684		   *	    call   c_Voice
+					invoke	c_Command		;パートコンパイル
+ 0E0B  E8 FC39		   *	    call   c_Command
+					invoke	c_Head_end		;ヘッダー設定(一番最後に呼ぶ。)
+ 0E0E  E8 F5B0		   *	    call   c_Head_end
+
+					;-------------------------------
+					;■WTD or FX ファイルのセーブ
+					;セーブするファイルの作成
+					.if	(cs:[cHCD_FlagFx]==00h)
+ 0E11  2E: 80 3E 0081 R
+       00		   *	    cmp    cs : [cHCD_FlagFx], 000h
+ 0E17  75 0E		   *	    jne    @C012C
+ 0E19  C6 46 FD 57				mov	Ext[0],'W'		;
+ 0E1D  C6 46 FE 54				mov	Ext[1],'T'		;拡張子は"WTD"
+ 0E21  C6 46 FF 44				mov	Ext[2],'D'		;
+					.else
+ 0E25  EB 0C		   *	    jmp    @C012E
+ 0E27			   *@C012C:
+ 0E27  C6 46 FD 46				mov	Ext[0],'F'		;
+ 0E2B  C6 46 FE 58				mov	Ext[1],'X'		;拡張子は"FX"
+ 0E2F  C6 46 FF 00				mov	Ext[2],0		;
+					.endif
+ 0E33			   *@C012E:
+					invoke	ChangeExt,	addr ss:cFilename,addr ss:Ext
+ 0E33  16		   *	    push   ss
+ 0E34  8D 46 FD		   *	    lea    ax, byte  ptr ss:[bp]+0FDh
+ 0E37  50		   *	    push   ax
+ 0E38  16		   *	    push   ss
+ 0E39  8D 86 FF77	   *	    lea    ax, byte  ptr ss:[bp]+077h
+ 0E3D  50		   *	    push   ax
+ 0E3E  E8 0000 E	   *	    call   ChangeExt
+					invoke	File_Create,	addr ss:cFilename,0
+ 0E41  6A 00		   *	    push   +00000h
+ 0E43  16		   *	    push   ss
+ 0E44  8D 86 FF77	   *	    lea    ax, byte  ptr ss:[bp]+077h
+ 0E48  50		   *	    push   ax
+ 0E49  E8 0000 E	   *	    call   File_Create
+ 0E4C  2E: A3 0008 R			mov	word ptr cs:[hWtd_File],ax
+
+					;セーブ・ファイルへ書き込み
+					.if	(cs:[cHCD_FlagFx]!=00h)
+ 0E50  2E: 80 3E 0081 R
+       00		   *	    cmp    cs : [cHCD_FlagFx], 000h
+ 0E56  74 0B		   *	    je     @C012F
+					   invoke  File_Write,	ax,128,addr cs:FX
+ 0E58  0E		   *	    push   cs
+ 0E59  68 0001 R	   *	    push   OFFSET cs:FX
+ 0E5C  68 0080		   *	    push   +00080h
+ 0E5F  50		   *	    push   ax
+ 0E60  E8 0000 E	   *	    call   File_Write
+					.endif
+ 0E63			   *@C012F:
+					invoke	File_Write,	ax,word ptr cs:[pWTD_File],addr ds:0
+ 0E63  1E		   *	    push   ds
+ 0E64  6A 00		   *	    push   OFFSET ds:+00000h
+ 0E66  2E: FF 36 000C R	   *	    push   cs:pWtd_File
+ 0E6B  50		   *	    push   ax
+ 0E6C  E8 0000 E	   *	    call   File_Write
+					invoke	File_Close,	ax
+ 0E6F  50		   *	    push   ax
+ 0E70  E8 0000 E	   *	    call   File_Close
+
+					;-------------------------------
+					;■デバック用セーブ
+					.if	(CS:[D_Debug] & 80h)
+ 0E73  2E: F6 06 0000 R
+       80		   *	    test   cs : [D_Debug], 080h
+ 0E79  74 35		   *	    je     @C0131
+ 0E7B  C6 46 FD 54				mov	Ext[0],'T'		;
+ 0E7F  C6 46 FE 43				mov	Ext[1],'C'		;拡張子は"TCM"
+ 0E83  C6 46 FF 4D				mov	Ext[2],'M'		;
+						invoke	ChangeExt,	addr ss:cFilename,addr ss:Ext
+ 0E87  16		   *	    push   ss
+ 0E88  8D 46 FD		   *	    lea    ax, byte  ptr ss:[bp]+0FDh
+ 0E8B  50		   *	    push   ax
+ 0E8C  16		   *	    push   ss
+ 0E8D  8D 86 FF77	   *	    lea    ax, byte  ptr ss:[bp]+077h
+ 0E91  50		   *	    push   ax
+ 0E92  E8 0000 E	   *	    call   ChangeExt
+						invoke	File_Create,	addr ss:cFilename,0
+ 0E95  6A 00		   *	    push   +00000h
+ 0E97  16		   *	    push   ss
+ 0E98  8D 86 FF77	   *	    lea    ax, byte  ptr ss:[bp]+077h
+ 0E9C  50		   *	    push   ax
+ 0E9D  E8 0000 E	   *	    call   File_Create
+						invoke	File_Write,	ax,word ptr cs:[szMml_File],addr es:0
+ 0EA0  06		   *	    push   es
+ 0EA1  6A 00		   *	    push   OFFSET es:+00000h
+ 0EA3  2E: FF 36 0002 R	   *	    push   cs:szMml_File
+ 0EA8  50		   *	    push   ax
+ 0EA9  E8 0000 E	   *	    call   File_Write
+						invoke	File_Close,	ax
+ 0EAC  50		   *	    push   ax
+ 0EAD  E8 0000 E	   *	    call   File_Close
+					.endif
+ 0EB0			   *@C0131:
+
+					;-------------------------------
+					;■メモリの解放
+					invoke	Memory_Close,	ds
+ 0EB0  1E		   *	    push   ds
+ 0EB1  E8 0000 E	   *	    call   Memory_Close
+					invoke	Memory_Close,	es
+ 0EB4  06		   *	    push   es
+ 0EB5  E8 0000 E	   *	    call   Memory_Close
+
+					ret
+ 0EB8  8B E5		   *	    mov    sp, bp
+ 0EBA  5D		   *	    pop    bp
+ 0EBB  C3		   *	    ret    00000h
+ 0EBC				_main	endp
+				;************************************************************************
+				;*		終わり							*
+				;************************************************************************
+					END
+
+Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:05
+WTC.asm							     Symbols 2 - 1
+
+
+
+
+Macros:
+
+                N a m e                 Type
+
+ROM0_GET_MAP . . . . . . . . . .	Proc
+ROM0_SET_MAP . . . . . . . . . .	Proc
+ROM1_GET_MAP . . . . . . . . . .	Proc
+ROM1_SET_MAP . . . . . . . . . .	Proc
+SRAM_GET_MAP . . . . . . . . . .	Proc
+SRAM_SET_MAP . . . . . . . . . .	Proc
+WTD_WorkGet  . . . . . . . . . .	Proc
+
+
+Structures and Unions:
+
+                N a m e                  Size
+                                         Offset      Type
+
+RiffHed  . . . . . . . . . . . .	 0009
+  RiffHed_Head . . . . . . . . .	 0000	     Byte
+  RiffHed_Size . . . . . . . . .	 0004	     DWord
+  RiffHed_Data . . . . . . . . .	 0008	     Byte
+Riff . . . . . . . . . . . . . .	 000D
+  Riff_Head  . . . . . . . . . .	 0000	     Byte
+  Riff_Size  . . . . . . . . . .	 0004	     DWord
+  Riff_Type  . . . . . . . . . .	 0008	     Byte
+  Riff_Data  . . . . . . . . . .	 000C	     Byte
+WTD_ChEmb  . . . . . . . . . . .	 0005
+  WTD_ChEmb_Address  . . . . . .	 0000	     Byte
+  WTD_ChEmb_Rate . . . . . . . .	 0001	     Byte
+  WTD_ChEmb_Counter  . . . . . .	 0002	     Byte
+  WTD_ChEmb_MaxMin . . . . . . .	 0003	     Byte
+  WTD_ChEmb_LevelSet . . . . . .	 0004	     Byte
+WTD_ChLfo  . . . . . . . . . . .	 0009
+  WTD_ChLfo_DecayRate  . . . . .	 0000	     Byte
+  WTD_ChLfo_SpeedRate  . . . . .	 0001	     Byte
+  WTD_ChLfo_Level  . . . . . . .	 0002	     Word
+  WTD_ChLfo_Count  . . . . . . .	 0004	     Byte
+  WTD_ChLfo_RateCounter  . . . .	 0005	     Byte
+  WTD_ChLfo_LevelSet . . . . . .	 0006	     Word
+  WTD_ChLfo_CountCounter . . . .	 0008	     Byte
+WTD_Emb  . . . . . . . . . . . .	 0010
+  WTD_Emb_AR . . . . . . . . . .	 0000	     Byte
+  WTD_Emb_AS . . . . . . . . . .	 0001	     Byte
+  WTD_Emb_AL . . . . . . . . . .	 0002	     Byte
+  WTD_Emb_FL . . . . . . . . . .	 0003	     Byte
+  WTD_Emb_DR . . . . . . . . . .	 0004	     Byte
+  WTD_Emb_DS . . . . . . . . . .	 0005	     Byte
+  WTD_Emb_DL . . . . . . . . . .	 0006	     Byte
+  WTD_Emb_Null1  . . . . . . . .	 0007	     Byte
+  WTD_Emb_SR . . . . . . . . . .	 0008	     Byte
+  WTD_Emb_SS . . . . . . . . . .	 0009	     Byte
+  WTD_Emb_SL . . . . . . . . . .	 000A	     Byte
+  WTD_Emb_Null2  . . . . . . . .	 000B	     Byte
+  WTD_Emb_RR . . . . . . . . . .	 000C	     Byte
+  WTD_Emb_RS . . . . . . . . . .	 000D	     Byte
+  WTD_Emb_RL . . . . . . . . . .	 000E	     Byte
+  WTD_Emb_Null3  . . . . . . . .	 000F	     Byte
+WTD_MusEx  . . . . . . . . . . .	 0000
+WTD_Mus  . . . . . . . . . . . .	 0012
+  WTD_Mus_Name . . . . . . . . .	 0000	     Byte
+  WTD_Mus_Version  . . . . . . .	 0004	     Word
+  WTD_Mus_Extr . . . . . . . . .	 0006	     Word
+  WTD_Mus_Emb  . . . . . . . . .	 0008	     Byte
+  WTD_Mus_Voice  . . . . . . . .	 0009	     Byte
+  WTD_Mus_Part . . . . . . . . .	 000A	     Byte
+  WTD_Mus_TimeBase . . . . . . .	 000B	     Byte
+  WTD_Mus_ExtrAdr  . . . . . . .	 000C	     Word
+  WTD_Mus_DataAdr  . . . . . . .	 000E	     Word
+  WTD_Mus_PartAdr  . . . . . . .	 0010	     Word
+WTD_Sys  . . . . . . . . . . . .	 0034
+  WTD_Sys_Flag . . . . . . . . .	 0000	     Word
+  WTD_Sys_ProgramOffset  . . . .	 0002	     Word
+  WTD_Sys_ProgramSegment . . . .	 0004	     Word
+  WTD_Sys_MusicOffset  . . . . .	 0006	     Word
+  WTD_Sys_MusicSegment . . . . .	 0008	     Word
+  WTD_Sys_EffectOffset . . . . .	 000A	     Word
+  WTD_Sys_EffectSegment  . . . .	 000C	     Word
+  WTD_Sys_PcmOffset  . . . . . .	 000E	     Word
+  WTD_Sys_PcmSegment . . . . . .	 0010	     Word
+  WTD_Sys_StayOutMask  . . . . .	 0012	     Word
+  WTD_Sys_OldIntvector . . . . .	 0014	     Word
+  WTD_Sys_OldIntvectorCom  . . .	 0018	     Word
+  WTD_Sys_ComFIFO_Offset . . . .	 001C	     Word
+  WTD_Sys_ComFIFO_Segment  . . .	 001E	     Word
+  WTD_Sys_Null_20  . . . . . . .	 0020	     Byte
+  WTD_Sys_VolumeMusic  . . . . .	 0021	     Byte
+  WTD_Sys_VolumeEffect . . . . .	 0022	     Byte
+  WTD_Sys_VolumePCM  . . . . . .	 0023	     Byte
+  WTD_Sys_Tempo  . . . . . . . .	 0024	     Word
+  WTD_Sys_TempoCounter . . . . .	 0026	     Word
+  WTD_Sys_MusicPart  . . . . . .	 0028	     Byte
+  WTD_Sys_EffectPart . . . . . .	 0029	     Byte
+  WTD_Sys_ComFIFO_Cnt  . . . . .	 002A	     Word
+  WTD_Sys_ComFIFO_Adr  . . . . .	 002C	     Word
+  WTD_Sys_ComFIFO_Size . . . . .	 002E	     Word
+  WTD_Sys_RunningStatus  . . . .	 0030	     Byte
+  WTD_Sys_InterruptBase  . . . .	 0031	     Byte
+  WTD_Sys_VoiceTableOffset . . .	 0032	     Word
+WTD  . . . . . . . . . . . . . .	 007A
+  WTD_FlagControl  . . . . . . .	 0000	     Word
+  WTD_FlagTai  . . . . . . . . .	 0002	     Byte
+  WTD_FlagSharp  . . . . . . . .	 0003	     Byte
+  WTD_FlagFlat . . . . . . . . .	 0004	     Byte
+  WTD_Channel  . . . . . . . . .	 0005	     Byte
+  WTD_Address  . . . . . . . . .	 0006	     Word
+  WTD_LoopCount  . . . . . . . .	 0008	     Byte
+  WTD_LoopCountPointer . . . . .	 0010	     Byte
+  WTD_Program  . . . . . . . . .	 0011	     Byte
+  WTD_SweepLevel . . . . . . . .	 0012	     Byte
+  WTD_SweepTime  . . . . . . . .	 0013	     Byte
+  WTD_Leng . . . . . . . . . . .	 0014	     Word
+  WTD_LengCounter  . . . . . . .	 0016	     Word
+  WTD_LengDefault  . . . . . . .	 0018	     Word
+  WTD_KeyOffTime . . . . . . . .	 001A	     Word
+  WTD_KeyOnDelay . . . . . . . .	 001C	     Word
+  WTD_KeyShift . . . . . . . . .	 001E	     Byte
+  WTD_Key  . . . . . . . . . . .	 001F	     Byte
+  WTD_KeySet . . . . . . . . . .	 0020	     Byte
+  WTD_KeySetPointer  . . . . . .	 0028	     Byte
+  WTD_AcsentVelocity . . . . . .	 0029	     Byte
+  WTD_BendSet  . . . . . . . . .	 002A	     Word
+  WTD_Bend . . . . . . . . . . .	 002C	     Word
+  WTD_BendDetune . . . . . . . .	 002E	     Word
+  WTD_BendLfoDecayRate . . . . .	 0030	     Byte
+  WTD_BendLfoSpeedRate . . . . .	 0031	     Byte
+  WTD_BendLfoLevel . . . . . . .	 0032	     Word
+  WTD_BendLfoCount . . . . . . .	 0034	     Byte
+  WTD_BendLfoRateCounter . . . .	 0035	     Byte
+  WTD_BendLfoLevelSet  . . . . .	 0036	     Word
+  WTD_BendLfoCountCounter  . . .	 0038	     Byte
+  WTD_BendEmbAddress . . . . . .	 0039	     Byte
+  WTD_BendEmbRate  . . . . . . .	 003A	     Byte
+  WTD_BendEmbCounter . . . . . .	 003B	     Byte
+  WTD_BendEmbMaxMin  . . . . . .	 003C	     Byte
+  WTD_BendEmbLevelSet  . . . . .	 003D	     Byte
+  WTD_ReleaseVolume  . . . . . .	 003E	     Byte
+  WTD_ExprPanSet . . . . . . . .	 003F	     Byte
+  WTD_ExprSet  . . . . . . . . .	 0040	     Byte
+  WTD_Expr . . . . . . . . . . .	 0041	     Byte
+  WTD_ExprDetune . . . . . . . .	 0042	     Word
+  WTD_ExprLfoDecayRate . . . . .	 0044	     Byte
+  WTD_ExprLfoSpeedRate . . . . .	 0045	     Byte
+  WTD_ExprLfoLevel . . . . . . .	 0046	     Word
+  WTD_ExprLfoCount . . . . . . .	 0048	     Byte
+  WTD_ExprLfoRateCounter . . . .	 0049	     Byte
+  WTD_ExprLfoLevelSet  . . . . .	 004A	     Word
+  WTD_ExprLfoCountCounter  . . .	 004C	     Byte
+  WTD_ExprEmbAddress . . . . . .	 004D	     Byte
+  WTD_ExprEmbRate  . . . . . . .	 004E	     Byte
+  WTD_ExprEmbCounter . . . . . .	 004F	     Byte
+  WTD_ExprEmbMaxMin  . . . . . .	 0050	     Byte
+  WTD_ExprEmbLevelSet  . . . . .	 0051	     Byte
+  WTD_WorkAddress  . . . . . . .	 0052	     Byte
+  WTD_OctaveSet  . . . . . . . .	 0053	     Byte
+  WTD_Octave . . . . . . . . . .	 0054	     Byte
+  WTD_GateTime8  . . . . . . . .	 0055	     Byte
+  WTD_GateTimeStepLast . . . . .	 0056	     Word
+  WTD_GateTimeStepFirst  . . . .	 0058	     Word
+  WTD_VolumeUpDown . . . . . . .	 005A	     Byte
+  WTD_ModDecay . . . . . . . . .	 005B	     Word
+  WTD_ModLevel . . . . . . . . .	 005D	     Byte
+  WTD_ModLevelSet  . . . . . . .	 005E	     Byte
+  WTD_Null_5F  . . . . . . . . .	 005F	     Byte
+  WTD_PanSet . . . . . . . . . .	 0060	     Byte
+  WTD_Pan  . . . . . . . . . . .	 0061	     Byte
+  WTD_PanDetune  . . . . . . . .	 0062	     Word
+  WTD_PanLfoDecayRate  . . . . .	 0064	     Byte
+  WTD_PanLfoSpeedRate  . . . . .	 0065	     Byte
+  WTD_PanLfoLevel  . . . . . . .	 0066	     Word
+  WTD_PanLfoCount  . . . . . . .	 0068	     Byte
+  WTD_PanLfoRateCounter  . . . .	 0069	     Byte
+  WTD_PanLfoLevelSet . . . . . .	 006A	     Word
+  WTD_PanLfoCountCounter . . . .	 006C	     Byte
+  WTD_PanEmbAddress  . . . . . .	 006D	     Byte
+  WTD_PanEmbRate . . . . . . . .	 006E	     Byte
+  WTD_PanEmbCounter  . . . . . .	 006F	     Byte
+  WTD_PanEmbMaxMin . . . . . . .	 0070	     Byte
+  WTD_PanEmbLevelSet . . . . . .	 0071	     Byte
+  WTD_ProgramRate  . . . . . . .	 0072	     Word
+  WTD_Program1st . . . . . . . .	 0074	     Byte
+  WTD_Program2nd . . . . . . . .	 0075	     Byte
+  WTD_Program3rd . . . . . . . .	 0076	     Byte
+  WTD_ProgramDecay . . . . . . .	 0077	     Byte
+  WTD_ProgramDecayRate . . . . .	 0078	     Word
+WaveData . . . . . . . . . . . .	 0009
+  WaveData_Head  . . . . . . . .	 0000	     Byte
+  WaveData_Size  . . . . . . . .	 0004	     DWord
+  WaveData_Data  . . . . . . . .	 0008	     Byte
+WaveFmt  . . . . . . . . . . . .	 0018
+  WaveFmt_Head . . . . . . . . .	 0000	     Byte
+  WaveFmt_Size . . . . . . . . .	 0004	     DWord
+  WaveFmt_Type . . . . . . . . .	 0008	     Word
+  WaveFmt_Channel  . . . . . . .	 000A	     Word
+  WaveFmt_SamplingRate . . . . .	 000C	     DWord
+  WaveFmt_SamplingSec  . . . . .	 0010	     DWord
+  WaveFmt_DataSize . . . . . . .	 0014	     Word
+  WaveFmt_ChannelSize  . . . . .	 0016	     Word
+cMCD . . . . . . . . . . . . . .	 003A
+  cMCD_ChannelWTD  . . . . . . .	 0000	     Byte
+  cMCD_ChannelMML  . . . . . . .	 0001	     Byte
+  cMCD_DefLength . . . . . . . .	 0002	     Word
+  cMCD_LoopL . . . . . . . . . .	 0004	     Word
+  cMCD_LoopCount . . . . . . . .	 0006	     Word
+  cMCD_LoopEnd . . . . . . . . .	 0008	     Word
+  cMCD_LoopJump  . . . . . . . .	 0018	     Word
+  cMCD_MacroCount  . . . . . . .	 0028	     Word
+  cMCD_MacroAdr  . . . . . . . .	 002A	     Word
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0EBC	  Word	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	16 Bit	 0082	  Word	  Public  'DATA'	
+STACK  . . . . . . . . . . . . .	16 Bit	 1000	  Para	  Stack	  'STACK'	 
+_BSS . . . . . . . . . . . . . .	16 Bit	 0010	  Word	  Public  'BSS'  
+CONST  . . . . . . . . . . . . .	16 Bit	 065C	  Word	  Public  'CONST'	 ReadOnly
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+A2H16R . . . . . . . . . . . . .	P Near	 0148	  _TEXT	Length= 0023 Public STDCALL
+  A2H16R1  . . . . . . . . . . .	L Near	 0159	  _TEXT	
+  A2H16RR  . . . . . . . . . . .	L Near	 0162	  _TEXT	
+A2H8R  . . . . . . . . . . . . .	P Near	 011F	  _TEXT	Length= 0029 Public STDCALL
+  A2H8R1 . . . . . . . . . . . .	L Near	 0130	  _TEXT	
+  A2H8RR . . . . . . . . . . . .	L Near	 013C	  _TEXT	
+ASC2HEX16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ASC2HEX8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+COMMENT_CHK  . . . . . . . . . .	P Near	 01C9	  _TEXT	Length= 0014 Public STDCALL
+  REMCHK . . . . . . . . . . . .	L Near	 01DA	  _TEXT	
+CREAD_L  . . . . . . . . . . . .	P Near	 0184	  _TEXT	Length= 0017 Public STDCALL
+CREAD  . . . . . . . . . . . . .	P Near	 016B	  _TEXT	Length= 0019 Public STDCALL
+CRJUMP . . . . . . . . . . . . .	P Near	 01DD	  _TEXT	Length= 0016 Public STDCALL
+CSET16 . . . . . . . . . . . . .	P Near	 01B9	  _TEXT	Length= 0010 Public STDCALL
+CSET_L . . . . . . . . . . . . .	P Near	 01AA	  _TEXT	Length= 000F Public STDCALL
+CSET . . . . . . . . . . . . . .	P Near	 019B	  _TEXT	Length= 000F Public STDCALL
+ChangeExt  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Change_Current_Directory . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ComSmole . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ExeSmole . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+FH2A16 . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+FH2A8  . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Close . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Create  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Err . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Load_S  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Load  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Open  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Seek  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Write . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+H2A8 . . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+H2A_F  . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+HEX2ASC16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+HEX2ASC8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Memory_Close . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Memory_Open  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+OPTION_ERROR . . . . . . . . . .	P Near	 0CAC	  _TEXT	Length= 0007 Public STDCALL
+OPTION_HELP  . . . . . . . . . .	P Near	 0CB3	  _TEXT	Length= 000F Public STDCALL
+Op_  . . . . . . . . . . . . . .	P Near	 0CC2	  _TEXT	Length= 011B Public STDCALL
+  ptFilename . . . . . . . . . .	DWord	 bp + 0004
+  cDebug . . . . . . . . . . . .	Byte	 bp - 0001
+  cHelp  . . . . . . . . . . . .	Byte	 bp - 0002
+  dotFlag  . . . . . . . . . . .	Byte	 bp - 0003
+_main  . . . . . . . . . . . . .	P Near	 0DDD	  _TEXT	Length= 00DF Public STDCALL
+  Ext  . . . . . . . . . . . . .	Byte	 bp - 0003
+  cFilename  . . . . . . . . . .	Byte	 bp - 0089
+cHCD_Set_Loop  . . . . . . . . .	P Near	 01F3	  _TEXT	Length= 0036 Public STDCALL
+  szBuff . . . . . . . . . . . .	Word	 bp + 0004
+  ptBuff . . . . . . . . . . . .	Word	 bp + 0006
+cHCD_Set_filename  . . . . . . .	P Near	 0232	  _TEXT	Length= 0009 Public STDCALL
+cHCD_Set_title . . . . . . . . .	P Near	 0229	  _TEXT	Length= 0009 Public STDCALL
+cHCD_include . . . . . . . . . .	P Near	 023B	  _TEXT	Length= 00AD Public STDCALL
+  cFilename  . . . . . . . . . .	Byte	 bp - 0080
+cMCD_CH  . . . . . . . . . . . .	P Near	 06BC	  _TEXT	Length= 0020 Public STDCALL
+cMCD_CRS . . . . . . . . . . . .	P Near	 0692	  _TEXT	Length= 0011 Public STDCALL
+  cMCD_CRS_END . . . . . . . . .	L Near	 06A1	  _TEXT	
+cMCD_CR  . . . . . . . . . . . .	P Near	 06A3	  _TEXT	Length= 0019 Public STDCALL
+cMCD_Loop_End  . . . . . . . . .	P Near	 096A	  _TEXT	Length= 005C Public STDCALL
+cMCD_Loop_Jump . . . . . . . . .	P Near	 09C6	  _TEXT	Length= 001F Public STDCALL
+cMCD_Loop_Start  . . . . . . . .	P Near	 0944	  _TEXT	Length= 0026 Public STDCALL
+cMCD_MacroEndChk . . . . . . . .	P Near	 077D	  _TEXT	Length= 001C Public STDCALL
+cMCD_Macro . . . . . . . . . . .	P Near	 06DC	  _TEXT	Length= 00A1 Public STDCALL
+  ptMacroSearch  . . . . . . . .	Word	 bp - 0002
+cMCD_lB  . . . . . . . . . . . .	P Near	 085E	  _TEXT	Length= 002F Public STDCALL
+cMCD_lL  . . . . . . . . . . . .	P Near	 088D	  _TEXT	Length= 000B Public STDCALL
+cMCD_lX  . . . . . . . . . . . .	P Near	 0898	  _TEXT	Length= 006F Public STDCALL
+  cCRC . . . . . . . . . . . . .	Byte	 bp - 0001
+  cFlag  . . . . . . . . . . . .	Byte	 bp - 0002
+cMCD_lZ  . . . . . . . . . . . .	P Near	 0907	  _TEXT	Length= 003D Public STDCALL
+cMCD_sp  . . . . . . . . . . . .	P Near	 0799	  _TEXT	Length= 004A Public STDCALL
+cMCD_st  . . . . . . . . . . . .	P Near	 0827	  _TEXT	Length= 0037 Public STDCALL
+cMCD_sv  . . . . . . . . . . . .	P Near	 07E3	  _TEXT	Length= 0044 Public STDCALL
+cMCD_trance  . . . . . . . . . .	P Near	 09E5	  _TEXT	Length= 0062 Public STDCALL
+  cPara  . . . . . . . . . . . .	Byte	 bp - 0001
+c_Command  . . . . . . . . . . .	P Near	 0A47	  _TEXT	Length= 0265 Public STDCALL
+  cMCDinfo . . . . . . . . . . .	 003A	 bp - 003A
+  iLength  . . . . . . . . . . .	Word	 bp - 003C
+  cOpcode  . . . . . . . . . . .	Byte	 bp - 003D
+c_Head_end . . . . . . . . . . .	P Near	 03C1	  _TEXT	Length= 00CE Public STDCALL
+  c_Head_end_Step0 . . . . . . .	L Near	 0428	  _TEXT	
+c_Head_first . . . . . . . . . .	P Near	 02E8	  _TEXT	Length= 01B9 Public STDCALL
+c_Voice_Emb_first  . . . . . . .	P Near	 05F4	  _TEXT	Length= 009E Public STDCALL
+  c_Voice_Emb_first_Loop1  . . .	L Near	 05FC	  _TEXT	
+  c_Voice_Emb_first_Loop2  . . .	L Near	 0603	  _TEXT	
+  c_Voice_Emb_first_Loop3  . . .	L Near	 0610	  _TEXT	
+  c_Voice_Emb_first_Step1  . . .	L Near	 0613	  _TEXT	
+  c_Voice_Emb_first_Step2  . . .	L Near	 063B	  _TEXT	
+  c_Voice_Emb_first_Loop4  . . .	L Near	 0642	  _TEXT	
+  c_Voice_Emb_first_Step3  . . .	L Near	 064C	  _TEXT	
+  c_Voice_Emb_first_Step7  . . .	L Near	 065A	  _TEXT	
+  c_Voice_Emb_first_Step4  . . .	L Near	 0666	  _TEXT	
+  c_Voice_Emb_first_Step5  . . .	L Near	 0675	  _TEXT	
+  c_Voice_Emb_first_Step6  . . .	L Near	 0679	  _TEXT	
+  c_Voice_Emb_first_Step99 . . .	L Near	 0682	  _TEXT	
+  c_Voice_Emb_first_End  . . . .	L Near	 0690	  _TEXT	
+c_Voice_Pcm_File . . . . . . . .	P Near	 0575	  _TEXT	Length= 007F Public STDCALL
+  cFilename  . . . . . . . . . .	Byte	 bp - 0080
+c_Voice_Pcm_first  . . . . . . .	P Near	 0496	  _TEXT	Length= 00DF Public STDCALL
+  c_Voice_Pcm_first_Loop1  . . .	L Near	 04C5	  _TEXT	
+  c_Voice_Pcm_first_Loop2  . . .	L Near	 04CC	  _TEXT	
+  c_Voice_Pcm_first_Loop3  . . .	L Near	 04D9	  _TEXT	
+  c_Voice_Pcm_first_Step1  . . .	L Near	 04DC	  _TEXT	
+  c_Voice_Pcm_first_Step2  . . .	L Near	 0504	  _TEXT	
+  c_Voice_Pcm_first_Loop4  . . .	L Near	 050B	  _TEXT	
+  c_Voice_Pcm_first_Step3  . . .	L Near	 0519	  _TEXT	
+  c_Voice_Pcm_first_Step3_Loop .	L Near	 051D	  _TEXT	
+  c_Voice_Pcm_first_Step4  . . .	L Near	 053A	  _TEXT	
+  c_Voice_Pcm_first_Step4_Loop .	L Near	 053E	  _TEXT	
+  c_Voice_Pcm_first_Step5  . . .	L Near	 054B	  _TEXT	
+  c_Voice_Pcm_first_Step5_Loop .	L Near	 054F	  _TEXT	
+  c_Voice_Pcm_first_Step6  . . .	L Near	 055C	  _TEXT	
+  c_Voice_Pcm_first_Step7  . . .	L Near	 0569	  _TEXT	
+  c_Voice_Pcm_first_Step99 . . .	L Near	 056B	  _TEXT	
+  c_Voice_Pcm_first_End  . . . .	L Near	 0573	  _TEXT	
+c_Voice  . . . . . . . . . . . .	P Near	 048F	  _TEXT	Length= 0007 Public STDCALL
+dat2hex16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+dat2hex8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0003h	 
+@Model . . . . . . . . . . . . .	Number	 0001h	 
+@Startup . . . . . . . . . . . .	L Near	 0100	  _TEXT	
+@code  . . . . . . . . . . . . .	Text   	 DGROUP
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+BANK_ERASE_FLASH . . . . . . . .	Number	 0009h	 
+BANK_FILL_BLOCK  . . . . . . . .	Number	 0008h	 
+BANK_GET_MAP . . . . . . . . . .	Number	 0001h	 
+BANK_MAX_BANKS . . . . . . . . .	Number	 007Fh	 
+BANK_OSWORK  . . . . . . . . . .	Number	 0003h	 
+BANK_READ_BLOCK  . . . . . . . .	Number	 0006h	 
+BANK_READ_BYTE . . . . . . . . .	Number	 0002h	 
+BANK_READ_WORD . . . . . . . . .	Number	 0004h	 
+BANK_ROM0_ADDRESS  . . . . . . .	Number	 2000h	 
+BANK_ROM0  . . . . . . . . . . .	Number	 0001h	 
+BANK_ROM1_ADDRESS  . . . . . . .	Number	 3000h	 
+BANK_ROM1  . . . . . . . . . . .	Number	 0002h	 
+BANK_SET_MAP . . . . . . . . . .	Number	 0000h	 
+BANK_SOFTFS  . . . . . . . . . .	Number	 0000h	 
+BANK_SRAM_ADDRESS  . . . . . . .	Number	 1000h	 
+BANK_SRAM  . . . . . . . . . . .	Number	 0000h	 
+BANK_USERDS0 . . . . . . . . . .	Number	 0002h	 
+BANK_USERDS1 . . . . . . . . . .	Number	 0001h	 
+BANK_WRITE_BLOCK . . . . . . . .	Number	 0007h	 
+BANK_WRITE_BYTE  . . . . . . . .	Number	 0003h	 
+BANK_WRITE_WORD  . . . . . . . .	Number	 0005h	 
+D_Debug  . . . . . . . . . . . .	Byte	 0000	  _DATA	
+EffectMaxPart  . . . . . . . . .	Number	 0003h	 
+FROM_Segment . . . . . . . . . .	Text   	 BANK_ROM0_ADDRESS
+FX_block . . . . . . . . . . . .	Word	 0071	  _DATA	
+FX_data  . . . . . . . . . . . .	DWord	 0075	  _DATA	
+FX_fileadr . . . . . . . . . . .	DWord	 0069	  _DATA	
+FX_filename  . . . . . . . . . .	Byte	 0041	  _DATA	
+FX_filesize  . . . . . . . . . .	DWord	 006D	  _DATA	
+FX_mode  . . . . . . . . . . . .	Word	 0073	  _DATA	
+FX_resouce . . . . . . . . . . .	DWord	 007D	  _DATA	
+FX_title . . . . . . . . . . . .	Byte	 0051	  _DATA	
+FX_type  . . . . . . . . . . . .	DWord	 0079	  _DATA	
+FX . . . . . . . . . . . . . . .	Byte	 0001	  _DATA	
+IRAM_Segment . . . . . . . . . .	Number	 0000h	 
+IRAM_SoundVoiceTable_WW  . . . .	Number	 0180h	 
+IRAM_SoundVoiceTable . . . . . .	Text   	 IRAM_SoundVoiceTable_WW
+InterruptVectorBase_WW . . . . .	Text   	 INT_HARDHAEW_VECTOR_BASE
+InterruptVectorBase  . . . . . .	Text   	 InterruptVectorBase_WW
+MusicMaxPart . . . . . . . . . .	Number	 0014h	 
+OPTION_ERROR_MSG . . . . . . . .	Byte	 05C2	  CONST	
+OP_HELP  . . . . . . . . . . . .	Byte	 05DB	  CONST	
+PRINT_ERR  . . . . . . . . . . .	L Near	 0114	  _TEXT	
+SRAM_Segment . . . . . . . . . .	Text   	 BANK_SRAM_ADDRESS
+WTD_BendEmb  . . . . . . . . . .	Text   	 WTD_BendEmbAddress
+WTD_BendLFO  . . . . . . . . . .	Text   	 WTD_BendLfoDecayRate
+WTD_Ctrl_AcsentR . . . . . . . .	Number	 FFBFh	 
+WTD_Ctrl_Acsent  . . . . . . . .	Number	 0040h	 
+WTD_Ctrl_BendEmbR  . . . . . . .	Number	 FFFDh	 
+WTD_Ctrl_BendEmb . . . . . . . .	Number	 0002h	 
+WTD_Ctrl_BendLfoR  . . . . . . .	Number	 FFFEh	 
+WTD_Ctrl_BendLfo . . . . . . . .	Number	 0001h	 
+WTD_Ctrl_EffectR . . . . . . . .	Number	 BFFFh	 
+WTD_Ctrl_Effect  . . . . . . . .	Number	 4000h	 
+WTD_Ctrl_EmbFreqR  . . . . . . .	Number	 FF7Fh	 
+WTD_Ctrl_EmbFreq . . . . . . . .	Number	 0080h	 
+WTD_Ctrl_EmbPanR . . . . . . . .	Number	 FDFFh	 
+WTD_Ctrl_EmbPan  . . . . . . . .	Number	 0200h	 
+WTD_Ctrl_EmbVolR . . . . . . . .	Number	 FEFFh	 
+WTD_Ctrl_EmbVol  . . . . . . . .	Number	 0100h	 
+WTD_Ctrl_ExprEmbR  . . . . . . .	Number	 FFF7h	 
+WTD_Ctrl_ExprEmb . . . . . . . .	Number	 0008h	 
+WTD_Ctrl_ExprLfoR  . . . . . . .	Number	 FFFBh	 
+WTD_Ctrl_ExprLfo . . . . . . . .	Number	 0004h	 
+WTD_Ctrl_PamEmbR . . . . . . . .	Number	 FFDFh	 
+WTD_Ctrl_PanEmb  . . . . . . . .	Number	 0020h	 
+WTD_Ctrl_PanLfoR . . . . . . . .	Number	 FFEFh	 
+WTD_Ctrl_PanLfo  . . . . . . . .	Number	 0010h	 
+WTD_Ctrl_PlayEndR  . . . . . . .	Number	 7FFFh	 
+WTD_Ctrl_PlayEnd . . . . . . . .	Number	 8000h	 
+WTD_Ctrl_Vol0R . . . . . . . . .	Number	 FBFFh	 
+WTD_Ctrl_Vol0  . . . . . . . . .	Number	 0400h	 
+WTD_Ctrl_WorkCyR . . . . . . . .	Number	 EFFFh	 
+WTD_Ctrl_WorkCy  . . . . . . . .	Number	 1000h	 
+WTD_Ctrl_WorkSwR . . . . . . . .	Number	 F7FFh	 
+WTD_Ctrl_WorkSw  . . . . . . . .	Number	 0800h	 
+WTD_Ctrl_WorkZeR . . . . . . . .	Number	 DFFFh	 
+WTD_Ctrl_WorkZe  . . . . . . . .	Number	 2000h	 
+WTD_ExprEmb  . . . . . . . . . .	Text   	 WTD_ExprEmbAddress
+WTD_ExprLFO  . . . . . . . . . .	Text   	 WTD_ExprLfoDecayRate
+WTD_FrectionSet  . . . . . . . .	Text   	 WTD_BendSet
+WTD_Frection . . . . . . . . . .	Text   	 WTD_Bend
+WTD_NoiseMode  . . . . . . . . .	Text   	 WTD_SweepLevel
+WTD_PanEmb . . . . . . . . . . .	Text   	 WTD_PanEmbAddress
+WTD_PanLFO . . . . . . . . . . .	Text   	 WTD_PanLfoDecayRate
+WTD_PcmAddress . . . . . . . . .	Text   	 WTD_LoopCount
+WTD_PcmSize  . . . . . . . . . .	Text   	 WTD_LoopCount+4
+WTD_Sys_3R . . . . . . . . . . .	Number	 FFF7h	 
+WTD_Sys_3  . . . . . . . . . . .	Number	 0008h	 
+WTD_Sys_5R . . . . . . . . . . .	Number	 FFDFh	 
+WTD_Sys_5  . . . . . . . . . . .	Number	 0020h	 
+WTD_Sys_6R . . . . . . . . . . .	Number	 FFBFh	 
+WTD_Sys_6  . . . . . . . . . . .	Number	 0040h	 
+WTD_Sys_ChannelMode1R  . . . . .	Number	 FEFFh	 
+WTD_Sys_ChannelMode1 . . . . . .	Number	 0100h	 
+WTD_Sys_ChannelMode2R  . . . . .	Number	 FDFFh	 
+WTD_Sys_ChannelMode2 . . . . . .	Number	 0200h	 
+WTD_Sys_ChannelMode3R  . . . . .	Number	 FBFFh	 
+WTD_Sys_ChannelMode3 . . . . . .	Number	 0400h	 
+WTD_Sys_ChannelMode4R  . . . . .	Number	 F7FFh	 
+WTD_Sys_ChannelMode4 . . . . . .	Number	 0800h	 
+WTD_Sys_EffectMask1R . . . . . .	Number	 EFFFh	 
+WTD_Sys_EffectMask1  . . . . . .	Number	 1000h	 
+WTD_Sys_EffectMask2R . . . . . .	Number	 DFFFh	 
+WTD_Sys_EffectMask2  . . . . . .	Number	 2000h	 
+WTD_Sys_EffectMask3R . . . . . .	Number	 BFFFh	 
+WTD_Sys_EffectMask3  . . . . . .	Number	 4000h	 
+WTD_Sys_EffectMask4R . . . . . .	Number	 7FFFh	 
+WTD_Sys_EffectMask4  . . . . . .	Number	 8000h	 
+WTD_Sys_EffectR  . . . . . . . .	Number	 FFFDh	 
+WTD_Sys_Effect . . . . . . . . .	Number	 0002h	 
+WTD_Sys_MidiR  . . . . . . . . .	Number	 FFEFh	 
+WTD_Sys_Midi . . . . . . . . . .	Number	 0010h	 
+WTD_Sys_MusicR . . . . . . . . .	Number	 FFFEh	 
+WTD_Sys_Music  . . . . . . . . .	Number	 0001h	 
+WTD_Sys_PcmR . . . . . . . . . .	Number	 FFFBh	 
+WTD_Sys_Pcm  . . . . . . . . . .	Number	 0004h	 
+WTD_Sys_TimerEmulateR  . . . . .	Number	 FF7Fh	 
+WTD_Sys_TimerEmulate . . . . . .	Number	 0080h	 
+WTD_Velocity . . . . . . . . . .	Text   	 WTD_ExprPanSet
+WTD_Voice1st . . . . . . . . . .	Text   	 WTD_Program1st
+WTD_Voice2nd . . . . . . . . . .	Text   	 WTD_Program2nd
+WTD_Voice3rd . . . . . . . . . .	Text   	 WTD_Program3rd
+WTD_VoiceCnt . . . . . . . . . .	Text   	 WTD_ProgramCnt
+WTD_VoiceRate  . . . . . . . . .	Text   	 WTD_ProgramRate
+WTD_Voice  . . . . . . . . . . .	Text   	 WTD_Program
+WTD_WorkAdd_Ch0  . . . . . . . .	Number	 0600h	 
+WTD_WorkAdd_Ch10 . . . . . . . .	Number	 0B00h	 
+WTD_WorkAdd_Ch11 . . . . . . . .	Number	 0B80h	 
+WTD_WorkAdd_Ch12 . . . . . . . .	Number	 0C00h	 
+WTD_WorkAdd_Ch13 . . . . . . . .	Number	 0C80h	 
+WTD_WorkAdd_Ch14 . . . . . . . .	Number	 0D00h	 
+WTD_WorkAdd_Ch15 . . . . . . . .	Number	 0D80h	 
+WTD_WorkAdd_Ch17 . . . . . . . .	Number	 0E80h	 
+WTD_WorkAdd_Ch18 . . . . . . . .	Number	 0F00h	 
+WTD_WorkAdd_Ch19 . . . . . . . .	Number	 0F80h	 
+WTD_WorkAdd_Ch1  . . . . . . . .	Number	 0680h	 
+WTD_WorkAdd_Ch2  . . . . . . . .	Number	 0700h	 
+WTD_WorkAdd_Ch3  . . . . . . . .	Number	 0780h	 
+WTD_WorkAdd_Ch4  . . . . . . . .	Number	 0800h	 
+WTD_WorkAdd_Ch5  . . . . . . . .	Number	 0880h	 
+WTD_WorkAdd_Ch6  . . . . . . . .	Number	 0900h	 
+WTD_WorkAdd_Ch7  . . . . . . . .	Number	 0980h	 
+WTD_WorkAdd_Ch8  . . . . . . . .	Number	 0A00h	 
+WTD_WorkAdd_Ch9  . . . . . . . .	Number	 0A80h	 
+WTD_WorkAdd_Ech0 . . . . . . . .	Number	 0400h	 
+WTD_WorkAdd_Ech1 . . . . . . . .	Number	 0480h	 
+WTD_WorkAdd_Ech2 . . . . . . . .	Number	 0500h	 
+WTD_WorkAdd_Emb  . . . . . . . .	Number	 0200h	 
+WTD_WorkAdd_End  . . . . . . . .	Text   	 WTD_WorkSize
+WTD_WorkAdd_PCM  . . . . . . . .	Number	 0580h	 
+WTD_WorkAdd_System . . . . . . .	Number	 0380h	 
+WTD_WorkAdd_User . . . . . . . .	Number	 0000h	 
+WTD_WorkAdd_Wave . . . . . . . .	Number	 0100h	 
+WTD_WorkChSize . . . . . . . . .	Number	 0080h	 
+WTD_WorkSize . . . . . . . . . .	Number	 1000h	 
+WTR_WorkAdd_Ch16 . . . . . . . .	Number	 0E00h	 
+WTdIL_Version_N  . . . . . . . .	Number	 010Dh	 
+WtdIL_Name . . . . . . . . . . .	Text   	 'WTD',0
+WtdIL_Version  . . . . . . . . .	Text   	 '1.0d',0
+cHCD_0 . . . . . . . . . . . . .	Byte	 001C	  CONST	
+cHCD_10  . . . . . . . . . . . .	Byte	 008E	  CONST	
+cHCD_11  . . . . . . . . . . . .	Byte	 0099	  CONST	
+cHCD_12  . . . . . . . . . . . .	Byte	 00A7	  CONST	
+cHCD_1 . . . . . . . . . . . . .	Byte	 0026	  CONST	
+cHCD_2 . . . . . . . . . . . . .	Byte	 0030	  CONST	
+cHCD_3 . . . . . . . . . . . . .	Byte	 003A	  CONST	
+cHCD_4 . . . . . . . . . . . . .	Byte	 0043	  CONST	
+cHCD_5 . . . . . . . . . . . . .	Byte	 004C	  CONST	
+cHCD_6 . . . . . . . . . . . . .	Byte	 0055	  CONST	
+cHCD_7 . . . . . . . . . . . . .	Byte	 0064	  CONST	
+cHCD_8 . . . . . . . . . . . . .	Byte	 006F	  CONST	
+cHCD_9 . . . . . . . . . . . . .	Byte	 0081	  CONST	
+cHCD_FlagFx  . . . . . . . . . .	Byte	 0081	  _DATA	
+cMCD_0 . . . . . . . . . . . . .	Byte	 0201	  CONST	
+cMCD_10  . . . . . . . . . . . .	Byte	 0250	  CONST	
+cMCD_11  . . . . . . . . . . . .	Byte	 0256	  CONST	
+cMCD_12  . . . . . . . . . . . .	Byte	 025C	  CONST	
+cMCD_13  . . . . . . . . . . . .	Byte	 0262	  CONST	
+cMCD_14  . . . . . . . . . . . .	Byte	 026A	  CONST	
+cMCD_15  . . . . . . . . . . . .	Byte	 0273	  CONST	
+cMCD_16  . . . . . . . . . . . .	Byte	 027B	  CONST	
+cMCD_17  . . . . . . . . . . . .	Byte	 0287	  CONST	
+cMCD_18  . . . . . . . . . . . .	Byte	 028F	  CONST	
+cMCD_19  . . . . . . . . . . . .	Byte	 0299	  CONST	
+cMCD_1 . . . . . . . . . . . . .	Byte	 020C	  CONST	
+cMCD_20  . . . . . . . . . . . .	Byte	 02A1	  CONST	
+cMCD_21  . . . . . . . . . . . .	Byte	 02A8	  CONST	
+cMCD_22  . . . . . . . . . . . .	Byte	 02B1	  CONST	
+cMCD_23  . . . . . . . . . . . .	Byte	 02BB	  CONST	
+cMCD_24  . . . . . . . . . . . .	Byte	 02C3	  CONST	
+cMCD_25  . . . . . . . . . . . .	Byte	 02CD	  CONST	
+cMCD_26  . . . . . . . . . . . .	Byte	 02D3	  CONST	
+cMCD_27  . . . . . . . . . . . .	Byte	 02DB	  CONST	
+cMCD_28  . . . . . . . . . . . .	Byte	 02E4	  CONST	
+cMCD_29  . . . . . . . . . . . .	Byte	 02EA	  CONST	
+cMCD_2 . . . . . . . . . . . . .	Byte	 0216	  CONST	
+cMCD_30  . . . . . . . . . . . .	Byte	 02F0	  CONST	
+cMCD_31  . . . . . . . . . . . .	Byte	 02FA	  CONST	
+cMCD_32  . . . . . . . . . . . .	Byte	 0302	  CONST	
+cMCD_33  . . . . . . . . . . . .	Byte	 030A	  CONST	
+cMCD_34  . . . . . . . . . . . .	Byte	 0313	  CONST	
+cMCD_35  . . . . . . . . . . . .	Byte	 031B	  CONST	
+cMCD_36  . . . . . . . . . . . .	Byte	 0323	  CONST	
+cMCD_37  . . . . . . . . . . . .	Byte	 032C	  CONST	
+cMCD_38  . . . . . . . . . . . .	Byte	 0332	  CONST	
+cMCD_39  . . . . . . . . . . . .	Byte	 0338	  CONST	
+cMCD_3 . . . . . . . . . . . . .	Byte	 021F	  CONST	
+cMCD_40  . . . . . . . . . . . .	Byte	 0340	  CONST	
+cMCD_41  . . . . . . . . . . . .	Byte	 0349	  CONST	
+cMCD_42  . . . . . . . . . . . .	Byte	 0351	  CONST	
+cMCD_43  . . . . . . . . . . . .	Byte	 035A	  CONST	
+cMCD_44  . . . . . . . . . . . .	Byte	 0362	  CONST	
+cMCD_45  . . . . . . . . . . . .	Byte	 036A	  CONST	
+cMCD_46  . . . . . . . . . . . .	Byte	 0372	  CONST	
+cMCD_47  . . . . . . . . . . . .	Byte	 037A	  CONST	
+cMCD_48  . . . . . . . . . . . .	Byte	 0382	  CONST	
+cMCD_49  . . . . . . . . . . . .	Byte	 038A	  CONST	
+cMCD_4 . . . . . . . . . . . . .	Byte	 0226	  CONST	
+cMCD_50  . . . . . . . . . . . .	Byte	 0392	  CONST	
+cMCD_51  . . . . . . . . . . . .	Byte	 039A	  CONST	
+cMCD_52  . . . . . . . . . . . .	Byte	 03A2	  CONST	
+cMCD_53  . . . . . . . . . . . .	Byte	 03AC	  CONST	
+cMCD_54  . . . . . . . . . . . .	Byte	 03B2	  CONST	
+cMCD_55  . . . . . . . . . . . .	Byte	 03BC	  CONST	
+cMCD_56  . . . . . . . . . . . .	Byte	 03C3	  CONST	
+cMCD_57  . . . . . . . . . . . .	Byte	 03CB	  CONST	
+cMCD_58  . . . . . . . . . . . .	Byte	 03D3	  CONST	
+cMCD_59  . . . . . . . . . . . .	Byte	 03DA	  CONST	
+cMCD_5 . . . . . . . . . . . . .	Byte	 022D	  CONST	
+cMCD_60  . . . . . . . . . . . .	Byte	 03E1	  CONST	
+cMCD_61  . . . . . . . . . . . .	Byte	 03EA	  CONST	
+cMCD_62  . . . . . . . . . . . .	Byte	 03F3	  CONST	
+cMCD_63  . . . . . . . . . . . .	Byte	 03FC	  CONST	
+cMCD_64  . . . . . . . . . . . .	Byte	 0405	  CONST	
+cMCD_65  . . . . . . . . . . . .	Byte	 040E	  CONST	
+cMCD_66  . . . . . . . . . . . .	Byte	 0417	  CONST	
+cMCD_67  . . . . . . . . . . . .	Byte	 0420	  CONST	
+cMCD_68  . . . . . . . . . . . .	Byte	 0429	  CONST	
+cMCD_69  . . . . . . . . . . . .	Byte	 0432	  CONST	
+cMCD_6 . . . . . . . . . . . . .	Byte	 0234	  CONST	
+cMCD_70  . . . . . . . . . . . .	Byte	 043B	  CONST	
+cMCD_71  . . . . . . . . . . . .	Byte	 0444	  CONST	
+cMCD_72  . . . . . . . . . . . .	Byte	 044D	  CONST	
+cMCD_73  . . . . . . . . . . . .	Byte	 0457	  CONST	
+cMCD_74  . . . . . . . . . . . .	Byte	 0462	  CONST	
+cMCD_75  . . . . . . . . . . . .	Byte	 046C	  CONST	
+cMCD_76  . . . . . . . . . . . .	Byte	 0476	  CONST	
+cMCD_77  . . . . . . . . . . . .	Byte	 047D	  CONST	
+cMCD_78  . . . . . . . . . . . .	Byte	 0484	  CONST	
+cMCD_79  . . . . . . . . . . . .	Byte	 048E	  CONST	
+cMCD_7 . . . . . . . . . . . . .	Byte	 023B	  CONST	
+cMCD_80  . . . . . . . . . . . .	Byte	 0499	  CONST	
+cMCD_81  . . . . . . . . . . . .	Byte	 04A3	  CONST	
+cMCD_82  . . . . . . . . . . . .	Byte	 04AE	  CONST	
+cMCD_83  . . . . . . . . . . . .	Byte	 04B6	  CONST	
+cMCD_84  . . . . . . . . . . . .	Byte	 04BE	  CONST	
+cMCD_8 . . . . . . . . . . . . .	Byte	 0242	  CONST	
+cMCD_9 . . . . . . . . . . . . .	Byte	 0249	  CONST	
+cMCD_Err_00  . . . . . . . . . .	Byte	 0575	  CONST	
+cMCD_Err_01  . . . . . . . . . .	Byte	 0578	  CONST	
+cMCD_Err_02  . . . . . . . . . .	Byte	 0585	  CONST	
+cMCD_Loop_Err1 . . . . . . . . .	Byte	 050C	  CONST	
+cMCD_Loop_Err2 . . . . . . . . .	Byte	 0535	  CONST	
+cMCD_Loop_Err3 . . . . . . . . .	Byte	 0555	  CONST	
+cMCD_Macro_Err2  . . . . . . . .	Byte	 04E7	  CONST	
+cMCD_Macro_Err . . . . . . . . .	Byte	 04C8	  CONST	
+cMCD_trance_Err  . . . . . . . .	Byte	 0592	  CONST	
+cVED_0 . . . . . . . . . . . . .	Byte	 0127	  CONST	
+cVED_1 . . . . . . . . . . . . .	Byte	 013B	  CONST	
+cVPD_0 . . . . . . . . . . . . .	Byte	 0101	  CONST	
+cVPD_1 . . . . . . . . . . . . .	Byte	 010D	  CONST	
+cVPD_2 . . . . . . . . . . . . .	Byte	 0118	  CONST	
+c_Command_Adrs_E . . . . . . . .	Word	 01FF	  CONST	
+c_Command_Adrs_S . . . . . . . .	Word	 0157	  CONST	
+c_Command_Adrs . . . . . . . . .	Word	 0155	  CONST	
+c_Head_Block . . . . . . . . . .	Byte	 00EC	  CONST	
+c_Head_Byte  . . . . . . . . . .	Byte	 00DF	  CONST	
+c_Head_CR  . . . . . . . . . . .	Byte	 00D0	  CONST	
+c_Head_Com_Adr_E . . . . . . . .	Word	 001A	  CONST	
+c_Head_Com_Adr_S . . . . . . . .	Word	 0002	  CONST	
+c_Head_Com_Adrs  . . . . . . . .	Word	 0000	  CONST	
+c_Head_Size  . . . . . . . . . .	Byte	 00D3	  CONST	
+c_Head_Version . . . . . . . . .	Byte	 00B4	  CONST	
+c_Voice_Emb_Adrs_E . . . . . . .	Word	 0125	  CONST	
+c_Voice_Emb_Adrs_S . . . . . . .	Word	 0123	  CONST	
+c_Voice_Emb_Adrs . . . . . . . .	Word	 0121	  CONST	
+c_Voice_Pcm_Adrs_E . . . . . . .	Word	 00FF	  CONST	
+c_Voice_Pcm_Adrs_S . . . . . . .	Word	 00FB	  CONST	
+c_Voice_Pcm_Adrs . . . . . . . .	Word	 00F9	  CONST	
+hMml_File  . . . . . . . . . . .	Word	 0000	  _BSS	
+hWtd_File  . . . . . . . . . . .	Word	 0008	  _BSS	
+pMml_File  . . . . . . . . . . .	Word	 0004	  _BSS	
+pWtd_File  . . . . . . . . . . .	Word	 000C	  _BSS	
+segMml_File  . . . . . . . . . .	Word	 0006	  _BSS	
+segWtd_File  . . . . . . . . . .	Word	 000E	  _BSS	
+szMml_File . . . . . . . . . . .	Word	 0002	  _BSS	
+szWtd_File . . . . . . . . . . .	Word	 000A	  _BSS	
+
+	   0 Warnings
+	   0 Errors

@@ -838,7 +838,6 @@ I_Com40:				;
 	rol	al,1			;
 	shr	al,1			;Bit 7 Reset & Bit 7 -> Cy Flag
 
-;	jc	I_Com40_1st
 	.if	(!carry?)
 I_Com40_1st:
 		mov	ds:[di].WTD_Program1st,al
@@ -847,22 +846,30 @@ I_Com40_1st:
 	.else
 		mov	ah,al		;
 		call	I_Read8		;
-;		.if	(ah==01h)
-		cmp	ah,01h
-		jnz	I_Com40_2nd
+		.if	(ah==01h)
 			mov	ds:[di].WTD_Program2nd,al
 			call	I_Read16
 			mov	ds:[di].WTD_ProgramRate,ax
-			ret		;※else の jmp 命令の代理
-	even
-I_Com40_2nd:
-;		.elseif	(ah==02h)
-		cmp	ah,02h
+		.elseif	(ah==03h)
+			mov	ds:[di].WTD_ProgramDecay,al
+			call	I_Read16
+			mov	ds:[di].WTD_ProgramDecayRate,ax
+		.else
+			cmp	ah,02h
 			jnz	I_Com40_1st
 			mov	ds:[di].WTD_Program3rd,al
 ;		.else	;(ah==00h)	デフォルト
 ;			jmp	I_Com40_1st
-;		.endif
+		.endif
+	.endif
+
+	mov	al,ds:[di].WTD_Program2nd	;'@'コマンド必要性の確認
+	and	al,ds:[di].WTD_Program3rd	;第2,3パラメータの指定が無かったら、戻す。
+	.if	(al&080h)
+		mov	al,ds:[di].WTD_Program1st	;
+		and	al,07fh				;上位bitのマスク
+		mov	dx,offset CGROUP:I_Table_Voice	;
+		call	I_Table_Jump			;
 	.endif
 
 	ret				;
@@ -922,6 +929,7 @@ I_Com43:				;
 		shl	ax,cl		;
 		or	ds:[bx].WTD_Sys_Flag,ax
 	.endif
+
 	ret				;
 ;===============================================================|
 ;		Frection Detune					|
@@ -1550,7 +1558,21 @@ I_Com75:				;
 	even				;偶数アドレス配置
 I_Com76:				;
 	call	I_Read8			;
-	mov	ds:[di].WTD_Expr,al	;
+	rol	al,1
+	shr	al,1
+	.if	(carry?)
+		.if	(al == 07Fh)
+			mov	al, 0FFh
+		.endif
+		mov	ds:[di].WTD_ReleaseVolume,al
+	.else
+		mov	ds:[di].WTD_Expr,al	;
+		.if	(al == 0)
+			mov	ds:[di].WTD_ExprEmbLevelSet, al
+			mov	dx,offset CGROUP:I_Table_Volume
+			jmp	I_Table_Jump		;音量セット
+		.endif
+	.endif
 	ret				;
 ;===============================================================|
 ;		NULL 'w'					|

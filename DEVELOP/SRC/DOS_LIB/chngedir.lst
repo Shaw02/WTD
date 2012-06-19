@@ -1,0 +1,227 @@
+Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+chngedir.asm						     Page 1 - 1
+
+
+
+					.186
+					.model	tiny,stdcall
+
+
+				;****************************************************************
+				;*		外部宣言					*
+				;****************************************************************
+				include	lib_dos.inc
+			      C 
+			      C 
+			      C ComSmole	proto	near,	sizeCOM:WORD
+			      C ExeSmole	proto	near,	szDGROUP:WORD
+			      C Memory_Open	proto	near,	ParaSize:word
+			      C Memory_Close	proto	near,	CloseSegment:word
+			      C 
+			      C File_Create	proto	near,	cFilename:dword,iAttr:word
+			      C File_Open	proto	near,	cFilename:dword,cMode:byte
+			      C File_Close	proto	near,	hFile:word
+			      C File_Load	proto	near,	hFile:word,	cBuff:dword
+			      C File_Load_S	proto	near,	hFile:word,	iSize:word,	cBuff:dword
+			      C File_Write	proto	near,	hFile:word,	iSize:word,	cBuff:dword
+			      C File_Seek	proto	near,	hFile:word,	iControl:BYTE,	dOffset	:dword
+			      C 
+			      C ChangeExt			proto	near,	cFilename:dword,cExt:dword
+			      C Change_Current_Directory	proto	near,	cDirname:dword
+			      C 
+			      C File_Err	proto	near
+			      C 
+			      C 
+			      C 
+			      C ASC2HEX8	proto	near
+			      C ASC2HEX16	proto	near
+			      C HEX2ASC8	proto	near
+			      C HEX2ASC16	proto	near
+			      C FH2A8		proto	near
+			      C FH2A16		proto	near
+			      C H2A_F		proto	near,	iValue	:WORD,	iForm	:WORD
+			      C H2A8		proto	near
+			      C dat2hex8	proto	near
+			      C dat2hex16	proto	near
+			      C 
+			      C 
+			      C 
+
+
+				;****************************************************************
+				;*		コード						*
+				;****************************************************************
+				;---------------------------------------------------------------|
+				;		カレントディレクトリの変更			|
+				;---------------------------------------------------------------|
+				;	●引数							|
+				;		cDirname	ディレクトリ名			|
+				;---------------------------------------------------------------|
+ 0000				.const
+ 0000 83 4A 83 8C 83 93		Current_Directory_Mess1	DB	'カレントディレクトリを',24h
+       83 67 83 66 83 42
+       83 8C 83 4E 83 67
+       83 8A 82 F0 24
+ 0017 82 C9 95 CF 8D 58		Current_Directory_Mess2	DB	'に変更しました。',0dh,0ah,24h
+       82 B5 82 DC 82 B5
+       82 BD 81 42 0D 0A
+       24
+ 0000				.code
+ 0000				Change_Current_Directory	proc	near	uses ds es,
+						cDirname:dword
+					local	Current_Directory[128]:byte
+
+ 0000  55		   *	    push   bp
+ 0001  8B EC		   *	    mov    bp, sp
+ 0003  83 C4 80		   *	    add    sp, 0FF80h
+ 0006  1E		   *	    push   ds
+ 0007  06		   *	    push   es
+ 0008  60				pusha
+
+					;-------------------------------
+					;カレントディレクトリあるか？
+ 0009  C5 76 04				lds	si,cDirname
+ 000C  16				push	ss
+ 000D  07				pop	es
+ 000E  8D 7E 80				lea	di,[Current_Directory]
+ 0011  33 C9				xor	cx,cx
+ 0013  33 DB				xor	bx,bx
+ 0015  56				push	si
+					.repeat
+ 0016			   *@C0001:
+ 0016  AC				   lodsb
+					   .if		(al=='\')
+ 0017  3C 5C		   *	    cmp    al, '\'
+ 0019  75 02		   *	    jne    @C0002
+ 001B  8B D9					mov	bx,cx	;一番最後の'\'をbxに記憶する。
+					   .endif
+ 001D			   *@C0002:
+ 001D  41				   inc	cx
+					.until	(al<21h)
+ 001E  3C 21		   *	    cmp    al, 021h
+ 0020  73 F4		   *	    jae    @C0001
+ 0022  5E				pop	si
+
+					;-------------------------------
+					;カレントディレクトリ名を設定
+					.if	(bx>0)
+ 0023  83 FB 00		   *	    cmp    bx, 000h
+ 0026  76 36		   *	    jbe    @C0005
+ 0028  8B CB					mov	cx,bx
+ 002A  FC					cld
+ 002B  F3/ A4					rep	movsb
+ 002D  B0 00					mov	al,00H
+ 002F  AA					stosb
+ 0030  B0 24					mov	al,24H
+ 0032  AA					stosb
+
+						;-------------------------------
+						;カレントディレクトリを変更する。
+ 0033  16					push	ss
+ 0034  1F					pop	ds
+ 0035  8D 56 80					lea	dx,[Current_Directory]
+ 0038  B4 3B					mov	ah,3BH			;
+ 003A  CD 21					int	21h			;
+						.if	(carry?)
+ 003C  73 03		   *	    jae    @C0007
+ 003E  E9 0000 E				jmp	File_Err
+						.endif
+ 0041			   *@C0007:
+ 0041  0E					push	cs
+ 0042  1F					pop	ds
+ 0043  8D 16 0000 R				lea	dx,[Current_Directory_Mess1]
+ 0047  B4 09					mov	ah,09H			;
+ 0049  CD 21					int	21h			;
+
+ 004B  16					push	ss			;
+ 004C  1F					pop	ds			;
+ 004D  8D 56 80					lea	dx,[Current_Directory]	;
+ 0050  B4 09					mov	ah,09H			;
+ 0052  CD 21					int	21h			;
+
+ 0054  0E					push	cs			;
+ 0055  1F					pop	ds			;
+ 0056  8D 16 0017 R				lea	dx,[Current_Directory_Mess2]
+ 005A  B4 09					mov	ah,09H			;
+ 005C  CD 21					int	21h			;
+					.endif
+ 005E			   *@C0005:
+					;-------------------------------
+					;終了
+
+ 005E  61				popa
+					ret				;
+ 005F  07		   *	    pop    es
+ 0060  1F		   *	    pop    ds
+ 0061  8B E5		   *	    mov    sp, bp
+ 0063  5D		   *	    pop    bp
+ 0064  C2 0004		   *	    ret    00004h
+ 0067				Change_Current_Directory	endp
+				;****************************************************************
+					end
+Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+chngedir.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0067	  Word	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	16 Bit	 0000	  Word	  Public  'DATA'	
+CONST  . . . . . . . . . . . . .	16 Bit	 002A	  Word	  Public  'CONST'	 ReadOnly
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+ASC2HEX16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ASC2HEX8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ChangeExt  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Change_Current_Directory . . . .	P Near	 0000	  _TEXT	Length= 0067 Public STDCALL
+  cDirname . . . . . . . . . . .	DWord	 bp + 0004
+  Current_Directory  . . . . . .	Byte	 bp - 0080
+ComSmole . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ExeSmole . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+FH2A16 . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+FH2A8  . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Close . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Create  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Err . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Load_S  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Load  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Open  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Seek  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Write . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+H2A8 . . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+H2A_F  . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+HEX2ASC16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+HEX2ASC8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Memory_Close . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Memory_Open  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+dat2hex16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+dat2hex8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0003h	 
+@Model . . . . . . . . . . . . .	Number	 0001h	 
+@code  . . . . . . . . . . . . .	Text   	 DGROUP
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+Current_Directory_Mess1  . . . .	Byte	 0000	  CONST	
+Current_Directory_Mess2  . . . .	Byte	 0017	  CONST	
+
+	   0 Warnings
+	   0 Errors

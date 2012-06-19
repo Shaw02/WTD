@@ -1,0 +1,53 @@
+;Title	Marche Militaire No.1 D.733,op.51
+;Composer シューベルト
+#timebase	48
+#part		2
+
+;冒頭--------------------------------------------------------------------------
+C0	C0 @0 [[v100 Q8 q0 o5 t120
+C1	C0 @0 [[v100 Q8 q0 o4
+C0,1	l16k100	[dr<aaP1g+8a8P0>]2 [:d8<ar>]4 <f+rar> d8<ar>drf+r '120 a2
+
+;------------------------------------------------------------------------------
+C0	l16o5	'120 a4grf+r '120e4f+rer '120d4erf+r P1<a8.ba8r8>P0
+		'120 a4P1grf+rP0 '120b4arf+r P1 g8agf+8gf+ e8r4. P0
+		'120e8eedrer f+rgra4 erf+rg4 f+rerd4
+		'120e8eedrer f+rgra4 : g rarb8.>c+< a8<aaa8a8> ]2
+				       c+rdre8. f+  d8<arP1g8a8P0>
+
+C1	l8o3	[[df+0a]2 : [c+g0a]2 ]2 [eg0>c+<]2
+		 [df+0a]2 d+f+0bd+a0b eg0b<b>d+0a e0gbge
+		[c+g0a<a>g0a : df+0a<a>f+0a]4 l16 : d0f+raal8aa]2
+						    d0f+rarl8P1gaP0
+
+C0	o5
+C1	o4
+C0,1	l16	['120dr<aaP1g+8a8P0>]2 [:'120d8<ar>]4<f+rar>
+C0		 '120d8<Q4 aaa8a8f+0>Q8 d2:
+C1		 '120d8<Q4 aaa8a8d0  Q8 a2:
+
+;------------------------------------------------------------------------------
+C0	l16o5	[ P1 [d8r8]4 P0 : P1 '120 d8c<b'120a8bag8P0r8 P1gab>cP0 ]2
+				  P1 '120 e8f+g'120a8ged8P0r8<P1gab>cP0
+	l8	P1 [dr]4 P0  P1 c+<bag f+a>df+ P0
+		P1 f+32e16.Q4d+ef+Q8P0 P1d4<aP0P1a16>d16P0
+	l16	P1 c+<bbaaggf+ l8 f+a>df+P0 P1 f+32e16.Q4d+ef+Q8P0 d4r4
+	l16	[ P1[ d8r8]4P0		P1d8c de-8fe- d8.P0P1c<b->cde-P0
+		  P1[:f8r8]4P0g8r8 :	P1f8e-dc8 de- d4 P0P1<b-ab->cP0 ]2
+					P1d8c<b-a8b-ag4P0r4
+	l8	  P1[ d8r8]4P0		P1df+a>cP1 P0<b>ed4P0
+		  P1[ d8r8]2P0		P1df+b>d f+ec<aP0 g4.r ]2
+
+C1	l8o4Q4	[[<gb0>d]4 : <gb0>d<'120d>f+0>c+< [<gb0>d]2]2
+			     <gb0>d<'120g>c+0 e   [<gb0>d]2
+		 [<gb0>d]4 <a>e0g<a>c+0e [<a>d0f+]2 [<a>c+0g]2 [<a>d0f+]2 
+		           <a>e0g<a>c+0e [<a>d0f+]2 [<a>c+0g]2 d0f+Q8dc+cQ4
+		[[<gb0>d]4 <gb0>d<'120a>c0f <b->d0fr4
+		 [:<b->d0f]4<e-b-0>c : <fb-0>d<fa0>c <b->dr4 ]2
+					<dg0b-df+0>c [<gb0>d]2
+		<rP1da0>c<dP0 rP1dg0bdP0 rP1df+0adP0 rP1dg0bdP0
+		 rP1da0>c<dP0 rP1dg0bdP0 rP1df+0ad   g0bP0d<gr> ]2
+
+
+
+

@@ -1,0 +1,185 @@
+Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+d2h16.asm						     Page 1 - 1
+
+
+
+					.186
+					.model	tiny,stdcall
+
+
+				;****************************************************************
+				;*		外部宣言					*
+				;****************************************************************
+				include	lib_dos.inc
+			      C 
+			      C 
+			      C ComSmole	proto	near,	sizeCOM:WORD
+			      C ExeSmole	proto	near,	szDGROUP:WORD
+			      C Memory_Open	proto	near,	ParaSize:word
+			      C Memory_Close	proto	near,	CloseSegment:word
+			      C 
+			      C File_Create	proto	near,	cFilename:dword,iAttr:word
+			      C File_Open	proto	near,	cFilename:dword,cMode:byte
+			      C File_Close	proto	near,	hFile:word
+			      C File_Load	proto	near,	hFile:word,	cBuff:dword
+			      C File_Load_S	proto	near,	hFile:word,	iSize:word,	cBuff:dword
+			      C File_Write	proto	near,	hFile:word,	iSize:word,	cBuff:dword
+			      C File_Seek	proto	near,	hFile:word,	iControl:BYTE,	dOffset	:dword
+			      C 
+			      C ChangeExt			proto	near,	cFilename:dword,cExt:dword
+			      C Change_Current_Directory	proto	near,	cDirname:dword
+			      C 
+			      C File_Err	proto	near
+			      C 
+			      C 
+			      C 
+			      C ASC2HEX8	proto	near
+			      C ASC2HEX16	proto	near
+			      C HEX2ASC8	proto	near
+			      C HEX2ASC16	proto	near
+			      C FH2A8		proto	near
+			      C FH2A16		proto	near
+			      C H2A_F		proto	near,	iValue	:WORD,	iForm	:WORD
+			      C H2A8		proto	near
+			      C dat2hex8	proto	near
+			      C dat2hex16	proto	near
+			      C 
+			      C 
+			      C 
+
+
+				;****************************************************************
+				;*		コード						*
+				;****************************************************************
+				;---------------------------------------------------------------|
+				;		１６進数コード～ASCII CODE(FF)			|
+				;---------------------------------------------------------------|
+				;	処理							|
+				;		１６進コードを１６進のアスキーコードに変換	|
+				;	引数							|
+				;		ax←変換したい数値				|
+				;	返り値							|
+				;		CS:DX←変換した文字列の先頭アドレス		|
+				;	コメント						|
+				;		この書き方は、書いたの近頃だ。			|
+				;---------------------------------------------------------------|
+ 0000				.data
+ 0000 30 30 30 30 24		dat2hex16_Print	db	'0000$'
+ 0000				.code
+ 0000				dat2hex16	proc	near	uses ax
+
+ 0000  50		   *	    push   ax
+ 0001  8B D0					mov	dx,ax		;
+ 0003  C1 E8 04					shr	ax,4		; ax <- ---- FEDC BA98 7654
+ 0006  81 E2 0F0F				and	dx,0f0fh	; dx <- ---- BA98 ---- 3210
+ 000A  25 0F0F					and	ax,0f0fh	; ax <- ---- FEDC ---- 7654
+
+						.if	(dl>9)
+ 000D  80 FA 09		   *	    cmp    dl, 009h
+ 0010  76 03		   *	    jbe    @C0001
+ 0012  80 C2 07						add	dl,7
+						.endif
+ 0015			   *@C0001:
+
+						.if	(dh>9)
+ 0015  80 FE 09		   *	    cmp    dh, 009h
+ 0018  76 03		   *	    jbe    @C0003
+ 001A  80 C6 07						add	dh,7
+						.endif
+ 001D			   *@C0003:
+
+						.if	(al>9)
+ 001D  3C 09		   *	    cmp    al, 009h
+ 001F  76 02		   *	    jbe    @C0005
+ 0021  04 07						add	al,7
+						.endif
+ 0023			   *@C0005:
+
+						.if	(ah>9)
+ 0023  80 FC 09		   *	    cmp    ah, 009h
+ 0026  76 03		   *	    jbe    @C0007
+ 0028  80 C4 07						add	ah,7
+						.endif
+ 002B			   *@C0007:
+
+ 002B  81 C2 3030				add	dx,3030h
+ 002F  05 3030					add	ax,3030h
+
+ 0032  86 D4					xchg	dl,ah
+
+ 0034  2E: A3 0002 R				mov	word ptr cs:[dat2hex16_Print + 2],ax
+ 0038  8B C2					mov	ax,dx
+ 003A  2E: A3 0000 R				mov	word ptr cs:[dat2hex16_Print + 0],ax
+
+ 003E  0E					push	cs		;
+ 003F  1F					pop	ds		;ds:dx←far &(dat2hex8_Print)
+ 0040  BA 0000 R				mov	dx,offset dat2hex16_Print
+
+						ret			;
+ 0043  58		   *	    pop    ax
+ 0044  C3		   *	    ret    00000h
+ 0045				dat2hex16	endp			;
+				;****************************************************************
+					end
+Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+d2h16.asm						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+DGROUP . . . . . . . . . . . . .	GROUP
+_TEXT  . . . . . . . . . . . . .	16 Bit	 0045	  Word	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	16 Bit	 0005	  Word	  Public  'DATA'	
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+ASC2HEX16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ASC2HEX8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ChangeExt  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Change_Current_Directory . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ComSmole . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+ExeSmole . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+FH2A16 . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+FH2A8  . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Close . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Create  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Err . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Load_S  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Load  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Open  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Seek  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+File_Write . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+H2A8 . . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+H2A_F  . . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+HEX2ASC16  . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+HEX2ASC8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Memory_Close . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+Memory_Open  . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+dat2hex16  . . . . . . . . . . .	P Near	 0000	  _TEXT	Length= 0045 Public STDCALL
+dat2hex8 . . . . . . . . . . . .	P Near	 0000	  Length= 0000 External STDCALL
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+@CodeSize  . . . . . . . . . . .	Number	 0000h	 
+@DataSize  . . . . . . . . . . .	Number	 0000h	 
+@Interface . . . . . . . . . . .	Number	 0003h	 
+@Model . . . . . . . . . . . . .	Number	 0001h	 
+@code  . . . . . . . . . . . . .	Text   	 DGROUP
+@data  . . . . . . . . . . . . .	Text   	 DGROUP
+@fardata?  . . . . . . . . . . .	Text   	 FAR_BSS
+@fardata . . . . . . . . . . . .	Text   	 FAR_DATA
+@stack . . . . . . . . . . . . .	Text   	 DGROUP
+dat2hex16_Print  . . . . . . . .	Byte	 0000	  _DATA	
+
+	   0 Warnings
+	   0 Errors

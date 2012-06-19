@@ -437,6 +437,8 @@ _Init	endp				;
 _MusicPlay	proc far c	uses bx cx dx di si ds es,
 	fptMusic:far ptr byte
 
+	push	bp
+
 ;---------------------------------------------------------------
 ;演奏の停止
 
@@ -470,6 +472,8 @@ _MusicPlay	proc far c	uses bx cx dx di si ds es,
 	add	sp,+4			;
 	mov	ds:[si].WTD_Sys_MusicOffset,ax	;アドレスの設定
 	mov	ds:[si].WTD_Sys_MusicSegment,dx	;
+
+	mov	bp, bx
 
 ;ポインタの設定
 	mov	es,dx			;
@@ -626,9 +630,11 @@ _MusicPlay_Chk2:
 	mov	ds:[di].WTD_Program,al		;
 	mov	ds:[di].WTD_Program2nd,al	;
 	mov	ds:[di].WTD_Program3rd,al	;
+	mov	ds:[di].WTD_ProgramDecay,al	;
 	mov	ds:[di].WTD_LoopCountPointer,al	;
 	mov	ds:[di].WTD_Key,al		;
 	mov	ds:[di].WTD_KeySet + 0,al	;
+ifndef	hyoka	;--------------------------------廉価版は無し
 	mov	ds:[di].WTD_KeySet + 1,al	;
 	mov	ds:[di].WTD_KeySet + 2,al	;
 	mov	ds:[di].WTD_KeySet + 3,al	;
@@ -636,6 +642,8 @@ _MusicPlay_Chk2:
 	mov	ds:[di].WTD_KeySet + 5,al	;
 	mov	ds:[di].WTD_KeySet + 6,al	;
 	mov	ds:[di].WTD_KeySet + 7,al	;
+endif	;----------------------------------------
+	mov	ds:[di].WTD_ReleaseVolume, al	;
 	mov	ax,es:[bx]			;
 	mov	ds:[di].WTD_Address,ax		;
 
@@ -676,6 +684,8 @@ _MusicPlay_End:
 	in	al,Int_Enable		;
 	or	al,Int_HblankSet	;
 	out	Int_Enable,al		;
+
+	pop	bp
 
 	ret				;終了
 _MusicPlay	endp			;
@@ -990,9 +1000,11 @@ _EffectPlay_Step2:			;
 	mov	ds:[di].WTD_Program,al		;
 	mov	ds:[di].WTD_Program2nd,al	;
 	mov	ds:[di].WTD_Program3rd,al	;
+	mov	ds:[di].WTD_ProgramDecay,al	;
 	mov	ds:[di].WTD_LoopCountPointer,al	;
 	mov	ds:[di].WTD_Key,al		;
 	mov	ds:[di].WTD_KeySet + 0,al	;
+ifndef	hyoka	;--------------------------------廉価版は無し
 	mov	ds:[di].WTD_KeySet + 1,al	;
 	mov	ds:[di].WTD_KeySet + 2,al	;
 	mov	ds:[di].WTD_KeySet + 3,al	;
@@ -1000,6 +1012,8 @@ _EffectPlay_Step2:			;
 	mov	ds:[di].WTD_KeySet + 5,al	;
 	mov	ds:[di].WTD_KeySet + 6,al	;
 	mov	ds:[di].WTD_KeySet + 7,al	;
+endif	;----------------------------------------
+	mov	ds:[di].WTD_ReleaseVolume, al	;
 	mov	ax,es:[bx]			;
 	mov	ds:[di].WTD_Address,ax		;
 
