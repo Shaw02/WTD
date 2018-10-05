@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+Microsoft (R) Macro Assembler Version 6.11		    07/23/15 20:11:07
 fclose.asm						     Page 1 - 1
 
 
@@ -84,7 +84,7 @@ fclose.asm						     Page 1 - 1
  0017				File_Close	endp			;
 				;****************************************************************
 					end
-Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+Microsoft (R) Macro Assembler Version 6.11		    07/23/15 20:11:07
 fclose.asm						     Symbols 2 - 1
 
 

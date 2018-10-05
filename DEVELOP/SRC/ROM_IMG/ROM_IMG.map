@@ -1,8 +1,8 @@
 
  Start  Stop   Length Name                   Class
  F0000H F3F3BH 03F3CH TEXT                   CODE
- F3F40H F59D0H 01A91H _TEXT                  CODE
- F59E0H F682FH 00E50H _GHOST_DATA            CODE
+ F3F40H F59FAH 01ABBH _TEXT                  CODE
+ F5A00H F684FH 00E50H _GHOST_DATA            CODE
  00000H 00E4FH 00E50H DATA                   DATA
  00E50H 00E50H 00000H _DATA                  DATA
  00E50H 00ED7H 00088H BSS                    DATA

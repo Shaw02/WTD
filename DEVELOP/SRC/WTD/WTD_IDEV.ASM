@@ -386,6 +386,7 @@ I_SP_Frection:				;
 	;オクターブ処理
 	mov	cl,ds:[di].WTD_OctaveSet
 	add	cl,3			;
+	sub	cl,ds:[di].WTD_BendRange
 	shr	ax,cl			;
 	mov	bx,ax			;
 	mov	ax,2048			;

@@ -884,33 +884,58 @@ I_Com41:				;
 ;===============================================================|
 	even				;偶数アドレス配置
 I_Com42:				;
+
+
 	call	I_Read16		;
 	rol	ax,1			;
 	shr	ax,1			;Bit 7 Reset & Bit 7 -> Cy Flag
-	mov	ds:[di].WTD_Bend,ax	;
-	.if	(carry?)
+	pushf
+
+	.if	(ds:[di].WTD_Channel >= 80h)
+
+	   ;内蔵音源--------------------
+	   sub	ax, 8192
+	   mov	ds:[di].WTD_BendDetune,ax		;ディチューン
+	   popf
+	   .if	(carry?)
+		call	I_Read8
+		and	al, 03h				;センシビティ
+		mov	ds:[di].WTD_BendRange,al	;※0～3の範囲
+	   .endif
+
+	.else
+
+	   ;MIDI音源--------------------
+	   mov	ds:[di].WTD_Bend,ax	;
+	   popf
+	   .if	(carry?)
 
 ifndef	hyoka	;------------------------廉価版は無し
-	mov	al,00h			;
-	mov	cl,MIDI_Ctrl_RegLSB	;
-	mov	dx,offset CGROUP:I_Table_CtrlChgB
-	call	I_Table_Jump		;
+		;RPN アドレス送信
+		mov	al,00h			;
+		mov	cl,MIDI_Ctrl_RegLSB	;
+		mov	dx,offset CGROUP:I_Table_CtrlChgB
+		call	I_Table_Jump		;
 
-	mov	al,00h			;
-	mov	cl,MIDI_Ctrl_RegMSB	;
-	mov	dx,offset CGROUP:I_Table_CtrlChgB
-	call	I_Table_Jump		;
+		mov	al,00h			;
+		mov	cl,MIDI_Ctrl_RegMSB	;
+		mov	dx,offset CGROUP:I_Table_CtrlChgB
+		call	I_Table_Jump		;
 endif	;--------------------------------
 
-	call	I_Read8			;
+		call	I_Read8			;
 
 ifndef	hyoka	;------------------------廉価版は無し
-	mov	cl,MIDI_Ctrl_DataEntly	;
-	mov	dx,offset CGROUP:I_Table_CtrlChgB
-	jmp	I_Table_Jump		;※call → jmp
+		;RPN データ送信
+		mov	cl,MIDI_Ctrl_DataEntly	;
+		mov	dx,offset CGROUP:I_Table_CtrlChgB
+		jmp	I_Table_Jump		;※call → jmp
 endif	;--------------------------------
+
+	   .endif
 
 	.endif
+
 	ret				;
 ;===============================================================|
 ;		Track / Sound Type				|

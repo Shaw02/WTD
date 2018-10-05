@@ -232,7 +232,7 @@ typedef struct {
 	int		ModDecay;				/* 5B-5C	ﾓｼﾞｭﾚｰｼｮﾝ ﾃﾞｨｹｲﾚｲﾄ */
 	char	ModLevel;				/* 5D		ﾓｼﾞｭﾚｰｼｮﾝ ﾚﾍﾞﾙ */
 	char	ModLevelSet;			/* 5E		現在のﾓｼﾞｭﾚｰｼｮﾝ ﾚﾍﾞﾙ */
-	char	Null_5F;				/* 5F		未使用 */
+	char	BendRange;				/* 5F		ベン°レンジ */
 	char	PanSet;					/* 60		出力パンポット */
 	char	Pan;					/* 61		パンポット */
 	int		PanDetune;				/* 62-63	音量増減値 */

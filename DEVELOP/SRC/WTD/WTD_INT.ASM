@@ -122,6 +122,7 @@ I_Start:
 ;---------------------------------------------------------------
 ;EOIの発行
 	cli					;割り込み不可
+	cld					;inc mode
 	mov	al,Int_HblankSet		;
 	out	Int_Eoi,al			;出力
 
@@ -693,6 +694,12 @@ endif	;----------------------------------------
 
 	;音程読み込み
 	mov	ax,ds:[di].WTD_Bend	;
+
+	;内蔵音源だったら、ベンドレンジ調整
+	.if	(ds:[di].WTD_Channel >= 80h)
+		mov	cl,ds:[di].WTD_BendRange
+		shr	ax,cl
+	.endif
 
 	;ディチューンの加算
 	add	ax,ds:[di].WTD_BendDetune

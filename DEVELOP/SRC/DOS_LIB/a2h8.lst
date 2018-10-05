@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+Microsoft (R) Macro Assembler Version 6.11		    07/23/15 20:11:07
 a2h8.asm						     Page 1 - 1
 
 
@@ -75,7 +75,7 @@ a2h8.asm						     Page 1 - 1
  000C				ASC2HEX8	endp			;
 				;****************************************************************
 					end
-Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+Microsoft (R) Macro Assembler Version 6.11		    07/23/15 20:11:07
 a2h8.asm						     Symbols 2 - 1
 
 

@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:04
+Microsoft (R) Macro Assembler Version 6.11		    07/23/15 20:11:09
 DAT2ASM.asm						     Page 1 - 1
 
 
@@ -118,8 +118,8 @@ DAT2ASM.asm						     Page 1 - 1
 			      C ;						A.Watanabe		|
 			      C ;									|
 			      C ;=======================================================================|
- = '1.0d',0		      C WtdIL_Version		equ	'1.0d',0	;文字列
- = 010D			      C WTdIL_Version_N		equ	010dh		;数値
+ = '1.0e',0		      C WtdIL_Version		equ	'1.0e',0	;文字列
+ = 010E			      C WTdIL_Version_N		equ	010eh		;数値
 			      C 
 				include	wtd_def.inc	;WTD Define infomation
 			      C ;=======================================================================|
@@ -185,6 +185,7 @@ DAT2ASM.asm						     Page 1 - 1
 			      C ;===============================================================|
 			      C ;セグメントアドレス定義
  = 0000			      C IRAM_Segment		equ	0000h			;本体RAM
+ = 0C00			      C IRAM2_Segment		equ	0C00h			;本体RAM(0xC000-)
  = BANK_SRAM_ADDRESS	      C SRAM_Segment		equ	BANK_SRAM_ADDRESS	;SRAM
  = BANK_ROM0_ADDRESS	      C FROM_Segment		equ	BANK_ROM0_ADDRESS	;ROM
 			      C 
@@ -375,7 +376,7 @@ DAT2ASM.asm						     Page 1 - 1
  005B  0000		      C WTD_ModDecay		dw	?		;5B-5C	ﾓｼﾞｭﾚｰｼｮﾝ ﾃﾞｨｹｲﾚｲﾄ
  005D  00		      C WTD_ModLevel		db	?		;5D	ﾓｼﾞｭﾚｰｼｮﾝ ﾚﾍﾞﾙ
  005E  00		      C WTD_ModLevelSet		db	?		;5E	現在のﾓｼﾞｭﾚｰｼｮﾝ ﾚﾍﾞﾙ
- 005F  00		      C WTD_Null_5F		db	?		;5F	未使用
+ 005F  00		      C WTD_BendRange		db	?		;5F	未使用
  0060  00		      C WTD_PanSet		db	?		;60	出力パンポット
  0061  00		      C WTD_Pan			db	?		;61	パンポット
  0062  0000		      C WTD_PanDetune		dw	?		;62-63	音量増減値
@@ -1072,7 +1073,7 @@ DAT2ASM.asm						     Page 1 - 1
 				;				End					|
 				;=======================================================================|
 					END
-Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:04
+Microsoft (R) Macro Assembler Version 6.11		    07/23/15 20:11:09
 DAT2ASM.asm						     Symbols 2 - 1
 
 
@@ -1235,7 +1236,7 @@ WTD  . . . . . . . . . . . . . .	 007A
   WTD_ModDecay . . . . . . . . .	 005B	     Word
   WTD_ModLevel . . . . . . . . .	 005D	     Byte
   WTD_ModLevelSet  . . . . . . .	 005E	     Byte
-  WTD_Null_5F  . . . . . . . . .	 005F	     Byte
+  WTD_BendRange  . . . . . . . .	 005F	     Byte
   WTD_PanSet . . . . . . . . . .	 0060	     Byte
   WTD_Pan  . . . . . . . . . . .	 0061	     Byte
   WTD_PanDetune  . . . . . . . .	 0062	     Word
@@ -1344,6 +1345,7 @@ Symbols:
 @fardata . . . . . . . . . . . .	Text   	 FAR_DATA
 @stack . . . . . . . . . . . . .	Text   	 DGROUP
 FROM_Segment . . . . . . . . . .	Text   	 BANK_ROM0_ADDRESS
+IRAM2_Segment  . . . . . . . . .	Number	 0C00h	 
 IRAM_Segment . . . . . . . . . .	Number	 0000h	 
 IRAM_SoundVoiceTable_WW  . . . .	Number	 0180h	 
 IRAM_SoundVoiceTable . . . . . .	Text   	 IRAM_SoundVoiceTable_WW
@@ -1467,8 +1469,8 @@ WTD_WorkAdd_Wave . . . . . . . .	Number	 0100h
 WTD_WorkChSize . . . . . . . . .	Number	 0080h	 
 WTD_WorkSize . . . . . . . . . .	Number	 1000h	 
 WTR_WorkAdd_Ch16 . . . . . . . .	Number	 0E00h	 
-WTdIL_Version_N  . . . . . . . .	Number	 010Dh	 
-WtdIL_Version  . . . . . . . . .	Text   	 '1.0d',0
+WTdIL_Version_N  . . . . . . . .	Number	 010Eh	 
+WtdIL_Version  . . . . . . . . .	Text   	 '1.0e',0
 convert_ptStr  . . . . . . . . .	Word	 0000	  CONST	
 convert_strCR  . . . . . . . . .	Byte	 001E	  CONST	
 convert_strDB  . . . . . . . . .	Byte	 0008	  CONST	

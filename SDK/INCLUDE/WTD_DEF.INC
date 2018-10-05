@@ -61,6 +61,7 @@ InterruptVectorBase	equ	InterruptVectorBase_WW		;割り込みベクタ
 ;===============================================================|
 ;セグメントアドレス定義
 IRAM_Segment		equ	0000h			;本体RAM
+IRAM2_Segment		equ	0C00h			;本体RAM(0xC000-)
 SRAM_Segment		equ	BANK_SRAM_ADDRESS	;SRAM
 FROM_Segment		equ	BANK_ROM0_ADDRESS	;ROM
 
@@ -237,7 +238,7 @@ WTD_VolumeUpDown	db	?		;5A	相対ボリュームの増減値
 WTD_ModDecay		dw	?		;5B-5C	ﾓｼﾞｭﾚｰｼｮﾝ ﾃﾞｨｹｲﾚｲﾄ
 WTD_ModLevel		db	?		;5D	ﾓｼﾞｭﾚｰｼｮﾝ ﾚﾍﾞﾙ
 WTD_ModLevelSet		db	?		;5E	現在のﾓｼﾞｭﾚｰｼｮﾝ ﾚﾍﾞﾙ
-WTD_Null_5F		db	?		;5F	未使用
+WTD_BendRange		db	?		;5F	未使用
 WTD_PanSet		db	?		;60	出力パンポット
 WTD_Pan			db	?		;61	パンポット
 WTD_PanDetune		dw	?		;62-63	音量増減値

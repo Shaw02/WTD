@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+Microsoft (R) Macro Assembler Version 6.11		    07/23/15 20:11:06
 int21err.asm						     Page 1 - 1
 
 
@@ -236,7 +236,7 @@ int21err.asm						     Page 1 - 1
  0033				File_Err	endp
 				;****************************************************************
 					end
-Microsoft (R) Macro Assembler Version 6.11		    04/22/12 02:03:03
+Microsoft (R) Macro Assembler Version 6.11		    07/23/15 20:11:06
 int21err.asm						     Symbols 2 - 1
 
 
