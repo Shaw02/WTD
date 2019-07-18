@@ -1,4 +1,4 @@
-path c:\masm611\bin;c:\masm611\binr;c:\WWitch\bin
+path c:\masm611\bin;c:\masm611\binr;c:\WWitch\bin\;c:\WWitch\bin16\;c:\WWitch\lsic86ww\bin\
 
 rem œ—õ‰¿”Å
 cd wtd
@@ -10,6 +10,18 @@ copy WTD_SRAM.LIB ..\..\..\bin\s\
 copy WTDHSRAM.LIB ..\..\..\bin\s\
 copy WTD_IRAM.LIB ..\..\..\bin\s\
 copy WTDHIRAM.LIB ..\..\..\bin\s\
+cd..
+
+rem œBIOS for WS Emulator ROM-Image
+cd rom_img
+nmake
+copy rom_img.bin ..\..\..\bin\
+cd..
+
+rem œROM-Image Maker
+cd wsmake
+nmake
+copy wsmake.com ..\..\..\bin\
 cd..
 
 rem œƒRƒ“ƒpƒCƒ‰

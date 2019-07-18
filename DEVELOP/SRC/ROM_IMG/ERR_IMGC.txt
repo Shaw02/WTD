@@ -1,0 +1,7 @@
+ROM_MAIN.c 24: Warning: illegal pointer combination (initializer)
+ROM_MAIN.c 25: Warning: illegal pointer combination (initializer)
+ROM_MAIN.c 26: Warning: illegal pointer combination (initializer)
+ROM_MAIN.c 27: Warning: illegal pointer combination (initializer)
+ROM_MAIN.c 28: Warning: illegal pointer combination (initializer)
+ROM_MAIN.c 192: Warning: illegal pointer combination (param)
+ROM_MAIN.c 201: Warning: 'i' not used

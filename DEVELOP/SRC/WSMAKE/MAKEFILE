@@ -1,0 +1,23 @@
+#==============================================================================
+#	Wonder Swan Total Sound Driver
+#		ROM-Image Maker
+#			Make file
+#				A.Waranabe (S.W.)
+#==============================================================================
+include ..\..\..\SDK\include\wtdsdk.mak
+
+PROJ = WSMAKE
+
+INC_FILES =  ..\..\..\SDK\include\wtd.h ..\..\..\SDK\include\bank.inc ..\..\..\SDK\include\comm.inc ..\..\..\SDK\include\process.inc ..\..\..\SDK\include\service.inc ..\..\..\SDK\include\sound.inc ..\..\..\SDK\include\timer.inc ..\..\..\SDK\include\wtd_def.inc ..\..\..\SDK\include\wtd_ver.inc ..\..\..\SDK\include\wtc_def.inc ..\..\..\SDK\include\WSMAKE.INC
+
+FILES = WSMAKE.ASM WM_SUB.ASM Wm_main.asm
+
+all: $(PROJ).com
+	@del *.bak
+	@del *.obj
+	@del *.exe
+	@del *.bin
+
+$(PROJ).com : $(FILES) $(INC_FILES)
+	@$(ASM) $(AFLAG) $(PROJ);>wtcerr.txt
+	@$(LINKER) $(LFLAG) $(PROJ),,,$(LIBS);

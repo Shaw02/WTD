@@ -123,7 +123,7 @@ I_SP_KeyOn:				;
 	mov	al,ah				;
 	mov	ah,0				;ax©Key
 	shl	ax,1				;
-	mov	bx,offset CGROUP:I_Frection_Table	;
+	mov	bx,offset CGROUP:I_Frection_Table
 	add	bx,ax				;
 	mov	ax,cs:[bx]			;ax©Pitch Bend
 ;ƒxƒ“ƒh‚Ì‘‚«‚İ
@@ -265,9 +265,9 @@ I_SP_Volume:				;
 
 ;‰¹—Ê‚ÌŸŒ³‚ğ[dB]‚É•ÏŠ·
 ;	shl	al,1			;(Range:0`255)
-;	and	ax,00ffh			;
-;	mov	bx,offset CGROUP:I_Volume_Table	;
-;	mov	si,ax				;
+;	and	ax,00ffh		;
+;	mov	bx,offset CGROUP:I_Volume_Table
+;	mov	si,ax			;
 ;	mov	al,cs:[bx + si]		;cl©int(256*(log(al+1)/log(257)))
 	mov	cl,al			;
 

@@ -39,13 +39,13 @@ EffectMaxPart		equ	3	;効果音は3 パート
 ;=======================================================================|
 ifdef	library	;---------------------	※　ライブラリ版
 
-_TEXT	segment	word public 'CODE'
+_TEXT	segment	para public 'CODE'
 _TEXT	ends
 
-DATA	segment	word public 'DATA'
+DATA	segment	para public 'DATA'
 DATA	ends
 
-_BSS	segment	word public 'BSS'
+_BSS	segment	para public 'BSS'
 _BSS	ends
 
 CGROUP	group	_TEXT
@@ -55,7 +55,7 @@ DGROUP	group	DATA,_BSS
 
 else		;---------------------	※　IL版
 
-_TEXT	segment word public 'CODE'
+_TEXT	segment para public 'CODE'
 _TEXT	ends
 
 CGROUP	group	_TEXT
@@ -66,7 +66,7 @@ endif		;---------------------
 ;=======================================================================|
 ;				プログラム・コード			|
 ;=======================================================================|
-_TEXT	segment word public 'CODE'
+_TEXT	segment para public 'CODE'
 
 ;	org	0000h			;明示の必要性？
 
@@ -88,7 +88,7 @@ _TEXT	ends
 ;				グローバル変数				|
 ;=======================================================================|
 ifdef	library				;※　ライブラリ版のみ必要
-_BSS	segment word public 'BSS'
+_BSS	segment para public 'BSS'
 
 include wtd_lib.asm			;ライブラリ版　データ領域
 

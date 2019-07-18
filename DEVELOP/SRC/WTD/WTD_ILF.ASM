@@ -824,7 +824,7 @@ _MusicStop_Loop1:					;
 	call	I_Table_Jump		;
 
 	mov	ax,0			;音色 = 0
-	mov	dx,offset CGROUP:I_Table_Voice	;
+	mov	dx,offset CGROUP:I_Table_Voice
 	call	I_Table_Jump		;
 
 	mov	ax,64			;パンポット = 64
@@ -842,7 +842,7 @@ ifndef	hyoka	;------------------------廉価版は無し
 endif	;--------------------------------
 
 	mov	ax,0			;モード　初期化
-	mov	dx,offset CGROUP:I_Table_Mode	;
+	mov	dx,offset CGROUP:I_Table_Mode
 	call	I_Table_Jump		;
 
 

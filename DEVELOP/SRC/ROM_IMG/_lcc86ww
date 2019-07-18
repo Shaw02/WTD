@@ -1,0 +1,13 @@
+# _lcc86ww: configuration file of LSI C-86 for WonderWitch on Windows
+-DLSI_C_WW -DLSI_C -O
+-XC:\WWitch\lsic86ww
+-IC:\WWitch\include
+-IC:\WWitch\lsic86ww\include
+-IC:\WWitch\WTD\SDK\INCLUDE
+-LC:\WWitch\lib
+-LC:\WWitch\lsic86ww\lib
+-LC:\WWitch\WTD\BIN\S
+-T$TEMP
+-k "-Fc -T F0000 -TDATA 00000"
+-aROM_BIOS.obj $LCC86 &
+-lWTDHIRAM.lib

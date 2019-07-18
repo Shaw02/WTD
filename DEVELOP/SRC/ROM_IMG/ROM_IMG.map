@@ -1,0 +1,43 @@
+
+ Start  Stop   Length Name                   Class
+ F0000H F1313H 01314H TEXT                   CODE
+ F1320H F2C2CH 0190DH _TEXT                  CODE
+ F2C30H F30AFH 00480H _GHOST_DATA            CODE
+ 00000H 0047FH 00480H DATA                   DATA
+ 00480H 00480H 00000H _DATA                  DATA
+ 00480H 004F3H 00074H BSS                    DATA
+ 00500H 014FFH 01000H _BSS                   BSS
+ 01500H 01500H 00000H _HEAP                  BSS
+
+ Origin   Group
+ F000:0   CGROUP
+ 0000:0   DGROUP
+
+  Address         Publics by Value
+
+ 0000:0000       _InteruptVector
+ 0000:0000       dseg_start
+ 0000:0400       _TextPaletteData
+ 0000:0420       _VramSprite
+ 0000:0424       _VramScreen1
+ 0000:0428       _VramScreen2
+ 0000:042C       _VramFont
+ 0000:0430       _VramPalette
+ 0000:0480       bss_start
+ 0000:0500       _WTD_Work
+ 0000:1500       heap_start
+ F000:0000       _Start
+ F000:00AD       _Exit
+ F000:00AF       _InterruptVector_Default
+ F000:00B0       _InterruptVector_DivZero
+ F000:10D1       _LCDcls
+ F000:1131       _LCDinit
+ F000:1190       _print
+ F000:11DB       _Inkey0
+ F000:121A       _KeyWait
+ F000:123A       _main
+ F000:1320       WanderSwanTotalSoundDriver_
+ F000:13B5       _WTD_FunctionLoad
+ F000:1C74       I_Start
+
+Program entry point at F000:0000

@@ -1,0 +1,22 @@
+#==============================================================================
+#	Wonder Swan Total Sound Driver
+#		BIOS for Wonder Swan Emulator ROM Image
+#			Make file
+#				A.Waranabe (S.W.)
+#==============================================================================
+include ..\..\..\SDK\include\wtdsdk.mak
+
+PROJ = ROM_IMG
+
+INC_FILES =  ..\..\..\SDK\include\wtd.h ..\..\..\SDK\include\ws.h ..\..\..\SDK\include\bank.inc ..\..\..\SDK\include\comm.inc ..\..\..\SDK\include\process.inc ..\..\..\SDK\include\service.inc ..\..\..\SDK\include\sound.inc ..\..\..\SDK\include\timer.inc ..\..\..\SDK\include\wtd_def.inc ..\..\..\SDK\include\wtd_ver.inc ..\..\..\SDK\include\wtc_def.inc
+
+FILES = ROM_BIOS.ASM ROM_MAIN.C
+
+all: $(PROJ).bin
+	@del *.bak
+	@del *.obj
+	@del *.exe
+
+$(PROJ).bin : $(FILES) $(INC_FILES)
+	@$(ASM) ROM_BIOS.ASM $(AFLAG); >ERR_IMGA.txt
+	@$(CC) -o $(PROJ).bin ROM_MAIN.C $(CFLAG) >ERR_IMGC.txt

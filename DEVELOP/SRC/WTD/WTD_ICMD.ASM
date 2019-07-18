@@ -155,7 +155,7 @@ I_PlayKey_Step2:				;
 	mov	ds:[di].WTD_Key,al		;音程保存
 ;ハードウェアをKeyOn
 	add	al,ds:[di].WTD_KeyShift		;
-	mov	dx,offset CGROUP:I_Table_KeyOn		;
+	mov	dx,offset CGROUP:I_Table_KeyOn	;
 	call	I_Table_Jump			;KeyOn
 
 I_PlayKey_Step2R:				;
@@ -1138,7 +1138,7 @@ endif	;--------------------------------
 	even				;偶数アドレス配置
 I_Com50:				;
 	call	I_Read8			;
-	mov	dx,offset CGROUP:I_Table_Mode	;
+	mov	dx,offset CGROUP:I_Table_Mode
 	call	I_Table_Jump		;設定
 	ret				;終了
 ;===============================================================|
